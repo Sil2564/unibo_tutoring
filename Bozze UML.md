@@ -7,6 +7,7 @@ Alla fine faremo un unico uml che cerca di racchiudere tutto (escludendo parti p
 UML ANDREA (INCOMPLETO, DA FINIRE)
 LOGICA MESSAGGI 
 
+```mermaid
 ---
 config:
   theme: dark
@@ -44,3 +45,5 @@ classDiagram
     Chat "1" -- "*" Messaggio : contiene 
     Chat "*" -- "2" Utente : coinvolge 
     SessioneTutoraggio "1" -- "1" Chat : collega
+
+ ```
