@@ -5,6 +5,7 @@ Io farei così per l'uml, ognuno fa un piccolo uml (che però prova ad essere de
 Alla fine faremo un unico uml che cerca di racchiudere tutto (escludendo parti poco importanti per aumentarne la leggibilità)
 
 UML ANDREA (INCOMPLETO, DA FINIRE)
+LOGICA MESSAGGI 
 
 ---
 config:
