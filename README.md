@@ -1,7 +1,7 @@
 # Analisi
 
 ## Introduzione
-In questa sezione vengono analizzati i requisiti e il dominio applicativo del progetto unibo_tutiring.
+In questa sezione vengono analizzati i requisiti e il dooooopominio applicativo del progetto unibo_tutiring.
 L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o preogettuali.
 
 ## Analisi dei requisiti
