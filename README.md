@@ -42,7 +42,61 @@ Gli elementi principali del dominio sono:
 La difficoltà  primaria sarà quella di gestire la coerenza dei ruoli tra offerta e richiesta, garantendo che le sessioni siano correttamente associate e confermate da entrambe le parti.
 Un'ulteriore complessità riguarda il calcolo e la validazione dei crediti formativi, che devono riflettere con precisione le ore effettivamente svolte.
 Infine, la gestione delle comunicazioni dirette e della prenotazione delle sessioni richiedono particolare attenzione per evitare sovrapposizioni di sessioni e per mantenere un sistema robusto e affidabile.
+### Elementi positivi
 
+### Elementi negativi
+
+## Schema di analisi modello del dominio
+
+Il sistema di tutoring gestisce studenti e tutor che possono proporre,
+accettare o confermare sessioni di tutoraggio.  
+Le entità principali del dominio sono `Utente`, `OffertaRichiesta`, `Sessione`,
+`Feedback` e `Credito`.  
+Lo schema seguente rappresenta i rapporti concettuali tra queste entità.
+
+```mermaid
+classDiagram
+    %% ============================
+    %% UML DEL DOMINIO - UNIBO TUTORING APP
+    %% ============================
+
+    class Utente {
+        +id
+        +nome
+        +email
+    }
+
+    class OffertaRichiesta {
+        +id
+        +tipo  // "offerta" o "richiesta"
+        +materia
+        +descrizione
+        +dataCreazione
+    }
+
+    class Sessione {
+        +id
+        +data
+        +ora
+        +durataOre
+        +stato  // proposta, confermata, sospesa
+    }
+
+
+    class Credito {
+        +id
+        +oreTotali
+    }
+
+    %% ============================
+    %% RELAZIONI DEL DOMINIO
+    %% ============================
+    Utente "1" --> "*" OffertaRichiesta : crea >
+    OffertaRichiesta "1" --> "*" Sessione : origina >
+    Sessione "1" --> "2" Utente : coinvolge >
+    Sessione "1" --> "1" Feedback : genera >
+    Utente "1" --> "1" Credito : possiede >
+```
 # Design
 
 ## Architettura
