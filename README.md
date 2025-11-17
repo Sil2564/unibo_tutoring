@@ -54,5 +54,62 @@ In questa architettura, le tre componenti principali (Model, View e Controller) 
 
 Questa suddivisione consente di mantenere il codice modulare, facilitando la gestione delle diverse sezioni dell'app (Dashboard, Chat, Profilo, ecc...) e rendendo possibile l'estensione futura con nuove funzionalità, come ad esempio l'integrazione con Teams.
 
+ 
+
+L’applicazione di tutoring segue un’architettura di tipo **MVC**, (Model–View–Controller), ispirata al pattern **ECB** (Entity–Control–Boundary). Il frontend gestisce l’interfaccia e la comunicazione con l’utente, il controller coordina le operazioni principali e interagisce con i gestori di dominio, mentre il database garantisce la persistenza delle informazioni.
+
+### Architettura – Schema UML
+
+```mermaid
+classDiagram
+    %% =====================================
+    %% UML ARCHITETTURALE - UNIBO_TUTORING
+    %% Pattern MVC / ECB
+    %% =====================================
+
+    class Frontend {
+        +mostraInterfaccia()
+        +inviaRichiesta()
+        +riceviRisposta()
+    }
+    <<boundary>> Frontend
+
+    class Controller {
+        +gestisciLogin()
+        +gestisciPrenotazioni()
+        +gestisciConferme()
+    }
+    <<control>> Controller
+
+    class UserManager {
+        +autenticaUtente()
+        +gestisciProfilo()
+    }
+    <<entity>> UserManager
+
+    class SessionManager {
+        +creaSessione()
+        +aggiornaStato()
+        +verificaConferme()
+    }
+    <<entity>> SessionManager
+
+    class DBService {
+        +salvaDati()
+        +recuperaDati()
+    }
+    <<entity>> DBService
+
+    %% RELAZIONI
+    Frontend --> Controller : invia azioni >
+    Controller --> UserManager : gestisce login/profilo >
+    Controller --> SessionManager : gestisce sessioni >
+    Controller --> DBService : persistenza >
+    SessionManager --> DBService : salva e carica sessioni >
+    UserManager --> DBService : salva e recupera utenti >
+```
+
+ 
+
 ## Design dettagliato
 
