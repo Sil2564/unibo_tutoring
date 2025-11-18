@@ -1,8 +1,8 @@
 # Analisi
 
 ## Introduzione
-In questa sezione vengono analizzati i requisiti e il dooooopominio applicativo del progetto unibo_tutiring.
-L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o preogettuali.
+In questa sezione vengono analizzati i requisiti e il doominio applicativo del progetto unibo_tutoring.
+L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o progettuali.
 
 ## Analisi dei requisiti
 L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti dell'università di Bologna in cui gi utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
@@ -21,13 +21,13 @@ L'applicazione dovrà permettere le seguenti funzionaloità principali:
 **Requisiti non funzionali**
 
 Oltre alle funzionalità principali, l'applicazione dovrà garantire una buona esperienza d'uso e un funzionamento stabile. In particolare:
-- Semplicità d'uso: interfaccia chiara e intuitiva, pensata per studenti che devono orientarsi facilmetne tra le sezioni
+- Semplicità d'uso: interfaccia chiara e intuitiva, pensata per studenti che devono orientarsi facilmente tra le sezioni
 - Affidabilità: i dati inseriti dagli utenti devono restare coerenti e sempre disponibili
 
 ## Analisi e modello del dominio
 
 L'applicazione unibo_tutoring dovrà gestire le attività di tutoraggio tra studenti dell'Università di Bologna.
-Il sistema ha lo scopo di favorire la collaborazione e il supporto reciproco tra studenti, permettendo a ciascuno di offrire o richiedere aiuto su specicìfiche materie universitarie e di accumulare crediti formativi in base alle ore di tutoraggio svolte.
+Il sistema ha lo scopo di favorire la collaborazione e il supporto reciproco tra studenti, permettendo a ciascuno di offrire o richiedere aiuto su specifiche materie universitarie e di accumulare crediti formativi in base alle ore di tutoraggio svolte.
 Il dominio applicativo è costituito da una serie di entità e relazioni che descrivono le interazioni fondamentali tra gli studenti e gli elementi che compongono il servizio.
 Ogni studente può assumere ruoli diversi a seconda del contesto: tutor, quando offre supporto su una materia, o studente, quando richiede aiuto.
 Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creazione di sessioni di tutoraggio, e la comunicazine diretta attraverso una chat privata.
@@ -103,8 +103,8 @@ classDiagram
 L'architettura dell'applicazione unibo_totoring segue il pattern MVC (Model-View-Controller).
 In questa architettura, le tre componenti principali (Model, View e Controller) cooperano per gestire le funzinalità di tutoraggio, la persistenza dei dati e l'interazione con l'utente.
 - Model: rappresenta il dominio applicativo: gestisce le entità principali (Utente, boxTutoraggio, Sessione, Chat, Credito) e le relazioni tra loro. Si occupa della logica dei dati, del calcolo dei crediti e dello ststo delle sessioni.
-- Controller: coordina le azioni dell'utente e media tra Model e View. È responsabile del flusso delle operazioni, come la creazione di un box di tutoraggio, la proposta di una sessione, o l'invio di messaggi in chat.
 - View: gestisce la parte grafica e interattiva dell'applicazione, mostrando i dati ricevuti dal Controller e aggiornandosi in base alle modifiche del Model.
+- Controller: coordina le azioni dell'utente e media tra Model e View. È responsabile del flusso delle operazioni, come la creazione di un box di tutoraggio, la proposta di una sessione, o l'invio di messaggi in chat.
 
 Questa suddivisione consente di mantenere il codice modulare, facilitando la gestione delle diverse sezioni dell'app (Dashboard, Chat, Profilo, ecc...) e rendendo possibile l'estensione futura con nuove funzionalità, come ad esempio l'integrazione con Teams.
 
@@ -167,3 +167,54 @@ classDiagram
 
 ## Design dettagliato
 
+Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o modificata.
+
+```mermaid
+classDiagram
+    %% ===== CLASSI PRINCIPALI =====
+
+    class Utente {
+        +String matricola
+        +String nome
+        +String email
+        +inviaMessaggio(Chat, testo)
+        +riceviMessaggio(Messaggio)
+        +visualizzaChat()
+    }
+
+    class Chat {
+        %%+int idChat
+        +List<Messaggio> messaggi
+        +List<Utente> partecipanti
+        %%+DateTime ultimaAttivita
+        +aggiungiMessaggio(Messaggio)
+        +ottieniMessaggi()
+        +mostraCronologia()
+    }
+
+    class Messaggio {
+        %%+int idMessaggio
+        %%+String testo
+        %%+DateTime timestamp
+        %%+boolean letto
+        +Utente mittente
+        +Utente destinatario
+        +segnalaComeLetto()
+    }
+
+    class SessioneTutoraggio {
+        %%+int idSessione
+        +String stato <<proposta/confermata/completata>>
+        +Chat chatAssociata
+        +collegaChat(Chat)
+    }
+
+
+
+    %% ===== RELAZIONI =====
+    Utente "1" -- "*" Messaggio : invia 
+    Messaggio "*" -- "1" Chat : appartiene a 
+    Chat "1" -- "*" Messaggio : contiene 
+    Chat "*" -- "2" Utente : coinvolge 
+    SessioneTutoraggio "1" -- "1" Chat : collega 
+ ```
