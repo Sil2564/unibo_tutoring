@@ -1,7 +1,7 @@
 # Analisi
 
 ## Introduzione
-In questa sezione vengono analizzati i requisiti e il doominio applicativo del progetto unibo_tutoring.
+In questa sezione vengono analizzati i requisiti e il dominio applicativo del progetto unibo_tutoring.
 L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o progettuali.
 
 ## Analisi dei requisiti
@@ -165,56 +165,97 @@ classDiagram
 
  
 
-## Design dettagliato
+## Design dettagliato- Gestione Profilo Utente 
 
 Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o modificata.
 
+
 ```mermaid
 classDiagram
-    %% ===== CLASSI PRINCIPALI =====
+    %% ============================================================
+    %% DESIGN DETTAGLIATO - PROFILO UTENTE(NIKI)
+    %% Pattern: ECB (Entity-Control-Boundary)
+    %% ============================================================
 
-    class Utente {
-        +String matricola
-        +String nome
-        +String email
-        +inviaMessaggio(Chat, testo)
-        +riceviMessaggio(Messaggio)
-        +visualizzaChat()
+    class ProfileView {
+        +mostraProfilo()
+        +richiediModifica()
+        +mostraCrediti(totale)
+    }
+    <<boundary>> ProfileView
+
+    class ProfileController {
+        +caricaProfilo(id)
+        +aggiornaProfilo(dati)
+        +ottieniCrediti(id)
+    }
+    <<control>> ProfileController
+
+    class UserRepository {
+        +trovaUtente(id)
+        +salvaModifiche(utente)
+    }
+    <<entity>> UserRepository
+
+    class CreditService {
+        +calcolaTotale(id)
+    }
+    %% RELAZIONI
+    ProfileView --> ProfileController : input dell'utente >
+    ProfileController --> UserRepository : lettura/scrittura dati >
+    ProfileController --> CreditService : recupero crediti >
+```
+## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
+```mermaid
+classDiagram
+    %% ============================================================
+    %% DESIGN DETTAGLIATO - CREDITI & BADGE (NIKI)
+    %% Pattern: Observer + Strategy
+    %% ============================================================
+
+    class SessionManager {
+        +confermaSessione(id)
+        +pubblica(evento)
     }
 
-    class Chat {
-        %%+int idChat
-        +List<Messaggio> messaggi
-        +List<Utente> partecipanti
-        %%+DateTime ultimaAttivita
-        +aggiungiMessaggio(Messaggio)
-        +ottieniMessaggi()
-        +mostraCronologia()
+    class SessionConfirmedEvent {
+        +sessionId
+        +tutorId
+        +durataOre
     }
 
-    class Messaggio {
-        %%+int idMessaggio
-        %%+String testo
-        %%+DateTime timestamp
-        %%+boolean letto
-        +Utente mittente
-        +Utente destinatario
-        +segnalaComeLetto()
+    class DomainEventBus {
+        +publish(event)
+        +subscribe(tipo, handler)
     }
 
-    class SessioneTutoraggio {
-        %%+int idSessione
-        +String stato <<proposta/confermata/completata>>
-        +Chat chatAssociata
-        +collegaChat(Chat)
+    class CreditService {
+        +onSessionConfirmed(event)
+        +aggiungiCrediti(id, ore)
+        +calcolaTotale(id)
+        +aggiornaBadge(id)
     }
 
+    class CreditRepository {
+        +carica(id)
+        +salva(record)
+    }
+
+    class BadgePolicy {
+        +determinaBadge(crediti)
+    }
+    <<interface>> BadgePolicy
+
+    class DefaultBadgePolicy {
+        +determinaBadge(crediti)
+    }
+
+    %% RELAZIONI
+    SessionManager --> DomainEventBus : publish >
+    DomainEventBus --> CreditService : notify >
+    CreditService --> CreditRepository : persistenza >
+    CreditService --> BadgePolicy : calcolo badge >
+    BadgePolicy <|.. DefaultBadgePolicy
+```
 
 
-    %% ===== RELAZIONI =====
-    Utente "1" -- "*" Messaggio : invia 
-    Messaggio "*" -- "1" Chat : appartiene a 
-    Chat "1" -- "*" Messaggio : contiene 
-    Chat "*" -- "2" Utente : coinvolge 
-    SessioneTutoraggio "1" -- "1" Chat : collega 
- ```
