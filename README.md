@@ -257,5 +257,74 @@ classDiagram
     CreditService --> BadgePolicy : calcolo badge >
     BadgePolicy <|.. DefaultBadgePolicy
 ```
+## GESTIONE SESSIONI E CHAT
+```mermaid
+
+  %% ============================================================
+    %% DESIGN DETTAGLIATO - SESSIONI E CHAT (ANDREA)
+    %% Pattern: Observer + Strategy
+    %% ============================================================
+
+classDiagram
+    
+    class TutoringSession {
+        -UUID id
+        -LocalDateTime dataOra
+        -Duration durata
+        -String materia
+        -StatoSessione statoCorrente
+        +conferma()
+        +annulla()
+        +completa()
+        +inviaMessaggio(testo, mittente)
+        +getStoricoChat() : List~Message~
+    }
+
+    
+    class SessionState {
+        <<interface>>
+        +conferma(sessione)
+        +annulla(sessione)
+        +completa(sessione)
+    }
+
+    class RequestedState {
+
+        +conferma(sessione)
+        +annulla(sessione)
+    }
+
+    class ConfirmedState {
+
+        +annulla(sessione)
+        +completa(sessione)
+    }
+
+    class CompletedState {
+
+    }
+
+  
+    TutoringSession --> SessionState : ha uno stato >
+    SessionState <|.. RequestedState
+    SessionState <|.. ConfirmedState
+    SessionState <|.. CompletedState
+
+    
+    class Chat {
+        -UUID idSessione
+        +aggiungiMessaggio(messaggio)
+        +getMessaggi() : List~Message~
+    }
+
+    class Message {
+        -String testo
+        -LocalDateTime timestamp
+        -String idMittente
+        +getTesto()
+    }
 
 
+    TutoringSession "1" *-- "1" Chat : possiede >
+    Chat "1" o-- "*" Message : contiene >
+```
