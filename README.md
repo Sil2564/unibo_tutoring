@@ -9,7 +9,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 
 **Requisiti funzionali**
 
-L'applicazione dovrà permettere le seguenti funzionaloità principali:
+L'applicazione dovrà permettere le seguenti funzionalità principali:
 - Gli studenti potranno registrarsi e autenticarsi usando la matricola universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
 - Gli utenti potranno creare, modificare e eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
@@ -265,11 +265,11 @@ classDiagram
     %% Pattern: Observer + Strategy
     %% ============================================================
 
-classDiagram
-    
+    classDiagram
+
     class TutoringSession {
-        -UUID id
-        -LocalDateTime dataOra
+        -int id
+        -Date dataOra
         -Duration durata
         -String materia
         -StatoSessione statoCorrente
@@ -280,7 +280,7 @@ classDiagram
         +getStoricoChat() : List~Message~
     }
 
-    
+    %% PATTERN STATE: Gestione degli stati
     class SessionState {
         <<interface>>
         +conferma(sessione)
@@ -288,8 +288,8 @@ classDiagram
         +completa(sessione)
     }
 
-    class RequestedState {
-
+    class ProposedState {
+ 
         +conferma(sessione)
         +annulla(sessione)
     }
@@ -304,27 +304,25 @@ classDiagram
 
     }
 
-  
-    TutoringSession --> SessionState : ha uno stato >
-    SessionState <|.. RequestedState
+    TutoringSession --> SessionState : ha uno stato 
+    SessionState <|.. ProposedState
     SessionState <|.. ConfirmedState
     SessionState <|.. CompletedState
 
-    
     class Chat {
-        -UUID idSessione
+        -int idSessione
         +aggiungiMessaggio(messaggio)
-        +getMessaggi() : List~Message~
+        +getMessaggi() messaggi<>
     }
 
     class Message {
         -String testo
-        -LocalDateTime timestamp
+        -Date timestamp
         -String idMittente
         +getTesto()
     }
 
-
-    TutoringSession "1" *-- "1" Chat : possiede >
-    Chat "1" o-- "*" Message : contiene >
+    
+    TutoringSession "1" *-- "1" Chat : possiede 
+    Chat "1" o-- "*" Message : contiene 
 ```
