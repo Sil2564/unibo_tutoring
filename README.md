@@ -5,13 +5,13 @@ In questa sezione vengono analizzati i requisiti e il dominio applicativo del pr
 L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o progettuali.
 
 ## Analisi dei requisiti
-L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti dell'università di Bologna in cui gi utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
+L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti dell'Università di Bologna in cui gli utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
 
 **Requisiti funzionali**
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
 - Gli studenti potranno registrarsi e autenticarsi usando la matricola universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
-- Gli utenti potranno creare, modificare e eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
+- Gli utenti potranno creare, modificare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
 - Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa
@@ -30,16 +30,16 @@ L'applicazione unibo_tutoring dovrà gestire le attività di tutoraggio tra stud
 Il sistema ha lo scopo di favorire la collaborazione e il supporto reciproco tra studenti, permettendo a ciascuno di offrire o richiedere aiuto su specifiche materie universitarie e di accumulare crediti formativi in base alle ore di tutoraggio svolte.
 Il dominio applicativo è costituito da una serie di entità e relazioni che descrivono le interazioni fondamentali tra gli studenti e gli elementi che compongono il servizio.
 Ogni studente può assumere ruoli diversi a seconda del contesto: tutor, quando offre supporto su una materia, o studente, quando richiede aiuto.
-Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creazione di sessioni di tutoraggio, e la comunicazine diretta attraverso una chat privata.
+Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creazione di sessioni di tutoraggio, e la comunicazione diretta attraverso una chat privata.
 
 Gli elementi principali del dominio sono:
 - Utente: rappresenta uno studente iscritto all'Università di Bologna.
 - BoxTutoraggio: rappresenta un'offerta o una richiesta di tutoraggio. Contiene informazioni sulla materia e una breve descrizione.
 - Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa)
-- Chat: rappresenta il canale di ocmunicazione tra gli utenti che partecipano a una sessione.
+- Chat: rappresenta il canale di comunicazione tra gli utenti che partecipano a una sessione.
 - Credito: rappresenta il numero di ore e CFU accumulati dal tutor per le attività svolte.
 
-La difficoltà  primaria sarà quella di gestire la coerenza dei ruoli tra offerta e richiesta, garantendo che le sessioni siano correttamente associate e confermate da entrambe le parti.
+La difficoltà primaria sarà quella di gestire la coerenza dei ruoli tra offerta e richiesta, garantendo che le sessioni siano correttamente associate e confermate da entrambe le parti.
 Un'ulteriore complessità riguarda il calcolo e la validazione dei crediti formativi, che devono riflettere con precisione le ore effettivamente svolte.
 Infine, la gestione delle comunicazioni dirette e della prenotazione delle sessioni richiedono particolare attenzione per evitare sovrapposizioni di sessioni e per mantenere un sistema robusto e affidabile.
 ### Elementi positivi
@@ -100,9 +100,9 @@ classDiagram
 # Design
 
 ## Architettura
-L'architettura dell'applicazione unibo_totoring segue il pattern MVC (Model-View-Controller).
-In questa architettura, le tre componenti principali (Model, View e Controller) cooperano per gestire le funzinalità di tutoraggio, la persistenza dei dati e l'interazione con l'utente.
-- Model: rappresenta il dominio applicativo: gestisce le entità principali (Utente, boxTutoraggio, Sessione, Chat, Credito) e le relazioni tra loro. Si occupa della logica dei dati, del calcolo dei crediti e dello ststo delle sessioni.
+L'architettura dell'applicazione unibo_tutoring segue il pattern MVC (Model-View-Controller).
+In questa architettura, le tre componenti principali (Model, View e Controller) cooperano per gestire le funzionalità di tutoraggio, la persistenza dei dati e l'interazione con l'utente.
+- Model: rappresenta il dominio applicativo: gestisce le entità principali (Utente, boxTutoraggio, Sessione, Chat, Credito) e le relazioni tra loro. Si occupa della logica dei dati, del calcolo dei crediti e dello stato delle sessioni.
 - View: gestisce la parte grafica e interattiva dell'applicazione, mostrando i dati ricevuti dal Controller e aggiornandosi in base alle modifiche del Model.
 - Controller: coordina le azioni dell'utente e media tra Model e View. È responsabile del flusso delle operazioni, come la creazione di un box di tutoraggio, la proposta di una sessione, o l'invio di messaggi in chat.
 
@@ -165,10 +165,7 @@ classDiagram
 
  
 
-## Design dettagliato- Gestione Profilo Utente 
-
-Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o modificata.
-
+## Design dettagliato- Gestione Profilo Utente
 
 ```mermaid
 classDiagram
@@ -258,6 +255,10 @@ classDiagram
     BadgePolicy <|.. DefaultBadgePolicy
 ```
 ## GESTIONE SESSIONI E CHAT
+
+Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o conclusa.
+
+
 ```mermaid
 
   %% ============================================================
@@ -326,3 +327,17 @@ classDiagram
     TutoringSession "1" *-- "1" Chat : possiede 
     Chat "1" o-- "*" Message : contiene 
 ```
+### Scelte Progettuali: Gestione Sessioni e Chat (Andrea)
+
+Il modulo relativo alla gestione delle sessioni di tutoraggio e della messaggistica privata è stato progettato per massimizzare la flessibilità e separare chiaramente le responsabilità.
+
+#### 1. Gestione del ciclo di vita della Sessione (State Pattern)
+Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Proposta, Confermata, Conclusa). Invece di gestire queste transizioni tramite complessi e fragili blocchi `if/switch` all'interno della classe principale, si è optato per l'utilizzo del **Pattern State**.
+* **`SessionState` (Interfaccia):** Definisce le azioni possibili su una sessione (`conferma()`, `annulla()`, `completa()`).
+* **Stati Concreti (`ProposedState`, `ConfirmedState`, `CompletedState`):** Implementano le transizioni consentite. Ad esempio, chiamare `conferma()` su uno stato `ProposedState` sposterà la sessione in `ConfirmedState`, mentre chiamare la stessa operazione su una sessione già in `CompletedState` solleverà un'eccezione, garantendo la coerenza del dominio.
+* **Vantaggi:** Questo approccio rispetta l'*Open/Closed Principle*. Qualora in futuro si decidesse di aggiungere un nuovo stato (es. `SuspendedState`), basterà creare una nuova classe senza dover modificare la logica preesistente della `TutoringSession`.
+
+#### 2. Architettura della Chat Privata (Composizione e Observer)
+La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
+* La classe `TutoringSession` fa da facciata (Façade pattern) verso l'esterno: espone il metodo `inviaMessaggio(...)` facendo in realtà eseguire all'oggetto `Chat` interno.
+* Questa separazione prepara il terreno per l'implementazione del pattern **Observer** lato GUI (Model-View-Controller). La View della Chat in JavaFX potrà "osservare" la lista dei messaggi nel Modello; ogni volta che un nuovo `Message` verrà aggiunto alla `Chat`, la View verrà notificata e si aggiornerà in modo reattivo, senza accoppiamento stretto tra logica di business e interfaccia grafica.
