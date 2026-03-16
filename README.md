@@ -169,66 +169,53 @@ Il sistema è organizzato secondo una separazione tra interfaccia utente, logica
 
 ```mermaid
 classDiagram
-direction TB
     class User {
-	    -matricola: String
-	    -nome: String
-	    -cognome: String
-	    -email: String
-	    -password: String
-	    +login(matricola, password) : Boolean
-	    +register(nome, cognome, email, matricola, password) : Boolean
-	    +validateMatricola() : Boolean
-	    +validateEmail() : Boolean
+        -matricola: String
+        -nome: String
+        -cognome: String
+        -email: String
+        -password: String
+        +login(matricola, password): Boolean
+        +register(nome, cognome, email, matricola, password): Boolean
+        +validateMatricola(): Boolean
+        +validateEmail(): Boolean
     }
-
     class AuthenticationService {
-	    -users: List~User~
-	    +authenticateUser(matricola, password) : User
-	    +registerNewUser(userData) : User
-	    +checkMatricolaExists(matricola) : Boolean
-	    +hashPassword(password) : String
+        -users: List~User~
+        +authenticateUser(matricola, password): User
+        +registerNewUser(userData): User
+        +checkMatricolaExists(matricola): Boolean
+        +hashPassword(password): String
     }
-
     class LoginView {
-	    -matricolaInput: String
-	    -passwordInput: String
-	    +displayLoginForm() : void
-	    +onLoginClick() : void
-	    +redirectToRegistration() : void
+        -matricolaInput: String
+        -passwordInput: String
+        +displayLoginForm(): void
+        +onLoginClick(): void
+        +redirectToRegistration(): void
     }
-
     class RegistrationView {
-	    -nomeInput: String
-	    -cognomeInput: String
-	    -emailInput: String
-	    -matricolaInput: String
-	    -passwordInput: String
-	    +displayRegistrationForm() : void
-	    +onRegisterClick() : void
-	    +validateFormData() : Boolean
+        -nomeInput: String
+        -cognomeInput: String
+        -emailInput: String
+        -matricolaInput: String
+        -passwordInput: String
+        +displayRegistrationForm(): void
+        +onRegisterClick(): void
+        +validateFormData(): Boolean
     }
-
     class Database {
-	    -users: List~User~
-	    +saveUser(user) : Boolean
-	    +findUserByMatricola(matricola) : User
-	    +getUserByCredentials(matricola, password) : User
+        -users: List~User~
+        +saveUser(user): Boolean
+        +findUserByMatricola(matricola): User
+        +getUserByCredentials(matricola, password): User
     }
+    LoginView --> AuthenticationService: usa
+    RegistrationView --> AuthenticationService: usa
+    AuthenticationService --> Database: accede a
+    AuthenticationService --> User: gestisce
+    Database --> User: memorizza
 
-    LoginView --> AuthenticationService : usa
-    RegistrationView --> AuthenticationService : usa
-    AuthenticationService --> Database : accede a
-    AuthenticationService --> User : gestisce
-    Database --> User : memorizza
-
-	class User:::Sky
-	class AuthenticationService:::Sky
-	class LoginView:::Sky
-	class RegistrationView:::Sky
-	class Database:::Sky
-
-	classDef Sky :,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C
 ```
 
 ## Classe User
