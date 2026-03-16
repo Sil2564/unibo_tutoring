@@ -163,7 +163,130 @@ classDiagram
     UserManager --> DBService : salva e recupera utenti >
 ```
 
- 
+## Design dettagliato- Gestione fasi Login e Registrazione
+Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola e password.
+Il sistema è organizzato secondo una separazione tra interfaccia utente, logica applicativa e gestione dei dati.
+
+```mermaid
+classDiagram
+direction TB
+    class User {
+	    -matricola: String
+	    -nome: String
+	    -cognome: String
+	    -email: String
+	    -password: String
+	    +login(matricola, password) : Boolean
+	    +register(nome, cognome, email, matricola, password) : Boolean
+	    +validateMatricola() : Boolean
+	    +validateEmail() : Boolean
+    }
+
+    class AuthenticationService {
+	    -users: List~User~
+	    +authenticateUser(matricola, password) : User
+	    +registerNewUser(userData) : User
+	    +checkMatricolaExists(matricola) : Boolean
+	    +hashPassword(password) : String
+    }
+
+    class LoginView {
+	    -matricolaInput: String
+	    -passwordInput: String
+	    +displayLoginForm() : void
+	    +onLoginClick() : void
+	    +redirectToRegistration() : void
+    }
+
+    class RegistrationView {
+	    -nomeInput: String
+	    -cognomeInput: String
+	    -emailInput: String
+	    -matricolaInput: String
+	    -passwordInput: String
+	    +displayRegistrationForm() : void
+	    +onRegisterClick() : void
+	    +validateFormData() : Boolean
+    }
+
+    class Database {
+	    -users: List~User~
+	    +saveUser(user) : Boolean
+	    +findUserByMatricola(matricola) : User
+	    +getUserByCredentials(matricola, password) : User
+    }
+
+    LoginView --> AuthenticationService : usa
+    RegistrationView --> AuthenticationService : usa
+    AuthenticationService --> Database : accede a
+    AuthenticationService --> User : gestisce
+    Database --> User : memorizza
+
+	class User:::Sky
+	class AuthenticationService:::Sky
+	class LoginView:::Sky
+	class RegistrationView:::Sky
+	class Database:::Sky
+
+	classDef Sky :,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C,stroke-width:1px,stroke-dasharray:none,stroke:#374D7C,fill:#E2EBFF,color:#374D7C
+```
+
+## Classe User
+La classe User rappresenta l'entità principale del sistema, ovvero l'utente registrato alla piattaforma.
+Gli attributi della classe contengono le informazioni personali necessarie per l'identificazione dell'utente:
+- matricola: identificativo univoco dello studente
+- nome: nome dell'utente
+- cognome: cognome dell'utente
+- email: indirizzo email dell'utente
+- password: password associata all'account
+
+La classe include inoltre diversi metodi che permettono la gestione delle operazioni di autenticazione:
+- login(): verifica le credenziali inserite dall'utente per accedere al sistema
+- register(): permette la creazione di un nuovo account utente
+- validateMatricola(): controlla la validità del formato della matricola
+- validateEmail(): verifica la correttezza dell'indirizzo email
+
+## Classe AuthenticationService
+La classe AuthenticationService gestisce la logica principale del sistema di autenticazione.
+Essa funge da livello intermedio tra l'interfaccia utente e il database.
+
+Gli attributi includono una lista di utenti registrati: users: List<User>
+
+I metodi principali sono:
+- authenticateUser(): verifica se la matricola e la password inserite corrispondono a un utente registrato
+- registerNewUser(): gestisce il processo di registrazione di un nuovo utente
+- checkMatricolaExists(): controlla se una matricola è già presente nel sistema
+- hashPassword(): converte la password in formato cifrato per garantire maggiore sicurezza
+
+## Classe LoginView
+La classe LoginView rappresenta l'interfaccia grafica utilizzata dall'utente per effettuare l'accesso al sistema.
+Gli attributi rappresentano i campi inseriti dall'utente ovvero matricolaInput e passwordInput.
+
+I metodi gestiscono l'interazione con l'interfaccia:
+- displayLoginForm(): mostra il modulo di login
+- onLoginClick(): gestisce il tentativo di accesso dell'utente
+- redirectToRegistration(): reindirizza l'utente alla pagina di registrazione nel caso non sia ancora registrato
+
+## Classe RegistrationView
+
+La classe RegistrationView invece, rappresenta l'interfaccia grafica per la registrazione di nuovi utenti.
+Gli attributi corrispondono ai campi del modulo di registrazione quindi nomeInput,cognomeInput, emailInput, matricolaInput e passwordInput.
+
+I metodi principali sono:
+- displayRegistrationForm(): visualizza il modulo di registrazione
+- onRegisterClick(): gestisce la richiesta di registrazione
+- validateFormData(): verifica che tutti i dati inseriti siano corretti prima dell'invio
+
+## Classe Database
+La classe Database rappresenta il sistema di persistenza dei dati e contiene le informazioni sugli utenti registrati.
+Essa include users: List<User>, che rappresenta l'insieme degli utenti memorizzati.
+
+I metodi principali sono:
+- saveUser(): salva un nuovo utente nel database
+- findUserByMatricola(): ricerca un utente tramite matricola
+- getUserByCredentials(): restituisce l'utente corrispondente alle credenziali inserite
+
+
 
 ## Design dettagliato- Gestione Profilo Utente
 
