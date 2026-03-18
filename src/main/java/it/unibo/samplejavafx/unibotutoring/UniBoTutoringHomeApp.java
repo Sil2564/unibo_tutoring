@@ -36,11 +36,19 @@ public class UniBoTutoringHomeApp extends Application {
 
     @Override
     public void start(final Stage stage) {
+        final Scene scene = createScene();
+        stage.setTitle("UniBo Tutoring - Home");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    public static Scene createScene() {
+        final UniBoTutoringHomeApp app = new UniBoTutoringHomeApp();
         final VBox page = new VBox(
-            createHeroSection(),
-            createHowItWorksSection(),
-            createWhySection(),
-            createFooterSection()
+            app.createHeroSection(),
+            app.createHowItWorksSection(),
+            app.createWhySection(),
+            app.createFooterSection()
         );
         page.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -48,38 +56,62 @@ public class UniBoTutoringHomeApp extends Application {
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
-        final Scene scene = new Scene(scrollPane, 1180, 900);
-        stage.setTitle("UniBo Tutoring - Home");
-        stage.setScene(scene);
-        stage.show();
+        return new Scene(scrollPane, 1180, 900);
     }
 
     private VBox createHeroSection() {
-        final VBox section = new VBox(22);
-        section.setPadding(new Insets(18, 40, 28, 40));
-        section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
+        final VBox section = new VBox(0);
+        section.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox topBar = new HBox(12);
         topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setPadding(new Insets(8, 24, 8, 24));
+        topBar.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        final Image uniBoLogoImage = new Image(Path.of("src", "icons", "unibo.png").toUri().toString());
+        final ImageView uniBoLogo = new ImageView(uniBoLogoImage);
+        uniBoLogo.setFitWidth(34);
+        uniBoLogo.setFitHeight(34);
+        uniBoLogo.setPreserveRatio(true);
+        uniBoLogo.setSmooth(true);
 
         final VBox brand = new VBox(2);
         final Label brandTitle = new Label("UniBo Tutoring");
-        brandTitle.setTextFill(Color.WHITE);
+        brandTitle.setTextFill(Color.web("#1A1A1A"));
         brandTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 19));
         final Label brandSubtitle = new Label("Università di Bologna");
-        brandSubtitle.setTextFill(Color.rgb(255, 255, 255, 0.85));
+        brandSubtitle.setTextFill(Color.web("#4B4B4B"));
         brandSubtitle.setFont(Font.font("System", FontWeight.NORMAL, 12));
         brand.getChildren().addAll(brandTitle, brandSubtitle);
+
+        final HBox brandBlock = new HBox(8, uniBoLogo, brand);
+        brandBlock.setAlignment(Pos.CENTER_LEFT);
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        final Button loginButton = secondaryButton("Accedi");
-        final Button registerButton = primaryWhiteButton("Registrati");
-        topBar.getChildren().addAll(brand, spacer, loginButton, registerButton);
+        final Button loginButton = new Button("Accedi");
+        loginButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
+        loginButton.setTextFill(PRIMARY_RED);
+        loginButton.setPadding(new Insets(12, 10, 12, 10));
+        loginButton.setBackground(Background.EMPTY);
+        loginButton.setBorder(Border.EMPTY);
+        loginButton.setOnAction(event -> openLoginPage(loginButton));
+        final Button registerButton = new Button("Registrati");
+        registerButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
+        registerButton.setTextFill(Color.WHITE);
+        registerButton.setPadding(new Insets(12, 14, 12, 14));
+        registerButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(14), Insets.EMPTY)));
+        registerButton.setBorder(Border.EMPTY);
+        registerButton.setOnAction(event -> openRegistrationPage(registerButton));
+        topBar.getChildren().addAll(brandBlock, spacer, loginButton, registerButton);
 
         final HBox heroBody = new HBox(34);
         heroBody.setAlignment(Pos.CENTER_LEFT);
+        heroBody.setPadding(new Insets(22, 40, 28, 40));
+
+        final VBox heroContent = new VBox(heroBody);
+        heroContent.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final VBox heroText = new VBox(14);
         heroText.setAlignment(Pos.TOP_LEFT);
@@ -97,7 +129,11 @@ public class UniBoTutoringHomeApp extends Application {
         subtitle.setTextFill(Color.rgb(255, 255, 255, 0.92));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
-        final HBox ctaButtons = new HBox(12, primaryWhiteButton("Inizia Subito"), secondaryButton("Ho già un account"));
+        final Button startNowButton = primaryWhiteButton("Inizia Subito");
+        startNowButton.setOnAction(event -> openRegistrationPage(startNowButton));
+        final Button existingAccountButton = secondaryButton("Ho già un account");
+        existingAccountButton.setOnAction(event -> openLoginPage(existingAccountButton));
+        final HBox ctaButtons = new HBox(12, startNowButton, existingAccountButton);
         heroText.getChildren().addAll(title, subtitle, ctaButtons);
         HBox.setHgrow(heroText, Priority.ALWAYS);
 
@@ -121,7 +157,7 @@ public class UniBoTutoringHomeApp extends Application {
         imageCard.getChildren().add(imageInner);
 
         heroBody.getChildren().addAll(heroText, imageCard);
-        section.getChildren().addAll(topBar, heroBody);
+        section.getChildren().addAll(topBar, heroContent);
         return section;
     }
 
@@ -223,14 +259,38 @@ public class UniBoTutoringHomeApp extends Application {
 
         final Button register = redButton("Crea il tuo account");
         register.setMaxWidth(Double.MAX_VALUE);
+        register.setOnAction(event -> openRegistrationPage(register));
 
-        final Label loginLine = new Label("Hai già un account? Accedi");
-        loginLine.setTextFill(Color.web("#434343"));
-        loginLine.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        final Label loginPrefix = new Label("Hai già un account?");
+        loginPrefix.setTextFill(Color.web("#434343"));
+        loginPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+
+        final Button loginLink = new Button("Accedi");
+        loginLink.setOnAction(event -> openLoginPage(loginLink));
+        loginLink.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
+        loginLink.setTextFill(PRIMARY_RED);
+        loginLink.setBackground(Background.EMPTY);
+        loginLink.setBorder(Border.EMPTY);
+        loginLink.setPadding(new Insets(0));
+
+        final HBox loginLine = new HBox(4, loginPrefix, loginLink);
+        loginLine.setAlignment(Pos.CENTER);
 
         cta.getChildren().addAll(ctaIconCircle, ctaTitle, ctaSubtitle, register, loginLine);
         section.getChildren().addAll(left, cta);
         return section;
+    }
+
+    private void openLoginPage(final Button sourceButton) {
+        final Stage stage = (Stage) sourceButton.getScene().getWindow();
+        stage.setScene(UniBoTutoringLoginApp.createScene(stage));
+        stage.setTitle("UniBo Tutoring - Login");
+    }
+
+    private void openRegistrationPage(final Button sourceButton) {
+        final Stage stage = (Stage) sourceButton.getScene().getWindow();
+        stage.setScene(UniBoTutoringRegistrationApp.createScene(stage));
+        stage.setTitle("UniBo Tutoring - Registrazione");
     }
 
     private VBox createFooterSection() {
