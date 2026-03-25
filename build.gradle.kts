@@ -56,5 +56,5 @@ tasks.withType<Test> {
 
 application {
     // Define the main class for the application
-    mainClass.set("it.unibo.samplejavafx.unibotutoring.UniBoTutoringHomeLauncher")
+    mainClass.set("it.unibo.tutoring.UniBoTutoringHomeLauncher")
 }
