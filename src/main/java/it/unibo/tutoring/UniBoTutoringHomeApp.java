@@ -1,4 +1,4 @@
-package it.unibo.samplejavafx.unibotutoring;
+package it.unibo.tutoring;
 import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
