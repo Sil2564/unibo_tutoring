@@ -102,12 +102,19 @@ public final class UniBoTutoringRegistrationApp {
         fieldsGrid.setHgap(16);
         fieldsGrid.setVgap(10);
 
-        addField(fieldsGrid, 0, 0, "Nome", createTextField(""));
-        addField(fieldsGrid, 1, 0, "Matricola", createTextField("es. 0000123456"));
-        addField(fieldsGrid, 2, 0, "Email", createTextField("mario.rossi@studio.unibo.it"));
-        addField(fieldsGrid, 0, 1, "Cognome", createTextField(""));
-        addField(fieldsGrid, 1, 1, "Password", createPasswordField("******"));
-        addField(fieldsGrid, 2, 1, "Conferma password", createPasswordField("******"));
+        final TextField nameField = createTextField("");
+        final TextField matricolaField = createTextField("es. 1234567");
+        final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
+        final TextField surnameField = createTextField("");
+        final PasswordField passwordField = createPasswordField("******");
+        final PasswordField confirmPasswordField = createPasswordField("******");
+
+        addField(fieldsGrid, 0, 0, "Nome", nameField);
+        addField(fieldsGrid, 1, 0, "Matricola", matricolaField);
+        addField(fieldsGrid, 2, 0, "Email", emailField);
+        addField(fieldsGrid, 0, 1, "Cognome", surnameField);
+        addField(fieldsGrid, 1, 1, "Password", passwordField);
+        addField(fieldsGrid, 2, 1, "Conferma password", confirmPasswordField);
 
         final HBox submitWrap = new HBox();
         submitWrap.setAlignment(Pos.CENTER);
@@ -118,6 +125,51 @@ public final class UniBoTutoringRegistrationApp {
         registerButton.setPrefHeight(46);
         registerButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
         submitWrap.getChildren().add(registerButton);
+
+        final Label feedbackLabel = new Label();
+        feedbackLabel.setTextFill(PRIMARY_RED);
+        feedbackLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 15));
+        feedbackLabel.setVisible(false);
+
+        registerButton.setOnAction(event -> {
+            final String name = nameField.getText().trim();
+            final String surname = surnameField.getText().trim();
+            final String matricola = matricolaField.getText().trim();
+            final String email = emailField.getText().trim();
+            final String password = passwordField.getText();
+            final String confirmPassword = confirmPasswordField.getText();
+
+            if (name.isBlank() || surname.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                feedbackLabel.setText("Compila tutti i campi.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (!matricola.matches("\\d{7}")) {
+                feedbackLabel.setText("La matricola deve contenere 7 cifre.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (!email.contains("@")) {
+                feedbackLabel.setText("Inserisci una email valida.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (!password.equals(confirmPassword)) {
+                feedbackLabel.setText("Le password non coincidono.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+
+            final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password);
+            if (!result.isSuccess()) {
+                feedbackLabel.setText(result.getMessage());
+                feedbackLabel.setVisible(true);
+                return;
+            }
+
+            stage.setScene(UniBoTutoringDashboardApp.createScene());
+            stage.setTitle("UniBo Tutoring - Dashboard");
+        });
 
         final Label loginPrefix = new Label("Hai già un account?");
         loginPrefix.setFont(Font.font("System", FontWeight.NORMAL, 20));
@@ -137,7 +189,7 @@ public final class UniBoTutoringRegistrationApp {
         loginLine.setAlignment(Pos.CENTER);
         loginLine.setMaxWidth(Double.MAX_VALUE);
 
-        formCard.getChildren().addAll(formTitle, formSubtitle, fieldsGrid, submitWrap, loginLine);
+        formCard.getChildren().addAll(formTitle, formSubtitle, fieldsGrid, submitWrap, feedbackLabel, loginLine);
         root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
 
         return new Scene(root, 1180, 900);

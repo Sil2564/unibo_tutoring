@@ -98,7 +98,7 @@ public final class UniBoTutoringLoginApp {
         matricolaLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
 
         final TextField matricolaField = new TextField();
-        matricolaField.setPromptText("es. 0000123456");
+        matricolaField.setPromptText("es. 1234567");
         matricolaField.setFont(Font.font("System", FontWeight.NORMAL, 20));
         matricolaField.setPrefHeight(44);
 
@@ -116,6 +116,36 @@ public final class UniBoTutoringLoginApp {
         loginButton.setPrefHeight(48);
         loginButton.setMaxWidth(Double.MAX_VALUE);
         loginButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
+
+        final Label feedbackLabel = new Label();
+        feedbackLabel.setTextFill(PRIMARY_RED);
+        feedbackLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 15));
+        feedbackLabel.setVisible(false);
+
+        loginButton.setOnAction(event -> {
+            final String matricola = matricolaField.getText().trim();
+            final String password = passwordField.getText();
+
+            if (!matricola.matches("\\d{7}")) {
+                feedbackLabel.setText("Inserisci una matricola valida di 7 cifre.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (password.isBlank()) {
+                feedbackLabel.setText("Inserisci la password.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+
+            if (AuthService.getInstance().authenticate(matricola, password)) {
+                stage.setScene(UniBoTutoringDashboardApp.createScene());
+                stage.setTitle("UniBo Tutoring - Dashboard");
+                return;
+            }
+
+            feedbackLabel.setText("Credenziali non riconosciute.");
+            feedbackLabel.setVisible(true);
+        });
 
         final Label registerPrefix = new Label("Non hai un account?");
         registerPrefix.setFont(Font.font("System", FontWeight.NORMAL, 20));
@@ -143,6 +173,7 @@ public final class UniBoTutoringLoginApp {
             passwordLabel,
             passwordField,
             loginButton,
+            feedbackLabel,
             registerLine
         );
 

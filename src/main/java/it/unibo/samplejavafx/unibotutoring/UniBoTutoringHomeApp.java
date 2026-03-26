@@ -311,6 +311,22 @@ public class UniBoTutoringHomeApp extends Application {
         section.getChildren().addAll(cols, copyright);
         return section;
     }
+    private VBox footerColumn(final String title, final String content) {
+            final VBox box = new VBox(8);
+            box.setPrefWidth(320);
+
+            final Label heading = new Label(title);
+            heading.setFont(Font.font("System", FontWeight.BOLD, 22));
+            heading.setTextFill(Color.WHITE);
+
+            final Label body = new Label(content);
+            body.setWrapText(true);
+            body.setTextFill(Color.rgb(255, 255, 255, 0.93));
+            body.setFont(Font.font("System", FontWeight.NORMAL, 13));
+
+            box.getChildren().addAll(heading, body);
+            return box;
+        }
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
         final VBox card = new VBox(10);
@@ -359,23 +375,7 @@ public class UniBoTutoringHomeApp extends Application {
         return box;
     }
 
-    private VBox footerColumn(final String title, final String content) {
-        final VBox box = new VBox(8);
-        box.setPrefWidth(320);
-
-        final Label heading = new Label(title);
-        heading.setFont(Font.font("System", FontWeight.BOLD, 22));
-        heading.setTextFill(Color.WHITE);
-
-        final Label body = new Label(content);
-        body.setWrapText(true);
-        body.setTextFill(Color.rgb(255, 255, 255, 0.93));
-        body.setFont(Font.font("System", FontWeight.NORMAL, 13));
-
-        box.getChildren().addAll(heading, body);
-        return box;
-    }
-
+    
     private Button primaryWhiteButton(final String text) {
         final Button button = new Button(text);
         button.setFont(Font.font("System", FontWeight.BOLD, 13));
