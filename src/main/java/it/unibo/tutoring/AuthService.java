@@ -1,4 +1,4 @@
-package it.unibo.samplejavafx.unibotutoring;
+package it.unibo.tutoring;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

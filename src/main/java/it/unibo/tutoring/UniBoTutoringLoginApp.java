@@ -1,5 +1,7 @@
 package it.unibo.tutoring;
 
+import it.unibo.tutoring.AuthService;
+import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import java.nio.file.Path;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
