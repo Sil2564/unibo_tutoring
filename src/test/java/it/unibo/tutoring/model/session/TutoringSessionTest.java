@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
+import it.unibo.tutoring.model.chat.Message;
 
 class TutoringSessionTest {
 
@@ -13,7 +15,7 @@ class TutoringSessionTest {
 
     @BeforeEach
     void setUp() {
-        session = new TutoringSessionImpl("Programmazione ad Oggetti", LocalDateTime.now().plusDays(2), Duration.ofHours(2));
+        session = new TutoringSessionImpl("Progettazione e Sviluppo del Software", LocalDateTime.now().plusDays(2), Duration.ofHours(2));
     }
 
     @Test
@@ -34,5 +36,17 @@ class TutoringSessionTest {
         assertThrows(IllegalStateException.class, () -> {
             session.completa();
         });
+    }
+
+    @Test
+    void testFacadeInviaMessaggio() {
+        session.inviaMessaggio("Ciao, ti propongo Giovedì alle 15.", "studente_1");
+        session.inviaMessaggio("Perfetto, confermo la sessione!", "tutor_2");
+
+        List<Message> storico = session.getStoricoChat();
+
+        assertEquals(2, storico.size(), "La sessione deve aver salvato 2 messaggi tramite la chat interna");
+        assertEquals("studente_1", storico.get(0).getIdMittente());
+        assertEquals("Perfetto, confermo la sessione!", storico.get(1).getTesto());
     }
 }

@@ -1,8 +1,14 @@
 package it.unibo.tutoring.model.session;
 
+import it.unibo.tutoring.model.chat.Chat;
+import it.unibo.tutoring.model.chat.ChatImpl;
+import it.unibo.tutoring.model.chat.Message;
+import it.unibo.tutoring.model.chat.MessageImpl;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 public class TutoringSessionImpl implements TutoringSession {
 
@@ -14,6 +20,9 @@ public class TutoringSessionImpl implements TutoringSession {
     // Questa variabile tiene traccia dello stato attuale
     private SessionState statoCorrente;
 
+    private final Chat chat;
+
+
     public TutoringSessionImpl(String materia, LocalDateTime dataOra, Duration durata) {
         this.id = UUID.randomUUID();
         this.materia = materia;
@@ -22,6 +31,8 @@ public class TutoringSessionImpl implements TutoringSession {
 
         // Appena creata, la sessione è Proposta
         this.statoCorrente = new ProposedState();
+
+        this.chat = new ChatImpl();
     }
 
     // Metodo aggiuntivo usato dagli Stati per cambiare lo stato della sessione
@@ -59,5 +70,16 @@ public class TutoringSessionImpl implements TutoringSession {
     @Override
     public void completa() {
         this.statoCorrente.completa(this);
+    }
+
+    @Override
+    public void inviaMessaggio(String testo, String idMittente) {
+        Message msg = new MessageImpl(testo, idMittente);
+        this.chat.aggiungiMessaggio(msg);
+    }
+
+    @Override
+    public List<Message> getStoricoChat() {
+        return this.chat.getStoricoMessaggi();
     }
 }
