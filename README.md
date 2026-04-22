@@ -339,7 +339,6 @@ classDiagram
     class CreditService {
         +onSessionConfirmed(event)
         +aggiungiCrediti(id, ore)
-        +calcolaTotale(id)
         +aggiornaBadge(id)
     }
 
@@ -369,7 +368,6 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
 
 
 ```mermaid
-
   %% ============================================================
     %% DESIGN DETTAGLIATO - SESSIONI E CHAT (ANDREA)
     %% Pattern: Observer + Strategy
