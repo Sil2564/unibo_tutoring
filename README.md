@@ -304,10 +304,14 @@ classDiagram
     class CreditService {
         +calcolaTotale(id)
     }
+ class CreditRepository {
+        +caricaCrediti(id)
+    }
     %% RELAZIONI
     ProfileView --> ProfileController : input dell'utente >
     ProfileController --> UserRepository : lettura/scrittura dati >
     ProfileController --> CreditService : recupero crediti >
+    CreditService --> CreditRepository : accesso dati >
 ```
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
 ```mermaid
