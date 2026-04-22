@@ -212,7 +212,6 @@ classDiagram
     AuthenticationService --> Database: accede a
     AuthenticationService --> User: gestisce
     Database --> User: memorizza
-
 ```
 
 ## Classe User
@@ -357,7 +356,6 @@ classDiagram
     class DefaultBadgePolicy {
         +determinaBadge(crediti)
     }
-
     %% RELAZIONI
     SessionManager --> DomainEventBus : publish >
     DomainEventBus --> CreditService : notify >
