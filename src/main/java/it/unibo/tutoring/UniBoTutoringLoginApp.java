@@ -125,29 +125,33 @@ public final class UniBoTutoringLoginApp {
         feedbackLabel.setVisible(false);
 
         loginButton.setOnAction(event -> {
-            final String matricola = matricolaField.getText().trim();
-            final String password = passwordField.getText();
+    final String matricola = matricolaField.getText().trim();
+    final String password = passwordField.getText();
 
-            if (!matricola.matches("\\d{7}")) {
-                feedbackLabel.setText("Inserisci una matricola valida di 7 cifre.");
-                feedbackLabel.setVisible(true);
-                return;
-            }
-            if (password.isBlank()) {
-                feedbackLabel.setText("Inserisci la password.");
-                feedbackLabel.setVisible(true);
-                return;
-            }
+    if (!matricola.matches("\\d{7}")) {
+        feedbackLabel.setText("Inserisci una matricola valida di 7 cifre.");
+        feedbackLabel.setVisible(true);
+        return;
+    }
+    if (password.isBlank()) {
+        feedbackLabel.setText("Inserisci la password.");
+        feedbackLabel.setVisible(true);
+        return;
+    }
 
-            if (AuthService.getInstance().authenticate(matricola, password)) {
-                stage.setScene(UniBoTutoringDashboardApp.createScene());
-                stage.setTitle("UniBo Tutoring - Dashboard");
-                return;
-            }
+    if (AuthService.getInstance().authenticate(matricola, password)) {
 
-            feedbackLabel.setText("Credenziali non riconosciute.");
-            feedbackLabel.setVisible(true);
-        });
+        UserAccount user = AuthService.getInstance().getUser(matricola);
+        CurrentSession.setUser(user);
+
+        stage.setScene(UniBoTutoringDashboardApp.createScene());
+        stage.setTitle("UniBo Tutoring - Dashboard");
+        return;
+    }
+
+    feedbackLabel.setText("Credenziali non riconosciute.");
+    feedbackLabel.setVisible(true);
+});
 
         final Label registerPrefix = new Label("Non hai un account?");
         registerPrefix.setFont(Font.font("System", FontWeight.NORMAL, 20));

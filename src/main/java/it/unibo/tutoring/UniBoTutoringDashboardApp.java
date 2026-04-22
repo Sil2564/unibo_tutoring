@@ -86,7 +86,14 @@ public class UniBoTutoringDashboardApp extends Application {
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		final ImageView userIcon = icon("user.png", 16, 16);
-		final Label userName = new Label("Mario Rossi");
+		UserAccount user = CurrentSession.getUser();
+
+		final Label userName;
+		if (user != null) {
+    	userName = new Label(user.getName() + " " + user.getSurname());
+		} else {
+    	userName = new Label("Utente");
+	}
 		userName.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
 		userName.setTextFill(TEXT_DARK);
 
@@ -95,11 +102,22 @@ public class UniBoTutoringDashboardApp extends Application {
 		separator.setPrefHeight(16);
 
 		final ImageView logoutIcon = icon("logout.png", 14, 14);
-		final Label logoutText = new Label("Logout");
-		logoutText.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-		logoutText.setTextFill(TEXT_DARK);
+final Button logoutButton = new Button("Logout", logoutIcon);
+logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+logoutButton.setTextFill(TEXT_DARK);
+logoutButton.setBackground(Background.EMPTY);
+logoutButton.setBorder(Border.EMPTY);
 
-		final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutIcon, logoutText);
+// LOGICA LOGOUT
+logoutButton.setOnAction(event -> {
+    CurrentSession.clear();
+
+    Stage stage = (Stage) logoutButton.getScene().getWindow();
+    stage.setScene(UniBoTutoringLoginApp.createScene(stage));
+    stage.setTitle("UniBo Tutoring - Login");
+});
+
+final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 		rightSide.setAlignment(Pos.CENTER_RIGHT);
 
 		header.getChildren().addAll(brandBlock, spacer, rightSide);
