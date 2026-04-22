@@ -212,7 +212,6 @@ classDiagram
     AuthenticationService --> Database: accede a
     AuthenticationService --> User: gestisce
     Database --> User: memorizza
-
 ```
 
 ## Classe User
@@ -304,10 +303,14 @@ classDiagram
     class CreditService {
         +calcolaTotale(id)
     }
+ class CreditRepository {
+        +caricaCrediti(id)
+    }
     %% RELAZIONI
     ProfileView --> ProfileController : input dell'utente >
     ProfileController --> UserRepository : lettura/scrittura dati >
     ProfileController --> CreditService : recupero crediti >
+    CreditService --> CreditRepository : accesso dati >
 ```
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
 ```mermaid
@@ -336,7 +339,6 @@ classDiagram
     class CreditService {
         +onSessionConfirmed(event)
         +aggiungiCrediti(id, ore)
-        +calcolaTotale(id)
         +aggiornaBadge(id)
     }
 
@@ -353,7 +355,6 @@ classDiagram
     class DefaultBadgePolicy {
         +determinaBadge(crediti)
     }
-
     %% RELAZIONI
     SessionManager --> DomainEventBus : publish >
     DomainEventBus --> CreditService : notify >
@@ -367,7 +368,6 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
 
 
 ```mermaid
-
   %% ============================================================
     %% DESIGN DETTAGLIATO - SESSIONI E CHAT (ANDREA)
     %% Pattern: Observer + Strategy
