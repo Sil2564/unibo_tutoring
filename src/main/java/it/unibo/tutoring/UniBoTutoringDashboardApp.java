@@ -28,6 +28,14 @@ import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+//classi per animare la sidebar in modo fluido
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.scene.Node;
+import javafx.util.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UniBoTutoringDashboardApp extends Application {
 
@@ -140,6 +148,8 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 	private VBox createSidebar() {
 		final VBox sidebar = new VBox(14);
 		sidebar.setPrefWidth(250);
+		sidebar.setMinWidth(250);
+		sidebar.setMaxWidth(250);
 		sidebar.setPadding(new Insets(14, 10, 14, 10));
 		sidebar.setBackground(new Background(new BackgroundFill(Color.web("#F6F6F6"), CornerRadii.EMPTY, Insets.EMPTY)));
 		sidebar.setBorder(new Border(new BorderStroke(Color.web("#D2D2D2"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0, 1, 0, 0))));
@@ -152,9 +162,10 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 
 		final Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		final Button collapse = new Button("<");
-		collapse.setFont(Font.font("System", FontWeight.BOLD, 11));
-		collapse.setTextFill(Color.web("#8A8A8A"));
+		final ImageView collapseIcon = icon("arrow-left.png", 10, 10);
+		final Button collapse = new Button();
+		collapse.setGraphic(collapseIcon);
+		collapse.setPadding(new Insets(0));
 		collapse.setPrefSize(20, 20);
 		collapse.setMinSize(20, 20);
 		collapse.setMaxSize(20, 20);
@@ -164,9 +175,14 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 
 		final VBox menu = new VBox(8);
 		
-		final Button dashboardBtn = navItem("home_white.png", "Dashboard", "Bacheca annunci", true);
+		// Lista che raccoglie tutti i nodi testuali (come i titoli o etichette) da nascondere
+		// quando la sidebar viene ristretta, per evitare che si sovrappongano o si deformino.
+		final List<Node> nodesToHide = new ArrayList<>();
+		nodesToHide.add(navTitle);
+
+		final Button dashboardBtn = navItem("home_white.png", "Dashboard", "Bacheca annunci", true, nodesToHide);
 		
-		final Button statisticsBtn = navItem("graphic.png", "Statistiche", "Ore e recensioni", false);
+		final Button statisticsBtn = navItem("graphic.png", "Statistiche", "Ore e recensioni", false, nodesToHide);
 		statisticsBtn.setOnAction(event -> {
 			final Stage stage = (Stage) statisticsBtn.getScene().getWindow();
 			stage.setScene(UniBoTutoringStatisticApp.createScene());
@@ -176,10 +192,63 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 		menu.getChildren().addAll(dashboardBtn, statisticsBtn);
 
 		sidebar.getChildren().addAll(navHeader, menu);
+
+		// Stato iniziale della sidebar (aperta di default)
+		final boolean[] isSidebarOpen = {true};
+		final Image arrowLeftImg = new Image(Path.of("src", "icons", "arrow-left.png").toUri().toString());
+		final Image arrowRightImg = new Image(Path.of("src", "icons", "arrow-right.png").toUri().toString());
+
+		collapse.setOnAction(event -> {
+			// Inverte lo stato: se era aperta diventa chiusa e viceversa
+			isSidebarOpen[0] = !isSidebarOpen[0];
+			final boolean open = isSidebarOpen[0];
+
+			// Imposta la larghezza target: 250 pixel se aperta, 60 pixel (solo icone) se chiusa
+			final double targetWidth = open ? 250 : 60;
+			
+			// Cambia immediatamente l'icona del pulsante in base al nuovo stato
+			collapseIcon.setImage(open ? arrowLeftImg : arrowRightImg);
+
+			// Se la sidebar si sta chiudendo, nascondiamo i testi PRIMA che inizi l'animazione.
+			// In questo modo evitiamo che il testo venga "schiacciato" stringendo l'interfaccia.
+			if (!open) {
+				nodesToHide.forEach(n -> {
+					n.setVisible(false);
+					n.setManaged(false); // setManaged(false) impedisce al nodo di occupare spazio nel layout
+				});
+			}
+
+			// Timeline crea un'animazione basata su fotogrammi chiave (KeyFrame)
+			final Timeline timeline = new Timeline(
+				// La durata dell'animazione è impostata a 250 millisecondi
+				new KeyFrame(Duration.millis(250),
+					// Modifichiamo in modo fluido la larghezza (pref, min e max) della sidebar verso la targetWidth
+					new KeyValue(sidebar.prefWidthProperty(), targetWidth),
+					new KeyValue(sidebar.minWidthProperty(), targetWidth),
+					new KeyValue(sidebar.maxWidthProperty(), targetWidth)
+				)
+			);
+			
+			// Azione da eseguire quando l'animazione giunge al termine
+			timeline.setOnFinished(e -> {
+				// Se la sidebar è stata aperta, ripristiniamo la visibilità dei testi
+				// SOLO DOPO che la sidebar ha raggiunto la sua larghezza massima, così compaiono con lo spazio adeguato
+				if (open) {
+					nodesToHide.forEach(n -> {
+						n.setVisible(true);
+						n.setManaged(true);
+					});
+				}
+			});
+			
+			// Avvia l'animazione di transizione
+			timeline.play();
+		});
+
 		return sidebar;
 	}
 
-	private Button navItem(final String iconName, final String title, final String subtitle, final boolean active) {
+	private Button navItem(final String iconName, final String title, final String subtitle, final boolean active, final List<Node> nodesToHide) {
 		final ImageView icon = icon(iconName, 14, 14);
 		final Label titleLabel = new Label(title);
 		titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
@@ -197,6 +266,8 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 		}
 
 		final VBox text = new VBox(0, titleLabel, subtitleLabel);
+		// Aggiungiamo il contenitore dei testi di questo bottone alla lista dei nodi da nascondere
+		nodesToHide.add(text);
 		final HBox content = new HBox(8, icon, text);
 		content.setAlignment(Pos.CENTER_LEFT);
 
