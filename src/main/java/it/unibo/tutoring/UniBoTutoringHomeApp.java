@@ -1,4 +1,5 @@
 package it.unibo.tutoring;
+import it.unibo.tutoring.view.components.AppHeader;
 import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -47,8 +48,7 @@ public class UniBoTutoringHomeApp extends Application {
         final VBox page = new VBox(
             app.createHeroSection(),
             app.createHowItWorksSection(),
-            app.createWhySection(),
-            app.createFooterSection()
+            app.createWhySection()
         );
         page.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -292,41 +292,6 @@ public class UniBoTutoringHomeApp extends Application {
         stage.setScene(UniBoTutoringRegistrationApp.createScene(stage));
         stage.setTitle("UniBo Tutoring - Registrazione");
     }
-
-    private VBox createFooterSection() {
-        final VBox section = new VBox(20);
-        section.setPadding(new Insets(26, 40, 18, 40));
-        section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
-
-        final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
-            footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
-            footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
-        );
-
-        final Label copyright = new Label("© 2026 Università di Bologna - UniBo Tutoring. Tutti i diritti riservati.");
-        copyright.setTextFill(Color.rgb(255, 255, 255, 0.94));
-        copyright.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
-
-        section.getChildren().addAll(cols, copyright);
-        return section;
-    }
-    private VBox footerColumn(final String title, final String content) {
-            final VBox box = new VBox(8);
-            box.setPrefWidth(320);
-
-            final Label heading = new Label(title);
-            heading.setFont(Font.font("System", FontWeight.BOLD, 22));
-            heading.setTextFill(Color.WHITE);
-
-            final Label body = new Label(content);
-            body.setWrapText(true);
-            body.setTextFill(Color.rgb(255, 255, 255, 0.93));
-            body.setFont(Font.font("System", FontWeight.NORMAL, 13));
-
-            box.getChildren().addAll(heading, body);
-            return box;
-        }
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
         final VBox card = new VBox(10);

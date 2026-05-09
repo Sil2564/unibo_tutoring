@@ -1,5 +1,6 @@
 package it.unibo.tutoring;
 
+import it.unibo.tutoring.view.components.AppHeader;
 import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -53,83 +54,24 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	public static Scene createScene() {
 		final UniBoTutoringDashboardApp app = new UniBoTutoringDashboardApp();
+		final UserAccount user = CurrentSession.getUser();
+		final String userDisplayName = user != null ? user.getName() + " " + user.getSurname() : "Utente";
 
 		final VBox root = new VBox();
 		root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		root.getChildren().addAll(
-			app.createHeader(),
-			app.createMainArea(),
-			app.createFooterSection()
+			new AppHeader(userDisplayName, () -> {
+				CurrentSession.clear();
+				final Stage stage = (Stage) root.getScene().getWindow();
+				stage.setScene(UniBoTutoringLoginApp.createScene(stage));
+				stage.setTitle("UniBo Tutoring - Login");
+			}),
+			app.createMainArea()
 		);
 		VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
 
 		return new Scene(root, 1320, 920);
-	}
-
-	private HBox createHeader() {
-		final HBox header = new HBox(12);
-		header.setAlignment(Pos.CENTER_LEFT);
-		header.setPadding(new Insets(10, 18, 10, 18));
-		header.setPrefHeight(64);
-		header.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-		header.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0, 0, 1, 0))));
-
-		final ImageView logo = icon("unibo.png", 30, 30);
-
-		final Label title = new Label("UniBo Tutoring");
-		title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 31));
-		title.setTextFill(TEXT_DARK);
-
-		final Label subtitle = new Label("Università di Bologna");
-		subtitle.setFont(Font.font("System", FontWeight.NORMAL, 14));
-		subtitle.setTextFill(Color.web("#535353"));
-
-		final VBox brand = new VBox(1, title, subtitle);
-
-		final HBox brandBlock = new HBox(8, logo, brand);
-		brandBlock.setAlignment(Pos.CENTER_LEFT);
-
-		final Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-
-		final ImageView userIcon = icon("user.png", 16, 16);
-		UserAccount user = CurrentSession.getUser();
-
-		final Label userName;
-		if (user != null) {
-    	userName = new Label(user.getName() + " " + user.getSurname());
-		} else {
-    	userName = new Label("Utente");
-	}
-		userName.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-		userName.setTextFill(TEXT_DARK);
-
-		final Separator separator = new Separator();
-		separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
-		separator.setPrefHeight(16);
-
-		final ImageView logoutIcon = icon("logout.png", 14, 14);
-final Button logoutButton = new Button("Logout", logoutIcon);
-logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-logoutButton.setTextFill(TEXT_DARK);
-logoutButton.setBackground(Background.EMPTY);
-logoutButton.setBorder(Border.EMPTY);
-
-// LOGICA LOGOUT
-logoutButton.setOnAction(event -> {
-    CurrentSession.clear();
-
-    Stage stage = (Stage) logoutButton.getScene().getWindow();
-    stage.setScene(UniBoTutoringLoginApp.createScene(stage));
-    stage.setTitle("UniBo Tutoring - Login");
-});
-
-final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
-		rightSide.setAlignment(Pos.CENTER_RIGHT);
-
-		header.getChildren().addAll(brandBlock, spacer, rightSide);
-		return header;
 	}
 
 	private HBox createMainArea() {
@@ -459,43 +401,6 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 		card.getChildren().addAll(tag, titleLabel, courseLabel, descriptionLabel, divider, bottom);
 		return card;
 	}
-
-	private VBox createFooterSection() {
-        final VBox section = new VBox(20);
-        section.setPadding(new Insets(26, 40, 18, 40));
-        section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
-
-        final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
-            footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
-            footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
-        );
-
-        final Label copyright = new Label("© 2026 Università di Bologna - UniBo Tutoring. Tutti i diritti riservati.");
-        copyright.setTextFill(Color.rgb(255, 255, 255, 0.94));
-        copyright.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
-
-        section.getChildren().addAll(cols, copyright);
-        return section;
-    }
-
-	private VBox footerColumn(final String title, final String content) {
-        final VBox box = new VBox(8);
-        box.setPrefWidth(320);
-
-        final Label heading = new Label(title);
-        heading.setFont(Font.font("System", FontWeight.BOLD, 22));
-        heading.setTextFill(Color.WHITE);
-
-        final Label body = new Label(content);
-        body.setWrapText(true);
-        body.setTextFill(Color.rgb(255, 255, 255, 0.93));
-        body.setFont(Font.font("System", FontWeight.NORMAL, 13));
-
-        box.getChildren().addAll(heading, body);
-        return box;
-    }
-
 
 	private ImageView icon(final String iconName, final double w, final double h) {
 		final Image image = new Image(Path.of("src", "icons", iconName).toUri().toString());
