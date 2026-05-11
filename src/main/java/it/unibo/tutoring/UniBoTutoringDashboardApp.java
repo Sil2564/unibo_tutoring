@@ -1,14 +1,20 @@
 package it.unibo.tutoring;
 
-import it.unibo.tutoring.view.components.AppHeader;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import it.unibo.tutoring.view.components.AppHeader;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -29,14 +35,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-//classi per animare la sidebar in modo fluido
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
-import javafx.scene.Node;
 import javafx.util.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UniBoTutoringDashboardApp extends Application {
 
@@ -135,7 +134,8 @@ public class UniBoTutoringDashboardApp extends Application {
     "user.png",
     "Profilo",
     "Dati e crediti",
-    false
+    false, 
+	nodesToHide
 );
 
 profileBtn.setOnAction(event -> {

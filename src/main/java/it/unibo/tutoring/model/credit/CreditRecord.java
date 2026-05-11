@@ -5,7 +5,6 @@ public final class CreditRecord {
     private final int totalHours;
     private final int totalCredits;
     private final Badge badge;
-
     public CreditRecord(
         final int totalHours,
         final int totalCredits,

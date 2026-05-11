@@ -1,6 +1,9 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
+
+import it.unibo.tutoring.model.credit.CreditRecord;
+import it.unibo.tutoring.model.credit.CreditService;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -132,6 +135,8 @@ public final class UniBoTutoringProfileApp  {
     private static VBox createContent(final UserAccount user) {
 
         final VBox content = new VBox(20);
+        final CreditRecord creditRecord =
+    CreditService.getCreditRecord(user.getMatricola());
 
         content.setPadding(new Insets(30));
         content.setAlignment(Pos.TOP_LEFT);
@@ -190,9 +195,101 @@ public final class UniBoTutoringProfileApp  {
             emailLabel
         );
 
+        final VBox creditCard = new VBox(14);
+
+creditCard.setPadding(new Insets(24));
+
+creditCard.setMaxWidth(500);
+
+creditCard.setBackground(new Background(
+    new BackgroundFill(
+        Color.WHITE,
+        new CornerRadii(12),
+        Insets.EMPTY
+    )
+));
+
+creditCard.setBorder(new Border(
+    new BorderStroke(
+        Color.web("#D6D6D6"),
+        BorderStrokeStyle.SOLID,
+        new CornerRadii(12),
+        BorderWidths.DEFAULT
+    )
+));
+
+final Label creditTitle = new Label("Crediti e Badge");
+
+creditTitle.setFont(
+    Font.font("System", FontWeight.EXTRA_BOLD, 24)
+);
+
+creditTitle.setTextFill(TEXT_DARK);
+
+final Label totalHoursLabel = createInfoLabel(
+    "Ore completate: "
+        + creditRecord.getTotalHours()
+);
+
+final Label totalCreditsLabel = createInfoLabel(
+    "CFU ottenuti: "
+        + creditRecord.getTotalCredits()
+);
+
+final Label badgeLabel = new Label(
+    creditRecord.getBadge().getDisplayName()
+);
+
+badgeLabel.setFont(
+    Font.font("System", FontWeight.EXTRA_BOLD, 18)
+);
+
+badgeLabel.setPadding(
+    new Insets(6, 14, 6, 14)
+);
+
+badgeLabel.setTextFill(Color.WHITE);
+
+final Color badgeColor;
+
+switch (creditRecord.getBadge()) {
+
+    case EXPERT:
+        badgeColor = Color.web("#D4AF37");
+        break;
+
+    case INTERMEDIATE:
+        badgeColor = Color.web("#3B82F6");
+        break;
+
+    default:
+        badgeColor = PRIMARY_RED;
+}
+
+badgeLabel.setBackground(
+    new Background(
+        new BackgroundFill(
+            badgeColor,
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+final Label badgeTitle = createInfoLabel(
+    "Badge Tutor:"
+);
+creditCard.getChildren().addAll(
+    creditTitle,
+    totalHoursLabel,
+    totalCreditsLabel,
+    badgeTitle,
+    badgeLabel
+);
+
         content.getChildren().addAll(
             pageTitle,
-            card
+            card,
+            creditCard
         );
 
         return content;
