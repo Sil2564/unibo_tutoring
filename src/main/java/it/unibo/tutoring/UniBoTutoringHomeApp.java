@@ -1,4 +1,5 @@
 package it.unibo.tutoring;
+import it.unibo.tutoring.view.components.AppHeader;
 import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -293,7 +294,7 @@ public class UniBoTutoringHomeApp extends Application {
         stage.setTitle("UniBo Tutoring - Registrazione");
     }
 
-    private VBox createFooterSection() {
+     private VBox createFooterSection() {
         final VBox section = new VBox(20);
         section.setPadding(new Insets(26, 40, 18, 40));
         section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -326,7 +327,7 @@ public class UniBoTutoringHomeApp extends Application {
 
             box.getChildren().addAll(heading, body);
             return box;
-        }
+    }
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
         final VBox card = new VBox(10);
