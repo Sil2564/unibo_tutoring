@@ -172,8 +172,20 @@ final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
 			stage.setScene(UniBoTutoringStatisticApp.createScene());
 			stage.setTitle("UniBo Tutoring - Statistiche");
 		});
+		final Button profileBtn = navItem(
+    "user.png",
+    "Profilo",
+    "Dati e crediti",
+    false
+);
+
+profileBtn.setOnAction(event -> {
+    final Stage stage = (Stage) profileBtn.getScene().getWindow();
+    stage.setScene(UniBoTutoringProfileApp.createScene());
+    stage.setTitle("UniBo Tutoring - Profilo");
+});
 		
-		menu.getChildren().addAll(dashboardBtn, statisticsBtn);
+		menu.getChildren().addAll(dashboardBtn, statisticsBtn, profileBtn);
 
 		sidebar.getChildren().addAll(navHeader, menu);
 		return sidebar;
