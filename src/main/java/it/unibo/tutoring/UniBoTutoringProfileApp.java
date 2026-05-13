@@ -139,6 +139,22 @@ public final class UniBoTutoringProfileApp  {
         final CreditRecord creditRecord =
     CreditService.getCreditRecord(user.getMatricola());
 
+    final Color badgeColor;
+
+switch (creditRecord.getBadge()) {
+
+    case EXPERT:
+        badgeColor = Color.web("#D4AF37");
+        break;
+
+    case INTERMEDIATE:
+        badgeColor = Color.web("#3B82F6");
+        break;
+
+    default:
+        badgeColor = PRIMARY_RED;
+}
+
         content.setPadding(new Insets(30));
         content.setAlignment(Pos.TOP_LEFT);
 
@@ -215,7 +231,8 @@ heroSubtitle.setFont(
 heroSubtitle.setTextFill(TEXT_MEDIUM);
 
 final Label heroBadge = new Label(
-    "Expert Tutor"
+    creditRecord.getBadge().getDisplayName()
+        + " Tutor"
 );
 
 heroBadge.setPadding(
@@ -231,7 +248,7 @@ heroBadge.setTextFill(Color.WHITE);
 heroBadge.setBackground(
     new Background(
         new BackgroundFill(
-            Color.web("#D4AF37"),
+            badgeColor,
             new CornerRadii(999),
             Insets.EMPTY
         )
@@ -361,22 +378,6 @@ badgeLabel.setPadding(
 );
 
 badgeLabel.setTextFill(Color.WHITE);
-
-final Color badgeColor;
-
-switch (creditRecord.getBadge()) {
-
-    case EXPERT:
-        badgeColor = Color.web("#D4AF37");
-        break;
-
-    case INTERMEDIATE:
-        badgeColor = Color.web("#3B82F6");
-        break;
-
-    default:
-        badgeColor = PRIMARY_RED;
-}
 
 badgeLabel.setBackground(
     new Background(

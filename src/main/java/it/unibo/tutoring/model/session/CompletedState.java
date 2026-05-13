@@ -1,30 +1,35 @@
 package it.unibo.tutoring.model.session;
 
-public class CompletedState implements SessionState {
+public class CompletedState
+    implements SessionState {
 
     @Override
-    public void conferma(TutoringSession session) {
+    public void conferma(
+        final TutoringSession session
+    ) {
 
         throw new IllegalStateException(
-            "La sessione è già confermata."
+            "La sessione è già completata."
         );
     }
 
     @Override
-    public void annulla(TutoringSession session) {
+    public void annulla(
+        final TutoringSession session
+    ) {
 
-        // TODO non l'ho inserito io il cancel per non rovinare logica lato sessioni/chat che penso possa essere cosa  correlata.
+        throw new IllegalStateException(
+            "Impossibile annullare una sessione completata."
+        );
     }
 
     @Override
-    public void completa(TutoringSession session) {
+    public void completa(
+        final TutoringSession session
+    ) {
 
-        if (session instanceof TutoringSessionImpl) {
-
-            ((TutoringSessionImpl) session)
-                .setStatoCorrente(
-                    new CompletedState()
-                );
-        }
+        throw new IllegalStateException(
+            "La sessione è già completata."
+        );
     }
 }

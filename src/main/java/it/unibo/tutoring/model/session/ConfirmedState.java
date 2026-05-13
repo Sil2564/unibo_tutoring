@@ -23,8 +23,32 @@ public void annulla(
     }
 }
 
-    @Override
-    public void completa(TutoringSession session) {
-        // TODO
+   @Override
+public void completa(
+    final TutoringSession session
+) {
+
+    if (
+        session instanceof
+        TutoringSessionImpl tutoringSession
+    ) {
+
+        final int completedHours =
+            (int) tutoringSession
+                .getDurata()
+                .toHours();
+
+        it.unibo.tutoring.model.credit
+            .CreditService
+            .addCompletedHours(
+                tutoringSession
+                    .getTutorMatricola(),
+                completedHours
+            );
+
+        tutoringSession.setStatoCorrente(
+            new CompletedState()
+        );
     }
+}
 }

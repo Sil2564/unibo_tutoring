@@ -1,12 +1,15 @@
 package it.unibo.tutoring.model.session;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import it.unibo.tutoring.model.chat.Message;
 
 class TutoringSessionTest {
@@ -15,7 +18,7 @@ class TutoringSessionTest {
 
     @BeforeEach
     void setUp() {
-        session = new TutoringSessionImpl("Progettazione e Sviluppo del Software", LocalDateTime.now().plusDays(2), Duration.ofHours(2));
+        session = new TutoringSessionImpl("Progettazione e Sviluppo del Software", LocalDateTime.now().plusDays(2), Duration.ofHours(2), "MAT12345");
     }
 
     @Test

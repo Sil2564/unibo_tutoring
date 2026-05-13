@@ -1,8 +1,14 @@
 package it.unibo.tutoring.model.credit;
 
+
+import java.util.HashMap;
+import java.util.Map;
+
 public final class CreditService {
 
     private static final int HOURS_PER_CREDIT = 4;
+    private static final Map<String, Integer>
+    USER_HOURS = new HashMap<>();
 
     private CreditService() {
     }
@@ -16,7 +22,8 @@ public final class CreditService {
          * In futuro questi dati arriveranno
          * dalle sessioni completate.
          */
-        final int totalHours = getMockHours(matricola);
+       final int totalHours =
+    getUserHours(matricola);
 
         final int totalCredits =
             totalHours / HOURS_PER_CREDIT;
@@ -30,6 +37,20 @@ public final class CreditService {
             badge
         );
     }
+
+    public static void addCompletedHours(
+    final String matricola,
+    final int hours
+) {
+
+    final int currentHours =
+        getUserHours(matricola);
+
+    USER_HOURS.put(
+        matricola,
+        currentHours + hours
+    );
+}
 
     private static Badge calculateBadge(
         final int totalHours
@@ -46,17 +67,13 @@ public final class CreditService {
         return Badge.BEGINNER;
     }
 
-    private static int getMockHours(
-        final String matricola
-    ) {
+    private static int getUserHours(
+    final String matricola
+) {
 
-        /*
-         * Mock temporaneo variabile
-         * per simulare utenti diversi.
-         */
-
-        return Math.abs(
-            matricola.hashCode()
-        ) % 60;
-    }
+    return USER_HOURS.getOrDefault(
+        matricola,
+        0
+    );
+}
 }

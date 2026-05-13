@@ -10,10 +10,21 @@ public class ProposedState implements SessionState {
         }
     }
 
-    @Override
-    public void annulla(TutoringSession session) {
-        // TODO
+   @Override
+public void annulla(
+    final TutoringSession session
+) {
+
+    if (
+        session instanceof
+        TutoringSessionImpl tutoringSession
+    ) {
+
+        tutoringSession.setStatoCorrente(
+            new CancelledState()
+        );
     }
+}
 
     @Override
     public void completa(TutoringSession session) {
