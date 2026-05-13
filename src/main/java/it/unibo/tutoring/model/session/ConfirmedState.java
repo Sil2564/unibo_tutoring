@@ -7,10 +7,21 @@ public class ConfirmedState implements SessionState {
         throw new IllegalStateException("La sessione è già confermata.");
     }
 
-    @Override
-    public void annulla(TutoringSession session) {
-        // TODO
+  @Override
+public void annulla(
+    final TutoringSession session
+) {
+
+    if (
+        session instanceof
+        TutoringSessionImpl tutoringSession
+    ) {
+
+        tutoringSession.setStatoCorrente(
+            new CancelledState()
+        );
     }
+}
 
     @Override
     public void completa(TutoringSession session) {
