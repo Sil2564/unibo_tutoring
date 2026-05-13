@@ -1,6 +1,6 @@
 package it.unibo.tutoring.model.session;
 
-public class ConfirmedState implements SessionState {
+public class CompletedState implements SessionState {
 
     @Override
     public void conferma(TutoringSession session) {
