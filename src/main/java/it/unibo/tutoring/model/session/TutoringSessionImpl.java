@@ -16,6 +16,7 @@ public class TutoringSessionImpl implements TutoringSession {
     private final String materia;
     private final LocalDateTime dataOra;
     private final Duration durata;
+    private final String tutorMatricola;
 
     // Questa variabile tiene traccia dello stato attuale
     private SessionState statoCorrente;
@@ -23,11 +24,12 @@ public class TutoringSessionImpl implements TutoringSession {
     private final Chat chat;
 
 
-    public TutoringSessionImpl(String materia, LocalDateTime dataOra, Duration durata) {
+    public TutoringSessionImpl(String materia, LocalDateTime dataOra, Duration durata, String tutorMatricola) {
         this.id = UUID.randomUUID();
         this.materia = materia;
         this.dataOra = dataOra;
         this.durata = durata;
+        this.tutorMatricola = tutorMatricola;
 
         // Appena creata, la sessione è Proposta
         this.statoCorrente = new ProposedState();
@@ -51,7 +53,9 @@ public class TutoringSessionImpl implements TutoringSession {
 
     @Override
     public Duration getDurata() { return this.durata; }
-
+    public String getTutorMatricola() {
+    return this.tutorMatricola;
+}
     @Override
     public SessionState getStatoCorrente() {
         return this.statoCorrente;

@@ -1,17 +1,31 @@
 package it.unibo.tutoring.view.components;
 
 import java.nio.file.Path;
+
+import it.unibo.tutoring.UniBoTutoringProfileApp;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 
 public class AppHeader extends HBox {
 
@@ -50,9 +64,31 @@ public class AppHeader extends HBox {
 
         final ImageView userIcon = icon("user.png", 16, 16);
 
-        final Label userName = new Label(userDisplayName);
-        userName.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        userName.setTextFill(TEXT_DARK);
+       final Button userName = new Button(userDisplayName);
+
+userName.setFont(
+    Font.font("System", FontWeight.SEMI_BOLD, 14)
+);
+
+userName.setTextFill(TEXT_DARK);
+
+userName.setBackground(Background.EMPTY);
+
+userName.setBorder(Border.EMPTY);
+
+userName.setCursor(Cursor.HAND);
+
+userName.setOnAction(event -> {
+
+    final Stage stage =
+        (Stage) userName.getScene().getWindow();
+
+    stage.setScene(
+        UniBoTutoringProfileApp.createScene()
+    );
+
+    stage.setTitle("UniBo Tutoring - Profilo");
+});
 
         final Separator separator = new Separator();
         separator.setOrientation(javafx.geometry.Orientation.VERTICAL);

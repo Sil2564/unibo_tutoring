@@ -130,21 +130,8 @@ public class UniBoTutoringDashboardApp extends Application {
 			stage.setScene(UniBoTutoringStatisticApp.createScene());
 			stage.setTitle("UniBo Tutoring - Statistiche");
 		});
-		final Button profileBtn = navItem(
-    "user.png",
-    "Profilo",
-    "Dati e crediti",
-    false, 
-	nodesToHide
-);
-
-profileBtn.setOnAction(event -> {
-    final Stage stage = (Stage) profileBtn.getScene().getWindow();
-    stage.setScene(UniBoTutoringProfileApp.createScene());
-    stage.setTitle("UniBo Tutoring - Profilo");
-});
 		
-		menu.getChildren().addAll(dashboardBtn, statisticsBtn, profileBtn);
+		menu.getChildren().addAll(dashboardBtn, statisticsBtn);
 
 		sidebar.getChildren().addAll(navHeader, menu);
 

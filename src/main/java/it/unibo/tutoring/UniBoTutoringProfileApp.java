@@ -22,6 +22,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -141,13 +142,114 @@ public final class UniBoTutoringProfileApp  {
         content.setPadding(new Insets(30));
         content.setAlignment(Pos.TOP_LEFT);
 
-        final Label pageTitle = new Label("Profilo Utente");
+        final HBox heroSection = new HBox(20);
 
-        pageTitle.setFont(
-            Font.font("System", FontWeight.EXTRA_BOLD, 34)
-        );
+heroSection.setAlignment(Pos.CENTER_LEFT);
 
-        pageTitle.setTextFill(TEXT_DARK);
+heroSection.setPadding(new Insets(24));
+
+heroSection.setBackground(
+    new Background(
+        new BackgroundFill(
+            Color.WHITE,
+            new CornerRadii(16),
+            Insets.EMPTY
+        )
+    )
+);
+
+heroSection.setBorder(
+    new Border(
+        new BorderStroke(
+            Color.web("#DADADA"),
+            BorderStrokeStyle.SOLID,
+            new CornerRadii(16),
+            BorderWidths.DEFAULT
+        )
+    )
+);
+
+final Label avatar = new Label(
+    user.getName().substring(0, 1)
+);
+
+avatar.setMinSize(82, 82);
+avatar.setMaxSize(82, 82);
+
+avatar.setAlignment(Pos.CENTER);
+
+avatar.setFont(
+    Font.font("System", FontWeight.EXTRA_BOLD, 34)
+);
+
+avatar.setTextFill(Color.WHITE);
+
+avatar.setBackground(
+    new Background(
+        new BackgroundFill(
+            PRIMARY_RED,
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final Label heroName = new Label(
+    user.getName() + " " + user.getSurname()
+);
+
+heroName.setFont(
+    Font.font("System", FontWeight.EXTRA_BOLD, 34)
+);
+
+heroName.setTextFill(TEXT_DARK);
+
+final Label heroSubtitle = new Label(
+    "Studente UniBo • Informatica"
+);
+
+heroSubtitle.setFont(
+    Font.font("System", FontWeight.NORMAL, 17)
+);
+
+heroSubtitle.setTextFill(TEXT_MEDIUM);
+
+final Label heroBadge = new Label(
+    "Expert Tutor"
+);
+
+heroBadge.setPadding(
+    new Insets(6, 14, 6, 14)
+);
+
+heroBadge.setFont(
+    Font.font("System", FontWeight.EXTRA_BOLD, 13)
+);
+
+heroBadge.setTextFill(Color.WHITE);
+
+heroBadge.setBackground(
+    new Background(
+        new BackgroundFill(
+            Color.web("#D4AF37"),
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final VBox heroTexts = new VBox(8);
+
+heroTexts.getChildren().addAll(
+    heroName,
+    heroSubtitle,
+    heroBadge
+);
+
+heroSection.getChildren().addAll(
+    avatar,
+    heroTexts
+);
 
         final VBox card = new VBox(16);
 
@@ -218,7 +320,7 @@ creditCard.setBorder(new Border(
     )
 ));
 
-final Label creditTitle = new Label("Crediti e Badge");
+final Label creditTitle = new Label("Progressione Tutor");
 
 creditTitle.setFont(
     Font.font("System", FontWeight.EXTRA_BOLD, 24)
@@ -235,6 +337,16 @@ final Label totalCreditsLabel = createInfoLabel(
     "CFU ottenuti: "
         + creditRecord.getTotalCredits()
 );
+final int nextLevelHours = 80;
+
+final int currentHours =
+    creditRecord.getTotalHours();
+
+final int remainingHours =
+    nextLevelHours - currentHours;
+
+final double progress =
+    (double) currentHours / nextLevelHours;
 
 final Label badgeLabel = new Label(
     creditRecord.getBadge().getDisplayName()
@@ -278,21 +390,138 @@ badgeLabel.setBackground(
 final Label badgeTitle = createInfoLabel(
     "Badge Tutor:"
 );
+final VBox progressContainer = new VBox(8);
+
+final Label progressLabel = new Label(
+    currentHours + " / " + nextLevelHours + " ore"
+);
+
+progressLabel.setFont(
+    Font.font("System", FontWeight.SEMI_BOLD, 14)
+);
+
+progressLabel.setTextFill(TEXT_MEDIUM);
+
+final Region progressBarBg = new Region();
+
+progressBarBg.setPrefSize(260, 14);
+
+progressBarBg.setBackground(
+    new Background(
+        new BackgroundFill(
+            Color.web("#E2E2E2"),
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final Region progressBarFill = new Region();
+
+progressBarFill.setPrefSize(
+    260 * progress,
+    14
+);
+
+progressBarFill.setBackground(
+    new Background(
+        new BackgroundFill(
+            PRIMARY_RED,
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final StackPane progressBar = new StackPane(
+    progressBarBg,
+    progressBarFill
+);
+
+progressBar.setAlignment(Pos.CENTER_LEFT);
+
+final Label remainingLabel = new Label(
+    remainingHours
+        + " ore al prossimo livello"
+);
+
+remainingLabel.setFont(
+    Font.font("System", FontWeight.NORMAL, 13)
+);
+
+remainingLabel.setTextFill(TEXT_MEDIUM);
+
+progressContainer.getChildren().addAll(
+    progressLabel,
+    progressBar,
+    remainingLabel
+);
+
 creditCard.getChildren().addAll(
     creditTitle,
     totalHoursLabel,
     totalCreditsLabel,
     badgeTitle,
-    badgeLabel
+    badgeLabel,
+    progressContainer
 );
 
-        content.getChildren().addAll(
-            pageTitle,
-            card,
-            creditCard
-        );
+        final VBox leftColumn = new VBox(20);
+        final HBox statsRow = new HBox(16);
 
-        return content;
+final VBox hoursCard = createStatCard(
+    String.valueOf(
+        creditRecord.getTotalHours()
+    ),
+    "Ore completate"
+);
+
+final VBox creditsCard = createStatCard(
+    String.valueOf(
+        creditRecord.getTotalCredits()
+    ),
+    "CFU ottenuti"
+);
+final VBox badgeCard = createStatCard(
+    creditRecord.getBadge().getDisplayName(),
+    "Badge"
+);
+
+final VBox ratingCard = createStatCard(
+    "4.9★",
+    "Rating"
+);
+
+statsRow.getChildren().addAll(
+    hoursCard,
+    creditsCard,
+    badgeCard,
+    ratingCard
+);
+leftColumn.getChildren().addAll(
+    statsRow,
+    card
+);
+
+final VBox rightColumn = new VBox(20);
+rightColumn.getChildren().addAll(
+    creditCard
+);
+
+final HBox columns = new HBox(24);
+columns.setAlignment(Pos.TOP_LEFT);
+
+columns.getChildren().addAll(
+    leftColumn,
+    rightColumn
+);
+
+content.getChildren().addAll(
+    heroSection,
+    columns
+);
+
+return content;
     }
 
     private static Label createInfoLabel(final String text) {
@@ -307,7 +536,63 @@ creditCard.getChildren().addAll(
 
         return label;
     }
+private static VBox createStatCard(
+    final String value,
+    final String label
+) {
 
+    final VBox card = new VBox(8);
+
+    card.setAlignment(Pos.CENTER);
+
+    card.setPadding(new Insets(18));
+
+    card.setPrefWidth(140);
+
+    card.setBackground(
+        new Background(
+            new BackgroundFill(
+                Color.WHITE,
+                new CornerRadii(14),
+                Insets.EMPTY
+            )
+        )
+    );
+
+    card.setBorder(
+        new Border(
+            new BorderStroke(
+                Color.web("#D9D9D9"),
+                BorderStrokeStyle.SOLID,
+                new CornerRadii(14),
+                BorderWidths.DEFAULT
+            )
+        )
+    );
+
+    final Label valueLabel = new Label(value);
+
+    valueLabel.setFont(
+        Font.font("System", FontWeight.EXTRA_BOLD, 28)
+    );
+
+    valueLabel.setTextFill(PRIMARY_RED);
+
+    final Label textLabel = new Label(label);
+
+    textLabel.setFont(
+        Font.font("System", FontWeight.SEMI_BOLD, 13)
+    );
+
+    textLabel.setTextFill(TEXT_MEDIUM);
+
+    card.getChildren().addAll(
+        valueLabel,
+        textLabel
+    );
+
+    return card;
+}
     private static ImageView icon(
         final String iconName,
         final double w,
