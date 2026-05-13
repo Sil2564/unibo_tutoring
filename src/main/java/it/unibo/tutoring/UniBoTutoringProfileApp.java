@@ -22,6 +22,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -319,7 +320,7 @@ creditCard.setBorder(new Border(
     )
 ));
 
-final Label creditTitle = new Label("Crediti e Badge");
+final Label creditTitle = new Label("Progressione Tutor");
 
 creditTitle.setFont(
     Font.font("System", FontWeight.EXTRA_BOLD, 24)
@@ -336,6 +337,16 @@ final Label totalCreditsLabel = createInfoLabel(
     "CFU ottenuti: "
         + creditRecord.getTotalCredits()
 );
+final int nextLevelHours = 80;
+
+final int currentHours =
+    creditRecord.getTotalHours();
+
+final int remainingHours =
+    nextLevelHours - currentHours;
+
+final double progress =
+    (double) currentHours / nextLevelHours;
 
 final Label badgeLabel = new Label(
     creditRecord.getBadge().getDisplayName()
@@ -379,12 +390,80 @@ badgeLabel.setBackground(
 final Label badgeTitle = createInfoLabel(
     "Badge Tutor:"
 );
+final VBox progressContainer = new VBox(8);
+
+final Label progressLabel = new Label(
+    currentHours + " / " + nextLevelHours + " ore"
+);
+
+progressLabel.setFont(
+    Font.font("System", FontWeight.SEMI_BOLD, 14)
+);
+
+progressLabel.setTextFill(TEXT_MEDIUM);
+
+final Region progressBarBg = new Region();
+
+progressBarBg.setPrefSize(260, 14);
+
+progressBarBg.setBackground(
+    new Background(
+        new BackgroundFill(
+            Color.web("#E2E2E2"),
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final Region progressBarFill = new Region();
+
+progressBarFill.setPrefSize(
+    260 * progress,
+    14
+);
+
+progressBarFill.setBackground(
+    new Background(
+        new BackgroundFill(
+            PRIMARY_RED,
+            new CornerRadii(999),
+            Insets.EMPTY
+        )
+    )
+);
+
+final StackPane progressBar = new StackPane(
+    progressBarBg,
+    progressBarFill
+);
+
+progressBar.setAlignment(Pos.CENTER_LEFT);
+
+final Label remainingLabel = new Label(
+    remainingHours
+        + " ore al prossimo livello"
+);
+
+remainingLabel.setFont(
+    Font.font("System", FontWeight.NORMAL, 13)
+);
+
+remainingLabel.setTextFill(TEXT_MEDIUM);
+
+progressContainer.getChildren().addAll(
+    progressLabel,
+    progressBar,
+    remainingLabel
+);
+
 creditCard.getChildren().addAll(
     creditTitle,
     totalHoursLabel,
     totalCreditsLabel,
     badgeTitle,
-    badgeLabel
+    badgeLabel,
+    progressContainer
 );
 
         final VBox leftColumn = new VBox(20);
