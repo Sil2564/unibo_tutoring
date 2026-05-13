@@ -69,7 +69,7 @@ public class UniBoTutoringHomeApp extends Application {
         topBar.setPadding(new Insets(8, 24, 8, 24));
         topBar.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        final Image uniBoLogoImage = new Image(Path.of("src", "icons", "unibo.png").toUri().toString());
+        final Image uniBoLogoImage = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
         final ImageView uniBoLogo = new ImageView(uniBoLogoImage);
         uniBoLogo.setFitWidth(34);
         uniBoLogo.setFitHeight(34);

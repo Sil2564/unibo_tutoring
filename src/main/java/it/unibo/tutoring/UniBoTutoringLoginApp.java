@@ -66,7 +66,7 @@ public final class UniBoTutoringLoginApp {
         backHomeButton.setPadding(new Insets(0));
         topBar.getChildren().add(backHomeButton);
 
-        final Image logo = new Image(Path.of("src", "icons", "unibo.png").toUri().toString());
+        final Image logo = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
         final ImageView logoView = new ImageView(logo);
         logoView.setFitWidth(70);
         logoView.setFitHeight(70);

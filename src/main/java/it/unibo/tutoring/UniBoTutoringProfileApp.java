@@ -75,7 +75,7 @@ public final class UniBoTutoringProfileApp  {
             )
         ));
 
-        final ImageView logo = icon("unibo.png", 30, 30);
+        final ImageView logo = icon("logo.png", 30, 30);
 
         final Label title = new Label("UniBo Tutoring");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 31));

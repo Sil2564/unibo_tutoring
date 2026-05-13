@@ -30,7 +30,7 @@ public class AppHeader extends HBox {
         this.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         this.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0, 0, 1, 0))));
 
-        final ImageView logo = icon("unibo.png", 30, 30);
+        final ImageView logo = icon("logo.png", 30, 30);
 
         final Label title = new Label("UniBo Tutoring");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 31));
