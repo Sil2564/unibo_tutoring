@@ -1,10 +1,10 @@
 package it.unibo.tutoring.view.session;
 
+import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.view.components.AppHeader;
 
-import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -14,8 +14,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -29,26 +27,45 @@ public class TutoringSessionViewApp extends Application {
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
     private static final Color CARD_BG = Color.WHITE;
-    private final TutoringSessionController controller = new TutoringSessionController();
+    private final TutoringSessionController controller;
+
+    public TutoringSessionViewApp() {
+        this.controller = new TutoringSessionController();
+    }
+
+    private TutoringSessionViewApp(final String materiaAnnuncio, final String tutorName) {
+        this.controller = new TutoringSessionController(materiaAnnuncio, tutorName);
+    }
+
+    public static Scene createScene(final Stage stage, final String materiaAnnuncio, final String tutorName) {
+        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, tutorName);
+        return app.createScene(stage);
+    }
 
     @Override
     public void start(final Stage stage) {
         stage.setTitle("UniBo Tutoring - Dettaglio Sessione");
-        stage.setScene(createScene());
+        stage.setScene(createScene(null));
         stage.show();
     }
 
-    public Scene createScene() {
+    public Scene createScene(final Stage stage) {
         final VBox root = new VBox();
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
         AppHeader header = new AppHeader();
 
-        Button btnBack = new Button("< Torna indietro");
+        final Button btnBack = new Button("< Torna indietro");
         btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #6A6A6A; -fx-font-weight: bold;");
         VBox.setMargin(btnBack, new Insets(10, 0, 0, 15));
+        if (stage != null) {
+            btnBack.setOnAction(e -> {
+                stage.setScene(UniBoTutoringDashboardApp.createScene());
+                stage.setTitle("UniBo Tutoring - Dashboard");
+            });
+        }
 
-        root.getChildren().addAll(header, createMainArea());
+        root.getChildren().addAll(header, btnBack, createMainArea());
         return new Scene(root, 1100, 750);
     }
 
@@ -91,7 +108,7 @@ public class TutoringSessionViewApp extends Application {
         card.getChildren().addAll(
                 title, new Separator(),
                 infoRow("Materia:", controller.getModel().getMateria()),
-                infoRow("Tutor:", "Mario Rossi"),
+                infoRow("Tutor:", controller.getTutorDisplayName()),
                 rowStato
         );
 

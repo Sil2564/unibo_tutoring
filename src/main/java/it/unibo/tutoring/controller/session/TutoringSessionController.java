@@ -10,14 +10,23 @@ public class TutoringSessionController {
 
     // Il controller possiede un riferimento al Modello
     private final TutoringSession model;
+    private final String tutorDisplayName;
 
     public TutoringSessionController() {
+        this("Progettazione e Sviluppo del Software", "Mario Rossi");
+    }
+
+    public TutoringSessionController(final String materia, final String tutorDisplayName) {
         this.model = new TutoringSessionImpl(
-    "Progettazione e Sviluppo del Software",
-    LocalDateTime.now(),
-    Duration.ofHours(2),
-    "0000000"
-);
+                materia,
+                LocalDateTime.now(),
+                Duration.ofHours(2),
+                "0000000");
+        this.tutorDisplayName = tutorDisplayName;
+    }
+
+    public String getTutorDisplayName() {
+        return this.tutorDisplayName;
     }
 
     public TutoringSession getModel() {

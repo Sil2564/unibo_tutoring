@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -394,6 +395,11 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setPadding(new Insets(4, 10, 4, 10));
 		contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
 		contact.setBorder(Border.EMPTY);
+		contact.setOnAction(event -> {
+			final Stage win = (Stage) contact.getScene().getWindow();
+			win.setScene(TutoringSessionViewApp.createScene(win, title, user));
+			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+		});
 
 		final HBox bottom = new HBox(8, meta, spacer, contact);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);
