@@ -397,7 +397,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setBorder(Border.EMPTY);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, title, user));
+			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 		});
 

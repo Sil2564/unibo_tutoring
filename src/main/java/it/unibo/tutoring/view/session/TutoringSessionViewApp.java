@@ -1,6 +1,7 @@
 package it.unibo.tutoring.view.session;
 
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
+import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.view.components.AppHeader;
@@ -33,19 +34,26 @@ public class TutoringSessionViewApp extends Application {
         this.controller = new TutoringSessionController();
     }
 
-    private TutoringSessionViewApp(final String materiaAnnuncio, final String tutorName) {
-        this.controller = new TutoringSessionController(materiaAnnuncio, tutorName);
+    private TutoringSessionViewApp(
+            final String materiaAnnuncio,
+            final String nomeInserzionista,
+            final boolean tutorOffer) {
+        this.controller = new TutoringSessionController(materiaAnnuncio, nomeInserzionista, tutorOffer);
     }
 
-    public static Scene createScene(final Stage stage, final String materiaAnnuncio, final String tutorName) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, tutorName);
+    public static Scene createScene(
+            final Stage stage,
+            final String materiaAnnuncio,
+            final String nomeInserzionista,
+            final boolean tutorOffer) {
+        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer);
         return app.createScene(stage);
     }
 
     @Override
     public void start(final Stage stage) {
         stage.setTitle("UniBo Tutoring - Dettaglio Sessione");
-        stage.setScene(createScene(null));
+        stage.setScene(createScene(stage));
         stage.show();
     }
 
@@ -53,7 +61,10 @@ public class TutoringSessionViewApp extends Application {
         final VBox root = new VBox();
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        AppHeader header = new AppHeader();
+        final Stage window = stage;
+        final AppHeader header = new AppHeader(
+                UserSession.getDisplayName(),
+                window != null ? UserSession.createLogoutAction(window) : null);
 
         final Button btnBack = new Button("< Torna indietro");
         btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #6A6A6A; -fx-font-weight: bold;");
@@ -66,7 +77,7 @@ public class TutoringSessionViewApp extends Application {
         }
 
         root.getChildren().addAll(header, btnBack, createMainArea());
-        return new Scene(root, 1100, 750);
+        return new Scene(root, 1320, 920);
     }
 
     private HBox createMainArea() {
@@ -108,7 +119,7 @@ public class TutoringSessionViewApp extends Application {
         card.getChildren().addAll(
                 title, new Separator(),
                 infoRow("Materia:", controller.getModel().getMateria()),
-                infoRow("Tutor:", controller.getTutorDisplayName()),
+                infoRow(controller.getRuoloInserzionista(), controller.getNomeInserzionista()),
                 rowStato
         );
 

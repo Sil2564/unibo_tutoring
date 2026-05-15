@@ -8,25 +8,33 @@ import it.unibo.tutoring.model.session.TutoringSessionImpl;
 
 public class TutoringSessionController {
 
-    // Il controller possiede un riferimento al Modello
     private final TutoringSession model;
-    private final String tutorDisplayName;
+    private final String nomeInserzionista;
+    private final boolean tutorOffer;
 
     public TutoringSessionController() {
-        this("Progettazione e Sviluppo del Software", "Mario Rossi");
+        this("Progettazione e Sviluppo del Software", "Mario Rossi", true);
     }
 
-    public TutoringSessionController(final String materia, final String tutorDisplayName) {
+    public TutoringSessionController(
+            final String materia,
+            final String nomeInserzionista,
+            final boolean tutorOffer) {
         this.model = new TutoringSessionImpl(
                 materia,
                 LocalDateTime.now(),
                 Duration.ofHours(2),
                 "0000000");
-        this.tutorDisplayName = tutorDisplayName;
+        this.nomeInserzionista = nomeInserzionista;
+        this.tutorOffer = tutorOffer;
     }
 
-    public String getTutorDisplayName() {
-        return this.tutorDisplayName;
+    public String getRuoloInserzionista() {
+        return this.tutorOffer ? "Tutor:" : "Studente:";
+    }
+
+    public String getNomeInserzionista() {
+        return this.nomeInserzionista;
     }
 
     public TutoringSession getModel() {
