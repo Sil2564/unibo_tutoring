@@ -37,16 +37,18 @@ public class TutoringSessionViewApp extends Application {
     private TutoringSessionViewApp(
             final String materiaAnnuncio,
             final String nomeInserzionista,
-            final boolean tutorOffer) {
-        this.controller = new TutoringSessionController(materiaAnnuncio, nomeInserzionista, tutorOffer);
+            final boolean tutorOffer,
+            final String tutorMatricola) {
+        this.controller = new TutoringSessionController(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
     }
 
     public static Scene createScene(
             final Stage stage,
             final String materiaAnnuncio,
             final String nomeInserzionista,
-            final boolean tutorOffer) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer);
+            final boolean tutorOffer,
+            final String tutorMatricola) {
+        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
         return app.createScene(stage);
     }
 

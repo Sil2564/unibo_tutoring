@@ -313,11 +313,11 @@ public class UniBoTutoringDashboardApp extends Application {
 		cards.setPrefWrapLength(860);
 
 		cards.getChildren().addAll(
-			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025"),
-			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025"),
-			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025"),
-			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025"),
-			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025")
+			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", ""),
+			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025","2323232"),
+			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025",""),
+			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025","2323232"),
+			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025","")
 		);
 
 		content.getChildren().addAll(titleRow, filtersRow, tabs, cards);
@@ -341,7 +341,8 @@ public class UniBoTutoringDashboardApp extends Application {
 		final String course,
 		final String description,
 		final String user,
-		final String date
+		final String date,
+        final String matricolaTutor
 	) {
 		final VBox card = new VBox(8);
 		card.setPrefWidth(250);
@@ -397,7 +398,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setBorder(Border.EMPTY);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer));
+			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer, matricolaTutor));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 		});
 
