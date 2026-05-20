@@ -53,10 +53,6 @@ public class TutoringSessionController {
 
     public void completaSessione() {
         this.model.completa();
-
-        CreditService.addCompletedHours(this.tutorMatricola, 1);
-
-        System.out.println("Assegnata 1 ora alla matricola " + tutorMatricola);
     }
 
     public void inviaMessaggio(String testo, String mittente) {
