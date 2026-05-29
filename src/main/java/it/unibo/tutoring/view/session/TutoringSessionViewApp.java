@@ -31,15 +31,25 @@ public class TutoringSessionViewApp extends Application {
     private final TutoringSessionController controller;
 
     public TutoringSessionViewApp() {
-        this.controller = new TutoringSessionController();
+        this.controller = new TutoringSessionController(
+                "Progettazione e Sviluppo del Software",
+                "Mario Rossi",
+                true,
+                "0000001",
+                "0000002");
     }
 
     private TutoringSessionViewApp(
             final String materiaAnnuncio,
             final String nomeInserzionista,
             final boolean tutorOffer,
-            final String tutorMatricola) {
-        this.controller = new TutoringSessionController(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
+            final String matricolaInserzionista) {
+        this.controller = new TutoringSessionController(
+                materiaAnnuncio,
+                nomeInserzionista,
+                tutorOffer,
+                matricolaInserzionista,
+                UserSession.getMatricola());
     }
 
     public static Scene createScene(
@@ -209,7 +219,7 @@ public class TutoringSessionViewApp extends Application {
         sendBtn.setOnAction(e -> {
             String testo = messageField.getText();
             if (!testo.trim().isEmpty()) {
-                controller.inviaMessaggio(testo, "Tu"); // Invia al controller
+                controller.inviaMessaggio(testo);
                 messageField.clear();
                 aggiornaMessaggi(messageArea);
             }
@@ -226,8 +236,8 @@ public class TutoringSessionViewApp extends Application {
     private void aggiornaMessaggi(VBox messageArea) {
         messageArea.getChildren().clear();
         for (Message m : controller.getModel().getStoricoChat()) {
-            boolean isMe = m.getIdMittente().equals("Tu");
-            messageArea.getChildren().add(chatBubble(m.getTesto(), isMe));
+            boolean isMe = m.getIdMittente().equals(controller.getUserMatricola());
+            messageArea.getChildren().add(chatBubble(m.getTesto(), m.getIdMittente(), isMe));
         }
     }
 
@@ -245,7 +255,16 @@ public class TutoringSessionViewApp extends Application {
         return new VBox(2, createLabel(label, true), v);
     }
 
-    private HBox chatBubble(String text, boolean isMe) {
+    private HBox chatBubble(String text, String senderId, boolean isMe) {
+        final VBox bubble = new VBox(3);
+
+        if (!isMe) {
+            final Label senderLabel = new Label(senderId);
+            senderLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+            senderLabel.setTextFill(TEXT_MEDIUM);
+            bubble.getChildren().add(senderLabel);
+        }
+
         Label msgLabel = new Label(text);
         msgLabel.setWrapText(true);
         msgLabel.setFont(Font.font("System", 14));
@@ -259,7 +278,9 @@ public class TutoringSessionViewApp extends Application {
             msgLabel.setBackground(new Background(new BackgroundFill(Color.web("#E9ECEF"), new CornerRadii(15, 15, 15, 0, false), Insets.EMPTY)));
         }
 
-        HBox row = new HBox(msgLabel);
+        bubble.getChildren().add(msgLabel);
+
+        HBox row = new HBox(bubble);
         row.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         return row;
     }
