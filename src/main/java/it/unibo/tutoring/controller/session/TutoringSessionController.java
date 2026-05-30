@@ -34,6 +34,13 @@ public class TutoringSessionController {
     private final String studenteMatricola;
     private final Path fileCondivisoPath;
 
+    // Dati della recensione salvata per la sessione.
+    // reviewStars = -1 indica che non è stata ancora lasciata alcuna valutazione.
+    private int reviewStars = -1;
+    private String reviewComment = "";
+    private String reviewAuthor = "";
+    private boolean reviewSaved = false;
+
     public TutoringSessionController(
             final String materia,
             final String nomeInserzionista,
@@ -109,6 +116,42 @@ public class TutoringSessionController {
         }
     }
 
+    // Metodo helper per salvare una recensione senza autore esplicito.
+    public void registraRecensione(final int stelle, final String commento) {
+        registraRecensione(stelle, commento, "");
+    }
+
+    // Registra la recensione nella sessione e la persiste su file.
+    public void registraRecensione(
+            final int stelle,
+            final String commento,
+            final String autoreRecensione) {
+        if (stelle < 0 || stelle > 5) {
+            throw new IllegalArgumentException("Il valore delle stelle deve essere tra 0 e 5.");
+        }
+        this.reviewStars = stelle;
+        this.reviewComment = commento != null ? commento.trim() : "";
+        this.reviewAuthor = autoreRecensione != null ? autoreRecensione.trim() : "";
+        this.reviewSaved = true;
+        salvaSuFile();
+    }
+
+    public int getReviewStars() {
+        return this.reviewStars;
+    }
+
+    public String getReviewComment() {
+        return this.reviewComment;
+    }
+
+    public boolean isReviewSaved() {
+        return this.reviewSaved;
+    }
+
+    public boolean shouldAskForReview() {
+        return this.model.getStatoCorrente() instanceof CompletedState && !this.reviewSaved;
+    }
+
     private void caricaDaFileSePresente() {
         if (!Files.exists(this.fileCondivisoPath)) {
             return;
@@ -121,6 +164,9 @@ public class TutoringSessionController {
                     ripristinaStato(line.substring("STATO;".length()));
                 } else if (line.startsWith("MSG;")) {
                     ripristinaMessaggio(line.substring("MSG;".length()));
+                } else if (line.startsWith("REVIEW;")) {
+                    // Legge i dati della recensione salvata se presenti.
+                    ripristinaRecensione(line.substring("REVIEW;".length()));
                 }
             }
         } catch (IOException e) {
@@ -150,6 +196,24 @@ public class TutoringSessionController {
         }
     }
 
+    // Ripristina i valori salvati della recensione da disco.
+    private void ripristinaRecensione(final String payload) {
+        final String[] campi = payload.split("\\|", 3);
+        if (campi.length < 2) {
+            return;
+        }
+
+        try {
+            this.reviewStars = Integer.parseInt(campi[0].trim());
+        } catch (NumberFormatException ignored) {
+            return;
+        }
+
+        this.reviewComment = campi[1].trim();
+        this.reviewAuthor = campi.length == 3 ? campi[2].trim() : "";
+        this.reviewSaved = true;
+    }
+
     private void salvaSuFile() {
         try {
             Files.createDirectories(SESSION_FOLDER);
@@ -160,6 +224,12 @@ public class TutoringSessionController {
 
                 for (Message message : this.model.getStoricoChat()) {
                     writer.write("MSG;" + message.getIdMittente() + "|" + message.getTesto());
+                    writer.newLine();
+                }
+
+                if (this.reviewSaved) {
+                    // Salva la recensione in fondo al file con formato REVIEW;stelle|commento
+                    writer.write("REVIEW;" + this.reviewStars + "|" + sanitizeReviewComment(this.reviewComment));
                     writer.newLine();
                 }
             }
@@ -183,6 +253,13 @@ public class TutoringSessionController {
     private String buildFileName() {
         final String materiaSenzaSpazi = this.materia.replaceAll("\\s+", "");
         return FILE_PREFIX + materiaSenzaSpazi + "_" + this.tutorMatricola + "_" + this.studenteMatricola + FILE_EXTENSION;
+    }
+
+    private static String sanitizeReviewComment(final String comment) {
+        if (comment == null) {
+            return "";
+        }
+        return comment.replace("\n", " ").replace("\r", " ").replace("|", "/");
     }
 
     private static String requireText(final String value, final String fieldName) {
