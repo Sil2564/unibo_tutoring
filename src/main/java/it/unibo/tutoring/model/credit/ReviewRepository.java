@@ -60,17 +60,17 @@ public final class ReviewRepository {
                 }
 
                 final String reviewerName = parts[0].trim();
-                final String date = parts[parts.length - 3].trim();
-                final int stars = Integer.parseInt(parts[parts.length - 2].trim());
-                final StringBuilder subjectBuilder = new StringBuilder();
-                for (int i = 1; i <= parts.length - 4; i++) {
-                    if (subjectBuilder.length() > 0) {
-                        subjectBuilder.append(SEP);
-                    }
-                    subjectBuilder.append(parts[i].trim());
+                final String subject = parts.length > 1 ? parts[1].trim() : "";
+                final String date = parts.length > 2 ? parts[2].trim() : "";
+                final int stars = parts.length > 3 && !parts[3].trim().isEmpty()
+                    ? Integer.parseInt(parts[3].trim())
+                    : 0;
+                final String comment;
+                if (parts.length <= 5) {
+                    comment = "";
+                } else {
+                    comment = String.join(SEP, java.util.Arrays.copyOfRange(parts, 4, parts.length - 1)).trim();
                 }
-                final String subject = subjectBuilder.toString();
-                final String comment = parts.length == 5 ? "" : String.join(SEP, java.util.Arrays.copyOfRange(parts, 4, parts.length - 1)).trim();
 
                 reviews.add(new Review(reviewerName, subject, date, stars, comment));
             }

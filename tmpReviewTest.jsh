@@ -1,0 +1,1 @@
+import it.unibo.tutoring.model.credit.ReviewRepository; import it.unibo.tutoring.model.credit.ReviewRepository.Review; var reviews = ReviewRepository.loadReviewsForRecipient("3636989"); System.out.println(reviews.size()); for (var r : reviews) System.out.println(r);

@@ -53,13 +53,6 @@ public class UniBoTutoringStatisticApp extends Application {
     private static final Color PAGE_BG = Color.web("#F8F9FA"); 
     private static final Color TEXT_DARK = Color.web("#111111");
     private static final Color TEXT_MEDIUM = Color.web("#707070"); 
-
-    private VBox scrollContent;
-    private HBox kpiCards;
-    private VBox reviewsSection;
-    private VBox sessionsSection;
-    private VBox progressSection;
-
     @Override
     public void start(final Stage stage) {
         stage.setTitle("UniBo Tutoring - Statistiche");
@@ -87,18 +80,7 @@ public class UniBoTutoringStatisticApp extends Application {
         );
         VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
 
-        final Scene scene = new Scene(root);
-        scene.windowProperty().addListener((observable, oldWindow, newWindow) -> {
-            if (newWindow != null) {
-                newWindow.focusedProperty().addListener((focusObs, wasFocused, isFocused) -> {
-                    if (isFocused) {
-                        app.refreshContent();
-                    }
-                });
-            }
-        });
-
-        return scene;
+        return new Scene(root);
     }
 
  private HBox createMainArea() {
@@ -248,15 +230,24 @@ public class UniBoTutoringStatisticApp extends Application {
         final String matricola = user != null ? user.getMatricola() : "";
 
         // Intestazione Titoli
-        final VBox titleBox = createTitleHeader();
+        final Label title = new Label("Statistiche e Recensioni");
+        title.setFont(Font.font("System", FontWeight.BOLD, 28));
+        title.setTextFill(TEXT_DARK);
+
+        final Label subtitle = new Label("Monitora le tue performance e i tuoi progressi");
+        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 14));
+        subtitle.setTextFill(TEXT_MEDIUM);
+
+        final VBox titleBox = new VBox(6, title, subtitle);
+        titleBox.setPadding(new Insets(0, 0, 12, 0));
 
         // Blocchi KPI superiori
-        this.kpiCards = createKpiCards(matricola);
+        final HBox kpiCards = createKpiCards(matricola);
 
         // Sezioni Centrali dell'interfaccia
-        this.reviewsSection = createReviewsSection(matricola);
-        this.sessionsSection = createSessionsSection(matricola);
-        this.progressSection = createProgressSection(matricola);
+        final VBox reviewsSection = createReviewsSection(matricola);
+        final VBox sessionsSection = createSessionsSection(matricola);
+        final VBox progressSection = createProgressSection(matricola);
 
         // Configurazione reattiva dello ScrollPane per l'adattamento al riquadro
         final ScrollPane scrollPane = new ScrollPane();
@@ -268,7 +259,7 @@ public class UniBoTutoringStatisticApp extends Application {
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: #F8F9FA; -fx-padding: 0;");
 
-        this.scrollContent = new VBox(24);
+        final VBox scrollContent = new VBox(24);
         scrollContent.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
         
         // Margini proporzionati: evita che i box tocchino i bordi del riquadro esterno
@@ -281,7 +272,7 @@ public class UniBoTutoringStatisticApp extends Application {
         sessionsSection.setMaxWidth(Double.MAX_VALUE);
         progressSection.setMaxWidth(Double.MAX_VALUE);
 
-        scrollContent.getChildren().setAll(titleBox, kpiCards, reviewsSection, sessionsSection, progressSection);
+        scrollContent.getChildren().addAll(titleBox, kpiCards, reviewsSection, sessionsSection, progressSection);
         
         scrollPane.setContent(scrollContent);
         content.getChildren().add(scrollPane);
@@ -289,42 +280,6 @@ public class UniBoTutoringStatisticApp extends Application {
 
         return content;
     }
-
-    private VBox createTitleHeader() {
-        final Label title = new Label("Statistiche e Recensioni");
-        title.setFont(Font.font("System", FontWeight.BOLD, 28));
-        title.setTextFill(TEXT_DARK);
-
-        final Label subtitle = new Label("Monitora le tue performance e i tuoi progressi");
-        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 14));
-        subtitle.setTextFill(TEXT_MEDIUM);
-
-        final VBox titleHeader = new VBox(6, new VBox(6, title, subtitle));
-        titleHeader.setPadding(new Insets(0, 0, 12, 0));
-        return titleHeader;
-    }
-
-    private void refreshContent() {
-        final UserAccount user = CurrentSession.getUser();
-        final String matricola = user != null ? user.getMatricola() : "";
-
-        this.kpiCards = createKpiCards(matricola);
-        this.reviewsSection = createReviewsSection(matricola);
-        this.sessionsSection = createSessionsSection(matricola);
-        this.progressSection = createProgressSection(matricola);
-
-        if (scrollContent != null) {
-            final VBox titleBox = createTitleHeader();
-            titleBox.setMaxWidth(Double.MAX_VALUE);
-            this.kpiCards.setMaxWidth(Double.MAX_VALUE);
-            this.reviewsSection.setMaxWidth(Double.MAX_VALUE);
-            this.sessionsSection.setMaxWidth(Double.MAX_VALUE);
-            this.progressSection.setMaxWidth(Double.MAX_VALUE);
-
-            scrollContent.getChildren().setAll(titleBox, kpiCards, reviewsSection, sessionsSection, progressSection);
-        }
-    }
-
     private HBox createKpiCards(final String matricola) {
         final HBox kpiBox = new HBox(20);
         kpiBox.setAlignment(Pos.CENTER_LEFT);
@@ -397,6 +352,9 @@ public class UniBoTutoringStatisticApp extends Application {
         sectionHeader.getChildren().addAll(msgIcon, sectionTitle);
 
         final VBox reviewsList = new VBox(12);
+        reviewsList.setMaxWidth(Double.MAX_VALUE);
+        
+        // Carica TUTTE le recensioni associate alla matricola dell'utente corrente
         List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
 
         if (reviews.isEmpty()) {
@@ -405,36 +363,47 @@ public class UniBoTutoringStatisticApp extends Application {
             none.setTextFill(TEXT_MEDIUM);
             reviewsList.getChildren().add(none);
         } else {
-            // mostra tutte le recensioni (in ordine cronologico inverso se possibile)
+            // Ordina tutte le recensioni in ordine cronologico inverso (dalla più recente)
             List<Review> sorted = reviews.stream().collect(Collectors.toList());
             sorted.sort((a, b) -> {
                 LocalDate da = parseDateSafe(a.date());
                 LocalDate db = parseDateSafe(b.date());
                 return db.compareTo(da);
             });
+            
+            // Cicla ed inserisce l'intera lista delle recensioni all'interno del box scorrevole
             for (final Review review : sorted) {
                 final String starsString = "★".repeat(Math.max(0, Math.min(5, review.stars()))) + "☆".repeat(Math.max(0, 5 - review.stars()));
-                reviewsList.getChildren().add(createCustomReviewCard(review.reviewerName(), review.subject(), starsString, review.date(), review.comment()));
+                VBox reviewCard = createCustomReviewCard(review.reviewerName(), review.subject(), starsString, review.date(), review.comment());
+                reviewCard.setMaxWidth(Double.MAX_VALUE);
+                reviewsList.getChildren().add(reviewCard);
             }
         }
 
-        // Rendi la lista recensioni scorrevole verticalmente (altezza adattabile)
+        // Creazione dello ScrollPane interno per contenere tutte le recensioni
         final ScrollPane reviewsScroll = new ScrollPane(reviewsList);
         reviewsScroll.setFitToWidth(true);
         reviewsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         reviewsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        reviewsScroll.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        
+        // Forza l'altezza e il ridimensionamento per essere speculare al box delle sessioni recenti
+        reviewsScroll.setPrefHeight(215); 
         reviewsScroll.setMaxHeight(Double.MAX_VALUE);
-      
-        reviewsScroll.setStyle("""
-            -fx-background-color: transparent;
-            -fx-background: transparent;
-            """);
+        VBox.setVgrow(reviewsScroll, Priority.ALWAYS);
+        
+        // Rende lo sfondo dello ScrollPane trasparente per uniformarsi alla card
+        reviewsScroll.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;");
 
         container.getChildren().addAll(sectionHeader, reviewsScroll);
+        
+        // Imposta l'altezza preferita del container principale per pareggiare le sessioni recenti
+        container.setPrefHeight(301);
+        container.setMinHeight(301);
+        
         return container;
-        }
-    private VBox createCustomReviewCard(String name, String subjectStr, String stars, String dateStr, String comment) {
+    }
+    
+        private VBox createCustomReviewCard(String name, String subjectStr, String stars, String dateStr, String comment) {
         final VBox card = new VBox(6);
         card.setPadding(new Insets(16));
         card.setStyle("-fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-background-color: white; -fx-background-radius: 8; -fx-border-width: 1;");
