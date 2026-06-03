@@ -1,7 +1,9 @@
 package it.unibo.tutoring.controller.session;
 
+import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.model.credit.CreditService;
+import it.unibo.tutoring.model.credit.CompletedSessionRepository;
 import it.unibo.tutoring.model.session.CompletedState;
 import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.model.session.ProposedState;
@@ -17,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class TutoringSessionController {
 
@@ -87,7 +90,10 @@ public class TutoringSessionController {
     public String getUserMatricola() {
         return this.userMatricola;
     }
-
+    public String getStudentName() {
+        final var student = AuthService.getInstance().getUser(this.studenteMatricola);
+        return student != null ? student.getName() + " " + student.getSurname() : this.studenteMatricola;
+    }
     public TutoringSession getModel() {
         return this.model;
     }
@@ -104,8 +110,25 @@ public class TutoringSessionController {
         if (!(this.model.getStatoCorrente() instanceof ConfirmedState)) {
             throw new IllegalStateException("Solo una sessione confermata puo essere completata.");
         }
+
+        final int completedHours = (int) this.model.getDurata().toHours();
+        final int creditsGiven = completedHours / 2;
+        final String subject = this.model.getMateria();
+        final String date = this.model.getDataOra().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+        final String studentName = getStudentName();
+
+        CompletedSessionRepository.saveCompletedSession(
+            studentName,
+            subject,
+            date,
+            completedHours,
+            creditsGiven,
+            this.tutorMatricola
+        );
+
         setStatoCorrente(new CompletedState());
-        CreditService.addCompletedHours(this.tutorMatricola, DEFAULT_COMPLETED_HOURS);
+        CreditService.addCompletedHours(this.tutorMatricola, completedHours);
         salvaSuFile();
     }
 

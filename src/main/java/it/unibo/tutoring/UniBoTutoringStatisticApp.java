@@ -19,10 +19,15 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -45,6 +50,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class UniBoTutoringStatisticApp extends Application {
@@ -247,7 +256,7 @@ public class UniBoTutoringStatisticApp extends Application {
         // Sezioni Centrali dell'interfaccia
         final VBox reviewsSection = createReviewsSection(matricola);
         final VBox sessionsSection = createSessionsSection(matricola);
-        final VBox progressSection = createProgressSection(matricola);
+        final VBox chartSection = createMonthlySessionsChart(matricola);
 
         // Configurazione reattiva dello ScrollPane per l'adattamento al riquadro
         final ScrollPane scrollPane = new ScrollPane();
@@ -270,9 +279,8 @@ public class UniBoTutoringStatisticApp extends Application {
         kpiCards.setMaxWidth(Double.MAX_VALUE);
         reviewsSection.setMaxWidth(Double.MAX_VALUE);
         sessionsSection.setMaxWidth(Double.MAX_VALUE);
-        progressSection.setMaxWidth(Double.MAX_VALUE);
 
-        scrollContent.getChildren().addAll(titleBox, kpiCards, reviewsSection, sessionsSection, progressSection);
+        scrollContent.getChildren().addAll(titleBox, kpiCards, reviewsSection, sessionsSection, chartSection);
         
         scrollPane.setContent(scrollContent);
         content.getChildren().add(scrollPane);
@@ -284,15 +292,12 @@ public class UniBoTutoringStatisticApp extends Application {
         final HBox kpiBox = new HBox(20);
         kpiBox.setAlignment(Pos.CENTER_LEFT);
 
-        var creditRecord = CreditRepository.loadRecord(matricola);
-        int totalHours = creditRecord.map(r -> r.getTotalHours()).orElse(42); // Fallback mockup se database vuoto
-        int totalCredits = creditRecord.map(r -> r.getTotalCredits()).orElse(150); 
-        double avgRating = creditRecord.map(r -> r.getRating()).orElse(4.6);
+        List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
+        int totalHours = sessions.stream().mapToInt(CompletedSession::hours).sum();
+        int totalCredits = sessions.stream().mapToInt(CompletedSession::creditsGiven).sum();
+        double avgRating = CreditRepository.loadRecord(matricola).map(r -> r.getRating()).orElse(4.6);
         
-        int totalSessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola).size();
-        if (totalSessions == 0) {
-            totalSessions = 15; // Fallback mockup
-        }
+        int totalSessions = sessions.size();
 
         final VBox card1 = createKpiCard("clock_red.png", "Ore totali", totalHours + "h", "di tutoraggio svolto");
         final VBox card2 = createKpiCard("coccarda.png", "Crediti", totalCredits + "", "crediti accumulati");
@@ -493,11 +498,10 @@ public class UniBoTutoringStatisticApp extends Application {
         List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
 
         if (sessions.isEmpty()) {
-            sessionsList.getChildren().addAll(
-                createCustomSessionCard("Laura Bianchi", "Analisi Matematica I", "2h", "10 Dic 2025", "+10 crediti"),
-                createCustomSessionCard("Giuseppe Verdi", "Programmazione", "3h", "20 Dic 2025", "+15 crediti"),
-                createCustomSessionCard("Anna Ferrari", "Analisi Matematica I", "2h", "05 Gen 2026", "+10 crediti")
-            );
+            final Label none = new Label("Non ci sono sessioni recenti");
+            none.setFont(Font.font("System", FontWeight.NORMAL, 13));
+            none.setTextFill(TEXT_MEDIUM);
+            sessionsList.getChildren().add(none);
         } else {
             // Ordina per data decrescente e mostra sempre le ultime 3
             List<CompletedSession> sorted = sessions.stream().collect(Collectors.toList());
@@ -515,6 +519,75 @@ public class UniBoTutoringStatisticApp extends Application {
 
         // La lista sessioni si espande per adattarsi al contenuto
         container.getChildren().addAll(sectionHeader, sessionsList);
+        return container;
+    }
+
+    private VBox createMonthlySessionsChart(final String matricola) {
+        final VBox container = new VBox(16);
+        container.setPadding(new Insets(24));
+        container.setStyle("-fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-color: white; -fx-background-radius: 10; -fx-border-width: 1;");
+
+        final HBox sectionHeader = new HBox(8);
+        sectionHeader.setAlignment(Pos.CENTER_LEFT);
+        final ImageView chartIcon = icon("graph_red.png", 18, 18);
+        final Label sectionTitle = new Label("Sessioni mensili");
+        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
+        sectionTitle.setTextFill(TEXT_DARK);
+        sectionHeader.getChildren().addAll(chartIcon, sectionTitle);
+
+        final CategoryAxis xAxis = new CategoryAxis();
+        xAxis.setLabel("Mese");
+
+        final NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("Sessioni");
+        yAxis.setMinorTickVisible(false);
+        yAxis.setForceZeroInRange(true);
+
+        final LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setAnimated(false);
+        chart.setLegendVisible(false);
+        chart.setCreateSymbols(true);
+        chart.setHorizontalGridLinesVisible(false);
+        chart.setVerticalGridLinesVisible(false);
+        chart.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+
+        final XYChart.Series<String, Number> series = new XYChart.Series<>();
+        final Map<String, Integer> countsByMonth = new LinkedHashMap<>();
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ITALIAN);
+
+        List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
+        sessions.stream()
+            .map(session -> parseDateSafe(session.date()))
+            .filter(date -> !date.equals(LocalDate.MIN))
+            .sorted()
+            .forEach(date -> {
+                final String monthLabel = date.format(formatter);
+                countsByMonth.put(monthLabel, countsByMonth.getOrDefault(monthLabel, 0) + 1);
+            });
+
+        if (countsByMonth.isEmpty()) {
+            countsByMonth.put("Nessun dato", 0);
+        }
+
+        countsByMonth.forEach((month, count) -> {
+            final XYChart.Data<String, Number> data = new XYChart.Data<>(month, count);
+            series.getData().add(data);
+            data.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                if (newNode != null) {
+                    final Tooltip tip = new Tooltip(month + ": " + count + " sessioni");
+                    Tooltip.install(newNode, tip);
+                    newNode.setStyle("-fx-background-color: #D91E43, white; -fx-background-insets: 0, 2; -fx-background-radius: 8;");
+                }
+            });
+        });
+
+        chart.getData().add(series);
+        chart.setPrefHeight(280);
+        chart.setMinHeight(240);
+        chart.setMaxWidth(Double.MAX_VALUE);
+
+        VBox.setVgrow(chart, Priority.ALWAYS);
+        container.getChildren().addAll(sectionHeader, chart);
         return container;
     }
 
@@ -552,56 +625,6 @@ public class UniBoTutoringStatisticApp extends Application {
         return card;
     }
 
-    private VBox createProgressSection(final String matricola) {
-        final VBox container = new VBox(16);
-        container.setPadding(new Insets(24));
-        container.setStyle("-fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-color: white; -fx-background-radius: 10; -fx-border-width: 1;");
-
-        final HBox sectionHeader = new HBox(8);
-        sectionHeader.setAlignment(Pos.CENTER_LEFT);
-        final ImageView cupIcon = icon("cup_red.png", 18, 18);
-        final Label sectionTitle = new Label("Progressi");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(TEXT_DARK);
-        sectionHeader.getChildren().addAll(cupIcon, sectionTitle);
-
-        final VBox progressContainer = new VBox(20);
-
-        progressContainer.getChildren().add(createProgressBar("Ore mensili (15/20)", "75%", 75.0));
-        progressContainer.getChildren().add(createProgressBar("Credito (150/200)", "75%", 75.0));
-        progressContainer.getChildren().add(createProgressBar("Recensioni (4.7/5)", "94%", 94.0));
-
-        container.getChildren().addAll(sectionHeader, progressContainer);
-        return container;
-    }
-
-    private VBox createProgressBar(final String label, final String percentage, final double progress) {
-        final VBox box = new VBox(6);
-
-        final HBox labelBox = new HBox();
-        labelBox.setAlignment(Pos.CENTER_LEFT);
-
-        final Label labelText = new Label(label);
-        labelText.setFont(Font.font("System", FontWeight.BOLD, 13));
-        labelText.setTextFill(TEXT_DARK);
-
-        final Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        final Label percentageText = new Label(percentage);
-        percentageText.setFont(Font.font("System", FontWeight.BOLD, 13));
-        percentageText.setTextFill(TEXT_DARK);
-
-        labelBox.getChildren().addAll(labelText, spacer, percentageText);
-
-        final ProgressBar progressBar = new ProgressBar(progress / 100.0);
-        progressBar.setPrefWidth(Double.MAX_VALUE);
-        progressBar.setPrefHeight(6);
-        progressBar.setStyle("-fx-padding: 0; -fx-background-insets: 0; -fx-control-inner-background: #FFE3E8; -fx-accent: #D91E43;");
-
-        box.getChildren().addAll(labelBox, progressBar);
-        return box;
-    }
 
     private VBox createFooterSection() {
         final VBox section = new VBox(20);
