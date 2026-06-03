@@ -16,6 +16,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -37,6 +38,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
 
 public class UniBoTutoringDashboardApp extends Application {
 
@@ -72,7 +74,24 @@ public class UniBoTutoringDashboardApp extends Application {
 		);
 		VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
 
-		return new Scene(root, 1320, 920);
+		final ScrollPane scrollPane =
+    new ScrollPane(root);
+
+scrollPane.setFitToWidth(true);
+
+scrollPane.setFitToHeight(true);
+
+scrollPane.setPannable(true);
+
+scrollPane.setHbarPolicy(
+    ScrollPane.ScrollBarPolicy.NEVER
+);
+
+return new Scene(
+    scrollPane,
+    1320,
+    920
+);
 	}
 
 	private HBox createMainArea() {
@@ -310,7 +329,10 @@ public class UniBoTutoringDashboardApp extends Application {
 		final FlowPane cards = new FlowPane();
 		cards.setHgap(14);
 		cards.setVgap(14);
-		cards.setPrefWrapLength(860);
+		cards.prefWrapLengthProperty().bind(
+    content.widthProperty().subtract(40)
+);
+
 
 		cards.getChildren().addAll(
 			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", "1111111"),
