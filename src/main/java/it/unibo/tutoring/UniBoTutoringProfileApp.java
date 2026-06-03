@@ -509,20 +509,27 @@ rightColumn.getChildren().addAll(
     creditCard
 );
 
-final HBox columns = new HBox(24);
-columns.setAlignment(Pos.TOP_LEFT);
+        final VBox calendarColumn = new VBox(20);
+        calendarColumn.getChildren().addAll(
+                createCalendarCard()
+        );
 
-columns.getChildren().addAll(
-    leftColumn,
-    rightColumn
-);
+        final HBox columns = new HBox(24);
+        columns.setAlignment(Pos.TOP_LEFT);
 
-content.getChildren().addAll(
-    heroSection,
-    columns
-);
 
-return content;
+        columns.getChildren().addAll(
+                leftColumn,
+                rightColumn,
+                calendarColumn
+        );
+
+        content.getChildren().addAll(
+                heroSection,
+                columns
+        );
+
+        return content;
     }
 
     private static Label createInfoLabel(final String text) {
@@ -615,4 +622,57 @@ private static VBox createStatCard(
 
         return view;
     }
+
+    // Calendario personale (Andrea)
+
+    private static VBox createCalendarCard() {
+        final VBox card = new VBox(16);
+        card.setPadding(new Insets(24));
+        card.setMaxWidth(500);
+        card.setBackground(new Background(
+                new BackgroundFill(Color.WHITE, new CornerRadii(12), Insets.EMPTY)
+        ));
+        card.setBorder(new Border(
+                new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)
+        ));
+
+        // Titolo del calendario
+        final Label title = new Label("I Tuoi Prossimi Impegni");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
+        title.setTextFill(TEXT_DARK);
+
+        // Dati mockati
+        final VBox session1 = createAgendaItem("Analisi Matematica I", "Domani, 15:00 - 17:00", "Studente: Andrea Tonini");
+        final VBox session2 = createAgendaItem("Fisica", "24 Maggio, 10:00 - 11:00", "Tutor: Sofia Ricci");
+        final VBox session3 = createAgendaItem("Programmazione", "28 Maggio, 14:00 - 16:00", "Studente: Luca Bianchi");
+
+        card.getChildren().addAll(
+                title,
+                session1, new Separator(),
+                session2, new Separator(),
+                session3
+        );
+
+        return card;
+    }
+
+    private static VBox createAgendaItem(final String materia, final String data, final String persona) {
+        final VBox itemBox = new VBox(4);
+
+        final Label lblMateria = new Label(materia);
+        lblMateria.setFont(Font.font("System", FontWeight.BOLD, 16));
+        lblMateria.setTextFill(TEXT_DARK);
+
+        final Label lblData = new Label(data);
+        lblData.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        lblData.setTextFill(PRIMARY_RED);
+
+        final Label lblPersona = new Label(persona);
+        lblPersona.setFont(Font.font("System", FontWeight.NORMAL, 14));
+        lblPersona.setTextFill(TEXT_MEDIUM);
+
+        itemBox.getChildren().addAll(lblMateria, lblData, lblPersona);
+        return itemBox;
+    }
+
 }

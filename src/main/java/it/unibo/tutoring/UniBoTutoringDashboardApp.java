@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -334,11 +335,11 @@ return new Scene(
 
 
 		cards.getChildren().addAll(
-			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025"),
-			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025"),
-			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025"),
-			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025"),
-			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025")
+			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", "1111111"),
+			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025","2323232"),
+			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025","3333333"),
+			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025","2323232"),
+			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025","4444444")
 		);
 
 		content.getChildren().addAll(titleRow, filtersRow, tabs, cards);
@@ -362,7 +363,8 @@ return new Scene(
 		final String course,
 		final String description,
 		final String user,
-		final String date
+		final String date,
+        final String matricolaInserzionista
 	) {
 		final VBox card = new VBox(8);
 		card.setPrefWidth(250);
@@ -416,6 +418,11 @@ return new Scene(
 		contact.setPadding(new Insets(4, 10, 4, 10));
 		contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
 		contact.setBorder(Border.EMPTY);
+		contact.setOnAction(event -> {
+			final Stage win = (Stage) contact.getScene().getWindow();
+			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer, matricolaInserzionista));
+			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+		});
 
 		final HBox bottom = new HBox(8, meta, spacer, contact);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);
