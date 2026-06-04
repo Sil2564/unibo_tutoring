@@ -448,3 +448,192 @@ Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Prop
 La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
 * La classe `TutoringSession` fa da facciata (Façade pattern) verso l'esterno: espone il metodo `inviaMessaggio(...)` facendo in realtà eseguire all'oggetto `Chat` interno.
 * Questa separazione prepara il terreno per l'implementazione del pattern **Observer** lato GUI (Model-View-Controller). La View della Chat in JavaFX potrà "osservare" la lista dei messaggi nel Modello; ogni volta che un nuovo `Message` verrà aggiunto alla `Chat`, la View verrà notificata e si aggiornerà in modo reattivo, senza accoppiamento stretto tra logica di business e interfaccia grafica.
+
+
+## GESTIONE FEEDBACK E RECENSIONI
+
+Il modulo di feedback e recensioni consente agli utenti di valutare le sessioni di tutoraggio completate.
+
+### Architettura del Sistema Review/Feedback
+
+```mermaid
+classDiagram
+    %% ============================================================
+    %% DESIGN DETTAGLIATO - FEEDBACK & REVIEWS
+    %% Pattern: Repository + ECB (Entity-Control-Boundary)
+    %% ============================================================
+
+    class TutoringSessionController {
+        +registraRecensione(stelle, commento)
+        -salvaSuFile()
+    }
+    <<control>> TutoringSessionController
+
+    class UniBoTutoringStatisticApp {
+        +createReviewsSection()
+        +createKpiCards()
+    }
+    <<boundary>> UniBoTutoringStatisticApp
+
+    class Review {
+        -String reviewerName
+        -String subject
+        -String date
+        -int stars
+        -String comment
+    }
+    <<entity>> Review
+
+    class ReviewRepository {
+        +loadReviewsForRecipient(matricola): List~Review~
+    }
+    <<entity>> ReviewRepository
+
+    class CreditService {
+        +getCreditRecord(matricola): CreditRecord
+    }
+    <<control>> CreditService
+
+    class CreditRecord {
+        -int totalHours
+        -int totalCredits
+        -Badge badge
+        -double rating
+        +getRating()
+    }
+    <<entity>> CreditRecord
+
+    %% RELAZIONI
+    TutoringSessionController --> Review : acquisisce dati >
+    UniBoTutoringStatisticApp --> ReviewRepository : legge storico >
+    UniBoTutoringStatisticApp --> CreditService : legge rating globale >
+    ReviewRepository --> Review : gestisce >
+    CreditService --> CreditRecord : gestisce >
+```
+
+### Classe Review
+
+La classe `Review` rappresenta una valutazione di una sessione di tutoraggio completata, utilizzando un record Java (data class).
+
+**Attributi:**
+- `reviewerName`: nome dello studente che lascia la recensione
+- `subject`: materia della sessione di tutoraggio
+- `date`: data della sessione
+- `stars`: voto numerico (scala 1-5)
+- `comment`: testo libero con osservazioni specifiche
+
+**Gestione:**
+- Le recensioni sono memorizzate nel file CSV `data/reviews.csv`
+- Ogni recensione contiene anche la matricola del tutor che le riceve (memorizzata come ultimo campo)
+- Il record è immutabile (Java record), garantendo thread-safety
+
+**Struttura del CSV:**
+```
+reviewerName;subject;date;stars;comment;tutorMatricola
+Mario Rossi;Calcolo;2024-06-15;5;Ottima spiegazione;12345678
+Laura Bianchi;Algebra;2024-06-14;4;Molto brava;87654321
+```
+
+### Classe ReviewRepository
+
+La classe ReviewRepository gestisce il caricamento delle recensioni da file CSV per la consultazione dello storico.
+
+Metodo principale:
+- loadReviewsForRecipient(matricola): carica tutte le recensioni ricevute da un tutor specifico.
+- Legge il file data/reviews.csv
+- Filtra per matricola tutor (ultimo campo del CSV)
+- Restituisce una List<Review>
+
+**Esempio di utilizzo:**
+```java
+List<Review> reviews = ReviewRepository.loadReviewsForRecipient("12345678");
+for (Review r : reviews) {
+    System.out.println(r.reviewerName() + ": " + r.stars() + " stelle");
+}
+```
+
+### Calcolo della media delle valutazioni 
+La gestione delle valutazioni (rating) e delle recensioni è strutturata in questo modo e suddivisa tra diverse classi:
+- UniBoTutoringStatisticApp: il rating medio viene letto direttamente tramite il record dei crediti;
+- TutoringSessionController: salva e gestisce il valore delle singole recensioni a fine sessione tramite la variabile reviewStars;
+- CreditRecord: è il modello di dati che memorizza il rating globale come semplice campo double rating;
+- ReviewRepository: si occupa di recuperare dal database CSV (reviews.csv) lo storico delle recensioni ricevute da un tutor.
+
+**Integrazione con CreditRecord:**
+Il campo rating fa parte del profilo reputazionale dell'utente, modellato in CreditRecord. Al momento, la logica di calcolo non itera in tempo reale sulle recensioni, ma si appoggia al CreditService e al CreditRepository che provvedono a leggere il valore globale già pre-calcolato dal database o assegnando un valore di default qualora l'utente sia nuovo.
+
+### Diagramma di Relazione tra Entità
+
+```mermaid
+classDiagram
+    %% RELAZIONI DETTAGLIATE DEL SISTEMA REVIEW/FEEDBACK
+    
+    class Sessione {
+        -UUID id
+        -String materia
+        -LocalDateTime dataOra
+        -String tutorMatricola
+        -SessionState stato
+    }
+
+    class Utente {
+        -String matricola
+        -String nome
+        -String email
+    }
+
+    class Review {
+        -String reviewerName
+        -String subject
+        -String date
+        -int stars
+        -String comment
+    }
+
+    class CompletedSession {
+        -String studentName
+        -String subject
+        -String date
+        -int hours
+        -int creditsGiven
+    }
+
+    class CreditRecord {
+        -int totalHours
+        -int totalCredits
+        -Badge badge
+        -double rating
+    }
+
+    Sessione "1" --> "1" CompletedSession : registra >
+    CompletedSession "1" --> "1" Review : genera >
+    Utente "1" <-- "*" Review : riceve >
+    Utente "1" --> "*" Sessione : tutor >
+    Utente "1" --> "1" CreditRecord : possiede >
+```
+
+### Scelte Progettuali Review e Feedback
+
+Il modulo relativo alla gestione delle recensioni e del sistema di feedback è stato progettato puntando su semplicità, immutabilità e chiara separazione delle responsabilità, al fine di garantire un'esperienza utente affidabile e un codice facilmente manutenibile.
+
+**1. Modello Dati Immutabile (Java Record)**
+Per rappresentare la singola recensione nel dominio applicativo, si è scelto di utilizzare il costrutto record di Java (ReviewRepository.Review).
+Vantaggio: Le recensioni, una volta emesse, sono entità storiche che non devono subire modifiche. L'uso di un record garantisce l'immutabilità nativa di tutti i suoi campi (nome, materia, data, stelle, commento).
+
+**2. Separazione delle Responsabilità (Separation of Concerns)**
+Il ciclo di vita di una recensione è stato diviso in base al contesto operativo, evitando classi "monolitiche":
+- Fase di Acquisizione: è demandata al TutoringSessionController. La recensione è concettualmente un output di una sessione conclusa; pertanto, il controller della sessione gestisce l'input delle stelle (da 1 a 5) e del commento, salvandoli direttamente all'interno dello stato della specifica sessione.
+- Fase di Consultazione: delegata al ReviewRepository, un componente leggero che accede al database (reviews.csv) per mappare lo storico globale del tutor.
+  
+**3. Persistenza Lightweight (File CSV)**
+Coerentemente con il resto dell'architettura del progetto, i feedback sono persistiti in formato testuale CSV (data/reviews.csv).
+Vantaggio: L'applicazione è indipendente da database esterni (DBMS) e i dati sono facilmente trasportabili, il che è perfetto per un approccio autonomo. 
+
+**4. Aggregazione Efficace nel Modello Utente (Caching del Rating)**
+Per garantire caricamenti rapidi, il sistema non ricalcola la media dei voti leggendo l'intero file CSV delle recensioni ad ogni avvio della dashboard. Al contrario, la media viene salvata come un singolo numero già calcolato (il campo rating) all'interno del profilo globale dell'utente (CreditRecord). Grazie a questo approccio, il punteggio dell'utente è sempre immediatamente disponibile per essere mostrato nel profilo o negli annunci, senza pesare sulle prestazioni dell'applicazione.
+
+**5. Gestione UI Reattiva e Funzionale**
+Lato interfaccia (UniBoTutoringStatisticApp), l'integrazione del sistema di feedback sfrutta le API funzionali di Java (Streams).
+Le recensioni recuperate dal repository vengono processate dinamicamente, ordinate in ordine cronologico inverso (mostrando sempre in cima le più recenti valutando in modo safe le stringhe delle date) e renderizzate in schede grafiche iniettate in uno ScrollPane. 
+
+
