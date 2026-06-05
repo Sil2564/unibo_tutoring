@@ -1,24 +1,24 @@
 package it.unibo.tutoring;
 
-final class CurrentSession {
+public final class CurrentSession {
 
     private static UserAccount currentUser;
 
     private CurrentSession() {}
 
-    static void setUser(final UserAccount user) {
+    public static void setUser(final UserAccount user) {
         currentUser = user;
     }
 
-    static UserAccount getUser() {
+    public static UserAccount getUser() {
         return currentUser;
     }
 
-    static void clear() {
+    public static void clear() {
         currentUser = null;
     }
 
-    static boolean isLoggedIn() {
+    public static boolean isLoggedIn() {
         return currentUser != null;
     }
 }

@@ -1,5 +1,7 @@
 package it.unibo.tutoring.model.box;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 public class BoxTutoraggioImpl
@@ -9,9 +11,17 @@ public class BoxTutoraggioImpl
 
     private final String titolo;
 
+    private final String corso;
+
     private final String materia;
 
-    private final String descrizione;
+    private final String argomento;
+
+    private final LocalDate data;
+
+    private final LocalTime ora;
+
+    private final int durataOre;
 
     private final String autoreMatricola;
 
@@ -19,8 +29,12 @@ public class BoxTutoraggioImpl
 
     public BoxTutoraggioImpl(
         final String titolo,
+        final String corso,
         final String materia,
-        final String descrizione,
+        final String argomento,
+        final LocalDate data,
+        final LocalTime ora,
+        final int durataOre,
         final String autoreMatricola,
         final BoxType tipo
     ) {
@@ -29,9 +43,17 @@ public class BoxTutoraggioImpl
 
         this.titolo = titolo;
 
+        this.corso = corso;
+
         this.materia = materia;
 
-        this.descrizione = descrizione;
+        this.argomento = argomento;
+
+        this.data = data;
+
+        this.ora = ora;
+
+        this.durataOre = durataOre;
 
         this.autoreMatricola = autoreMatricola;
 
@@ -49,13 +71,33 @@ public class BoxTutoraggioImpl
     }
 
     @Override
+    public String getCorso() {
+        return this.corso;
+    }
+
+    @Override
     public String getMateria() {
         return this.materia;
     }
 
     @Override
-    public String getDescrizione() {
-        return this.descrizione;
+    public String getArgomento() {
+        return this.argomento;
+    }
+
+    @Override
+    public LocalDate getData() {
+        return this.data;
+    }
+
+    @Override
+    public LocalTime getOra() {
+        return this.ora;
+    }
+
+    @Override
+    public int getDurataOre() {
+        return this.durataOre;
     }
 
     @Override

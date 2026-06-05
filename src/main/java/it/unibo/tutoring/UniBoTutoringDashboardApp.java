@@ -38,7 +38,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
+import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
+import javafx.stage.Stage;
 
 public class UniBoTutoringDashboardApp extends Application {
 
@@ -265,6 +266,22 @@ return new Scene(
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		final Button createAnnouncement = new Button("+Crea Annuncio");
+		createAnnouncement.setOnAction(event -> {
+
+    final Stage stage =
+        (Stage) createAnnouncement
+            .getScene()
+            .getWindow();
+
+    stage.setScene(
+        CreateAnnouncementViewApp
+            .createScene()
+    );
+
+    stage.setTitle(
+        "UniBo Tutoring - Nuovo Annuncio"
+    );
+});
 		createAnnouncement.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
 		createAnnouncement.setTextFill(Color.WHITE);
 		createAnnouncement.setPadding(new Insets(9, 16, 9, 16));
