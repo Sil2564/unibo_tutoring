@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
@@ -38,8 +39,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
-import javafx.stage.Stage;
 
 public class UniBoTutoringDashboardApp extends Application {
 
