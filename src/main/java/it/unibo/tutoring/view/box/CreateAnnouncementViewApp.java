@@ -7,7 +7,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -22,7 +28,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-
 public final class CreateAnnouncementViewApp {
 
     private static final Color PRIMARY_RED =
@@ -150,15 +155,122 @@ public final class CreateAnnouncementViewApp {
 
         sessionLabel.setTextFill(TEXT_DARK);
 
-        final Label placeholder =
-            new Label(
-                "Form annuncio in costruzione..."
-            );
+        final ComboBox<String> corsoBox =
+    new ComboBox<>();
 
-        card.getChildren().addAll(
-            sessionLabel,
-            placeholder
-        );
+corsoBox.getItems().addAll(
+    "Tecnologie dei Sistemi Informatici",
+    "Informatica",
+    "Ingegneria Informatica",
+    "Ingegneria Elettronica"
+);
+
+corsoBox.setValue(
+    "Tecnologie dei Sistemi Informatici"
+);
+
+final TextField materiaField =
+    new TextField();
+
+materiaField.setPromptText(
+    "Es. Programmazione ad Oggetti"
+);
+
+final TextField argomentoField =
+    new TextField();
+
+argomentoField.setPromptText(
+    "Es. Pattern MVC"
+);
+
+final DatePicker dataPicker =
+    new DatePicker();
+
+final TextField oraField =
+    new TextField();
+
+oraField.setPromptText(
+    "HH:mm"
+);
+
+final Spinner<Integer> durataSpinner =
+    new Spinner<>(1, 8, 2);
+
+final ToggleGroup tipoGroup =
+    new ToggleGroup();
+
+final RadioButton offertaRadio =
+    new RadioButton(
+        "Offerta Tutoraggio"
+    );
+
+offertaRadio.setToggleGroup(
+    tipoGroup
+);
+
+offertaRadio.setSelected(true);
+
+final RadioButton richiestaRadio =
+    new RadioButton(
+        "Richiesta Tutoraggio"
+    );
+
+richiestaRadio.setToggleGroup(
+    tipoGroup
+);
+
+final Button publishButton =
+    new Button(
+        "Pubblica Annuncio"
+    );
+
+publishButton.setBackground(
+    new Background(
+        new BackgroundFill(
+            PRIMARY_RED,
+            new CornerRadii(8),
+            Insets.EMPTY
+        )
+    )
+);
+
+publishButton.setTextFill(
+    Color.WHITE
+);
+
+publishButton.setOnAction(
+    event -> System.out.println(
+        "Annuncio creato"
+    )
+);
+
+card.getChildren().addAll(
+    sessionLabel,
+
+    new Label("Corso"),
+    corsoBox,
+
+    new Label("Materia"),
+    materiaField,
+
+    new Label("Argomento"),
+    argomentoField,
+
+    new Label("Data"),
+    dataPicker,
+
+    new Label("Orario"),
+    oraField,
+
+    new Label("Durata (ore)"),
+    durataSpinner,
+
+    new Label("Tipo"),
+    offertaRadio,
+    richiestaRadio,
+
+    publishButton
+);
 
         root.getChildren().addAll(
             header,
