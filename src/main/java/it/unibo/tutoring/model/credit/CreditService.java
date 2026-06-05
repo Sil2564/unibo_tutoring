@@ -14,8 +14,7 @@ public final class CreditService {
      *   crediti e il badge in base alle ore) invece di usare una mappa in-memory.
      */
 
-    private static final int HOURS_PER_CREDIT = 4;
-    
+private static final int HOURS_PER_CREDIT = 2;
 
     private CreditService() {
     }

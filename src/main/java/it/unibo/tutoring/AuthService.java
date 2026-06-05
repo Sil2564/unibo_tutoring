@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-final class AuthService {
+public final class AuthService {
 
     static final class RegistrationResult {
         private final boolean success;
@@ -40,7 +40,7 @@ final class AuthService {
         this.loadUsers();
     }
 
-    static AuthService getInstance() {
+    public static AuthService getInstance() {
         return INSTANCE;
     }
 

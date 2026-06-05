@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,5 +90,41 @@ public final class CompletedSessionRepository {
         }
 
         return sessions;
+    }
+
+    public static synchronized void saveCompletedSession(
+        final String studentName,
+        final String subject,
+        final String date,
+        final int hours,
+        final int creditsGiven,
+        final String tutorMatricola
+    ) {
+        try {
+            if (DB.getParent() != null) {
+                Files.createDirectories(DB.getParent());
+            }
+
+            final String header = "studentName;subject;date;hours;creditsGiven;tutorMatricola";
+            if (!Files.exists(DB)) {
+                Files.writeString(DB, header + System.lineSeparator(), StandardOpenOption.CREATE_NEW);
+            }
+
+            final String line = String.join(";",
+                sanitizeCsvValue(studentName),
+                sanitizeCsvValue(subject),
+                sanitizeCsvValue(date),
+                Integer.toString(hours),
+                Integer.toString(creditsGiven),
+                sanitizeCsvValue(tutorMatricola)
+            );
+            Files.writeString(DB, line + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (final IOException e) {
+            // ignora errori di scrittura per non bloccare l'app
+        }
+    }
+
+    private static String sanitizeCsvValue(final String input) {
+        return input == null ? "" : input.replace(";", ",").trim();
     }
 }
