@@ -28,6 +28,17 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import java.time.LocalTime;
+
+import it.unibo.tutoring.model.box.BoxRepository;
+import it.unibo.tutoring.model.box.BoxTutoraggioImpl;
+import it.unibo.tutoring.model.box.BoxType;
+
+
+
+
+
+
 public final class CreateAnnouncementViewApp {
 
     private static final Color PRIMARY_RED =
@@ -238,12 +249,74 @@ publishButton.setTextFill(
     Color.WHITE
 );
 
-publishButton.setOnAction(
-    event -> System.out.println(
-        "Annuncio creato"
-    )
-);
+publishButton.setOnAction(event -> {
 
+    if (materiaField.getText().isBlank()
+        || argomentoField.getText().isBlank()
+        || dataPicker.getValue() == null
+        || oraField.getText().isBlank()) {
+
+        System.out.println(
+            "Compila tutti i campi"
+        );
+
+        return;
+    }
+
+    try {
+
+        final LocalTime ora =
+            LocalTime.parse(
+                oraField.getText()
+            );
+
+        final BoxType tipo =
+            offertaRadio.isSelected()
+                ? BoxType.OFFER
+                : BoxType.REQUEST;
+
+        final String titolo =
+            "Sessione con "
+            + user.getName()
+            + " "
+            + user.getSurname();
+
+        final BoxTutoraggioImpl box =
+            new BoxTutoraggioImpl(
+                titolo,
+                corsoBox.getValue(),
+                materiaField.getText(),
+                argomentoField.getText(),
+                dataPicker.getValue(),
+                ora,
+                durataSpinner.getValue(),
+                user.getMatricola(),
+                tipo
+            );
+
+        BoxRepository.addBox(box);
+
+        final Stage stage =
+            (Stage) publishButton
+                .getScene()
+                .getWindow();
+
+        stage.setScene(
+            UniBoTutoringDashboardApp
+                .createScene()
+        );
+
+        stage.setTitle(
+            "UniBo Tutoring - Dashboard"
+        );
+
+    } catch (final Exception exception) {
+
+        System.out.println(
+            "Formato orario non valido. Usa HH:mm"
+        );
+    }
+});
 card.getChildren().addAll(
     sessionLabel,
 
