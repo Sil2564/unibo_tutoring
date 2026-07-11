@@ -23,4 +23,6 @@ public interface TutoringSession {
     void inviaMessaggio(String testo, String idMittente);
 
     List<Message> getStoricoChat();
+
+    String getTutorMatricola();
 }
