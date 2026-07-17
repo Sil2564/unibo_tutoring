@@ -55,7 +55,8 @@ public final class CreditRepository {
                         totalHours,
                         totalCredits,
                         badge,
-                        rating
+                        rating,
+                        0 // nextLevelHours recalculated by Service
                     ));
                 }
             }

@@ -89,24 +89,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		);
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-		final ScrollPane scrollPane =
-    new ScrollPane(root);
-
-scrollPane.setFitToWidth(true);
-
-scrollPane.setFitToHeight(true);
-
-scrollPane.setPannable(true);
-
-scrollPane.setHbarPolicy(
-    ScrollPane.ScrollBarPolicy.NEVER
-);
-
-return new Scene(
-    scrollPane,
-    1320,
-    920
-);
+return new Scene(root, 1320, 920);
 	}
 
 	private HBox createMainArea() {

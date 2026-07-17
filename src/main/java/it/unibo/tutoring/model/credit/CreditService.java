@@ -19,7 +19,15 @@ public final class CreditService implements EventSubscriber {
         // try repository first
         final Optional<CreditRecord> stored = CreditRepository.loadRecord(matricola);
         if (stored.isPresent()) {
-            return stored.get();
+            final CreditRecord rec = stored.get();
+            final int nextLevel = badgePolicy.getNextThreshold(rec.getTotalHours());
+            return new CreditRecord(
+                rec.getTotalHours(),
+                rec.getTotalCredits(),
+                badgePolicy.calculateBadge(rec.getTotalHours()),
+                rec.getRating(),
+                nextLevel
+            );
         }
 
         // default new record

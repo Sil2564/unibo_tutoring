@@ -128,7 +128,14 @@ public class TutoringSessionController {
         );
 
         setStatoCorrente(new CompletedState());
-        CreditService.addCompletedHours(this.tutorMatricola, completedHours);
+        it.unibo.tutoring.AppConfig.getInstance()
+            .getEventBus()
+            .publish(
+                new it.unibo.tutoring.event.SessionCompletedEvent(
+                    this.tutorMatricola,
+                    completedHours
+                )
+            );
         salvaSuFile();
     }
 
