@@ -9,7 +9,7 @@ public class CompletedState
     ) {
 
         throw new IllegalStateException(
-            "La sessione è già completata."
+            "La sessione e' gia' completata."
         );
     }
 
@@ -29,7 +29,7 @@ public class CompletedState
     ) {
 
         throw new IllegalStateException(
-            "La sessione è già completata."
+            "La sessione e' gia' completata."
         );
     }
 }

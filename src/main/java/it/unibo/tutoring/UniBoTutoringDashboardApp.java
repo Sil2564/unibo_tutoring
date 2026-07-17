@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
@@ -16,6 +17,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ScrollPane;
@@ -87,7 +89,24 @@ public class UniBoTutoringDashboardApp extends Application {
 		);
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-		return new Scene(root, 1320, 920);
+		final ScrollPane scrollPane =
+    new ScrollPane(root);
+
+scrollPane.setFitToWidth(true);
+
+scrollPane.setFitToHeight(true);
+
+scrollPane.setPannable(true);
+
+scrollPane.setHbarPolicy(
+    ScrollPane.ScrollBarPolicy.NEVER
+);
+
+return new Scene(
+    scrollPane,
+    1320,
+    920
+);
 	}
 
 	private HBox createMainArea() {
@@ -261,6 +280,22 @@ public class UniBoTutoringDashboardApp extends Application {
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		final Button createAnnouncement = new Button("+Crea Annuncio");
+		createAnnouncement.setOnAction(event -> {
+
+    final Stage stage =
+        (Stage) createAnnouncement
+            .getScene()
+            .getWindow();
+
+    stage.setScene(
+        CreateAnnouncementViewApp
+            .createScene()
+    );
+
+    stage.setTitle(
+        "UniBo Tutoring - Nuovo Annuncio"
+    );
+});
 		createAnnouncement.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
 		createAnnouncement.setTextFill(Color.WHITE);
 		createAnnouncement.setPadding(new Insets(9, 16, 9, 16));
@@ -332,14 +367,17 @@ public class UniBoTutoringDashboardApp extends Application {
 		final FlowPane cards = new FlowPane();
 		cards.setHgap(14);
 		cards.setVgap(14);
-		cards.setPrefWrapLength(860);
+		cards.prefWrapLengthProperty().bind(
+    content.widthProperty().subtract(40)
+);
+
 
 		cards.getChildren().addAll(
-			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", ""),
+			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", "1111111"),
 			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025","2323232"),
-			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025",""),
+			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025","3333333"),
 			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025","2323232"),
-			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025","")
+			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025","4444444")
 		);
 
 		content.getChildren().addAll(titleRow, filtersRow, tabs, cards);
@@ -364,7 +402,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		final String description,
 		final String user,
 		final String date,
-        final String matricolaTutor
+        final String matricolaInserzionista
 	) {
 		final VBox card = new VBox(8);
 		card.setPrefWidth(250);
@@ -420,7 +458,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setBorder(Border.EMPTY);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer, matricolaTutor));
+			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer, matricolaInserzionista));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 		});
 

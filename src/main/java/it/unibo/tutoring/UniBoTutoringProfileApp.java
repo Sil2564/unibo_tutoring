@@ -1,11 +1,14 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
 import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.user.UserRepository;
+import it.unibo.tutoring.model.session.SessionRepository;
+import it.unibo.tutoring.model.session.TutoringSession;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -31,6 +34,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.scene.control.ScrollPane;
+
 
 public final class UniBoTutoringProfileApp  {
 
@@ -663,22 +667,42 @@ private static VBox createStatCard(
                 new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)
         ));
 
-        // Titolo del calendario
         final Label title = new Label("I Tuoi Prossimi Impegni");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
         title.setTextFill(TEXT_DARK);
+        card.getChildren().add(title);
 
-        // Dati mockati
-        final VBox session1 = createAgendaItem("Analisi Matematica I", "Domani, 15:00 - 17:00", "Studente: Andrea Tonini");
-        final VBox session2 = createAgendaItem("Fisica", "24 Maggio, 10:00 - 11:00", "Tutor: Sofia Ricci");
-        final VBox session3 = createAgendaItem("Programmazione", "28 Maggio, 14:00 - 16:00", "Studente: Luca Bianchi");
+        String miaMatricola = CurrentSession.getUser().getMatricola();
+        SessionRepository repository = new SessionRepository();
 
-        card.getChildren().addAll(
-                title,
-                session1, new Separator(),
-                session2, new Separator(),
-                session3
-        );
+        // Riceve la lista delle sessioni confermate
+        List<TutoringSession> impegni = repository.getConfirmedSessionsForUser(miaMatricola);
+
+        if (impegni.isEmpty()) {
+            Label emptyMsg = new Label("Nessuna sessione programmata.");
+            emptyMsg.setFont(Font.font("System", 14));
+            emptyMsg.setTextFill(TEXT_MEDIUM);
+            card.getChildren().add(emptyMsg);
+        } else {
+            for (int i = 0; i < impegni.size(); i++) {
+                TutoringSession session = impegni.get(i);
+
+                // Inserisce nome del tutor
+                String persona = session.getTutorMatricola().equals(miaMatricola) ? "Sessione da Tutor" : "Tutor: " + session.getTutorMatricola();
+
+                VBox agendaRow = createAgendaItem(
+                        session.getMateria(),
+                        "Data da concordare",
+                        persona
+                );
+
+                card.getChildren().add(agendaRow);
+
+                if (i < impegni.size() - 1) {
+                    card.getChildren().add(new Separator());
+                }
+            }
+        }
 
         return card;
     }

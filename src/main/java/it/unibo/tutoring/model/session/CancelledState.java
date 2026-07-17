@@ -18,7 +18,7 @@ public class CancelledState implements SessionState {
     ) {
 
         throw new IllegalStateException(
-            "La sessione è già annullata."
+            "La sessione e' gia' annullata."
         );
     }
 

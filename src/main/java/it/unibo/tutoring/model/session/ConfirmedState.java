@@ -4,7 +4,7 @@ public class ConfirmedState implements SessionState {
 
     @Override
     public void conferma(TutoringSession session) {
-        throw new IllegalStateException("La sessione è già confermata.");
+        throw new IllegalStateException("La sessione e' gia' confermata.");
     }
 
   @Override

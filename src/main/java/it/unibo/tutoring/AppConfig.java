@@ -18,9 +18,8 @@ public final class AppConfig {
         this.eventBus = new DomainEventBus();
 
         // Initialize Services and Daos
-        final FileCreditDao creditDao = new FileCreditDao();
         final DefaultBadgePolicy badgePolicy = new DefaultBadgePolicy();
-        this.creditService = new CreditService(creditDao, badgePolicy);
+        this.creditService = new CreditService(badgePolicy);
 
         // Wiring: Subscriptions
         this.eventBus.subscribe(SessionCompletedEvent.class, this.creditService);

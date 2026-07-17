@@ -2,11 +2,11 @@ package it.unibo.tutoring;
 
 public final class UserAccount {
 
-    private final String name;
-    private final String surname;
-    private final String matricola;
-    private final String email;
-    private final String passwordHash;
+    final String name;
+    final String surname;
+    final String matricola;
+    final String email;
+    final String passwordHash;
 
     public UserAccount(
         final String name,
