@@ -4,76 +4,49 @@ package it.unibo.tutoring.model.credit;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class CreditService {
+import it.unibo.tutoring.event.DomainEvent;
+import it.unibo.tutoring.event.EventSubscriber;
+import it.unibo.tutoring.event.SessionCompletedEvent;
+
+public final class CreditService implements EventSubscriber {
 
     private static final int HOURS_PER_CREDIT = 4;
-    private static final Map<String, Integer>
-    USER_HOURS = new HashMap<>();
+    private final CreditDao creditDao;
+    private final BadgePolicy badgePolicy;
 
-    private CreditService() {
+    public CreditService(final CreditDao creditDao, final BadgePolicy badgePolicy) {
+        this.creditDao = creditDao;
+        this.badgePolicy = badgePolicy;
     }
 
-    public static CreditRecord getCreditRecord(
-        final String matricola
-    ) {
-
-        /*
-         * MOCK TEMPORANEO
-         * In futuro questi dati arriveranno
-         * dalle sessioni completate.
-         */
-       final int totalHours =
-    getUserHours(matricola);
-
-        final int totalCredits =
-            totalHours / HOURS_PER_CREDIT;
-
-        final Badge badge =
-            calculateBadge(totalHours);
+    public CreditRecord getCreditRecord(final String matricola) {
+        final int totalHours = getUserHours(matricola);
+        final int totalCredits = totalHours / HOURS_PER_CREDIT;
+        final Badge badge = badgePolicy.calculateBadge(totalHours);
+        final int nextLevel = badgePolicy.getNextThreshold(totalHours);
 
         return new CreditRecord(
             totalHours,
             totalCredits,
-            badge
+            badge,
+            nextLevel
         );
     }
 
-    public static void addCompletedHours(
-    final String matricola,
-    final int hours
-) {
-
-    final int currentHours =
-        getUserHours(matricola);
-
-    USER_HOURS.put(
-        matricola,
-        currentHours + hours
-    );
-}
-
-    private static Badge calculateBadge(
-        final int totalHours
-    ) {
-
-        if (totalHours >= 50) {
-            return Badge.EXPERT;
-        }
-
-        if (totalHours >= 20) {
-            return Badge.INTERMEDIATE;
-        }
-
-        return Badge.BEGINNER;
+    public void addCompletedHours(final String matricola, final int hours) {
+        final int currentHours = getUserHours(matricola);
+        creditDao.saveUserHours(matricola, currentHours + hours);
     }
 
-    private static int getUserHours(
-    final String matricola
-) {
+    @Override
+    public void onEvent(final DomainEvent event) {
+        if (event instanceof SessionCompletedEvent) {
+            final SessionCompletedEvent e = (SessionCompletedEvent) event;
+            addCompletedHours(e.getTutorMatricola(), e.getCompletedHours());
+        }
+    }
 
-    return USER_HOURS.getOrDefault(
-        matricola,
-        0
-    );
-}
+    private int getUserHours(final String matricola) {
+        return creditDao.getUserHours(matricola);
+    }
 }

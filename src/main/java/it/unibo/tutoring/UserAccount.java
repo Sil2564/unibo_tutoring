@@ -1,6 +1,6 @@
 package it.unibo.tutoring;
 
-final class UserAccount {
+public final class UserAccount {
 
     private final String name;
     private final String surname;
@@ -8,7 +8,7 @@ final class UserAccount {
     private final String email;
     private final String passwordHash;
 
-    UserAccount(
+    public UserAccount(
         final String name,
         final String surname,
         final String matricola,
@@ -22,23 +22,23 @@ final class UserAccount {
         this.passwordHash = passwordHash;
     }
 
-    String getName() {
+    public String getName() {
         return this.name;
     }
 
-    String getSurname() {
+    public String getSurname() {
         return this.surname;
     }
 
-    String getMatricola() {
+    public String getMatricola() {
         return this.matricola;
     }
 
-    String getEmail() {
+    public String getEmail() {
         return this.email;
     }
 
-    String getPasswordHash() {
+    public String getPasswordHash() {
         return this.passwordHash;
     }
 }

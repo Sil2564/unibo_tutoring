@@ -17,6 +17,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -60,6 +62,20 @@ public class UniBoTutoringDashboardApp extends Application {
 		final VBox root = new VBox();
 		root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
+		final VBox scrollContent = new VBox();
+		final HBox mainArea = app.createMainArea();
+		scrollContent.getChildren().addAll(
+			mainArea,
+			app.createFooterSection()
+		);
+		scrollContent.setMinHeight(Region.USE_PREF_SIZE);
+		VBox.setVgrow(mainArea, Priority.ALWAYS);
+
+		final ScrollPane scrollPane = new ScrollPane(scrollContent);
+		scrollPane.setFitToWidth(true);
+		scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		scrollPane.setBorder(Border.EMPTY);
+
 		root.getChildren().addAll(
 			new AppHeader(userDisplayName, () -> {
 				CurrentSession.clear();
@@ -67,10 +83,9 @@ public class UniBoTutoringDashboardApp extends Application {
 				stage.setScene(UniBoTutoringLoginApp.createScene(stage));
 				stage.setTitle("UniBo Tutoring - Login");
 			}),
-			app.createMainArea(),
-			app.createFooterSection()
+			scrollPane
 		);
-		VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
+		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 		return new Scene(root, 1320, 920);
 	}
@@ -275,24 +290,21 @@ public class UniBoTutoringDashboardApp extends Application {
 		HBox.setHgrow(searchField, Priority.ALWAYS);
 		searchBox.getChildren().addAll(searchIcon, searchField);
 
-		final HBox comboBox = new HBox();
-		comboBox.setAlignment(Pos.CENTER_LEFT);
-		comboBox.setPadding(new Insets(0, 12, 0, 12));
-		comboBox.setPrefHeight(44);
-		comboBox.setPrefWidth(260);
-		comboBox.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(7), Insets.EMPTY)));
-		comboBox.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(7), BorderWidths.DEFAULT)));
+		final ComboBox<String> subjectCombo = new ComboBox<>();
+		subjectCombo.getItems().addAll(
+			"Tutte le materie",
+			"Analisi Matematica I",
+			"Programmazione ad Oggetti",
+			"Fisica Generale",
+			"Basi di Dati",
+			"Algoritmi e Strutture Dati"
+		);
+		subjectCombo.getSelectionModel().selectFirst();
+		subjectCombo.setPrefHeight(44);
+		subjectCombo.setPrefWidth(260);
+		subjectCombo.setStyle("-fx-background-color: white; -fx-border-color: #CFCFCF; -fx-border-radius: 7; -fx-background-radius: 7; -fx-font-family: 'System'; -fx-font-weight: 600; -fx-font-size: 14px;");
 
-		final Label comboLabel = new Label("Tutte le materie");
-		comboLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-		final Region comboSpacer = new Region();
-		HBox.setHgrow(comboSpacer, Priority.ALWAYS);
-		final Label chevron = new Label("v");
-		chevron.setTextFill(Color.web("#777777"));
-		chevron.setFont(Font.font("System", FontWeight.BOLD, 13));
-		comboBox.getChildren().addAll(comboLabel, comboSpacer, chevron);
-
-		filtersRow.getChildren().addAll(searchBox, comboBox);
+		filtersRow.getChildren().addAll(searchBox, subjectCombo);
 
 		final HBox tabs = new HBox(0);
 		tabs.setAlignment(Pos.CENTER_LEFT);
@@ -301,11 +313,21 @@ public class UniBoTutoringDashboardApp extends Application {
 		tabs.setBackground(new Background(new BackgroundFill(Color.web("#D7D7D7"), new CornerRadii(6), Insets.EMPTY)));
 		tabs.setPadding(new Insets(2));
 
-		tabs.getChildren().addAll(
-			tab("Tutte (5)", true),
-			tab("Offerte (3)", false),
-			tab("Richieste (2)", false)
-		);
+		final Button tabAll = tab("Tutte (5)", true);
+		final Button tabOffers = tab("Offerte (3)", false);
+		final Button tabRequests = tab("Richieste (2)", false);
+
+		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests);
+		for (final Button t : allTabs) {
+			t.setOnAction(e -> {
+				for (final Button other : allTabs) {
+					final boolean isActive = (other == t);
+					other.setBackground(new Background(new BackgroundFill(isActive ? Color.WHITE : Color.TRANSPARENT, new CornerRadii(5), Insets.EMPTY)));
+				}
+			});
+		}
+
+		tabs.getChildren().addAll(tabAll, tabOffers, tabRequests);
 
 		final FlowPane cards = new FlowPane();
 		cards.setHgap(14);
@@ -438,6 +460,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
         final Label body = new Label(content);
         body.setWrapText(true);
+        body.setMinHeight(Region.USE_PREF_SIZE);
         body.setTextFill(Color.rgb(255, 255, 255, 0.93));
         body.setFont(Font.font("System", FontWeight.NORMAL, 13));
 

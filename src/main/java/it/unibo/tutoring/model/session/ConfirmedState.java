@@ -33,17 +33,15 @@ public void completa(
         TutoringSessionImpl tutoringSession
     ) {
 
-        final int completedHours =
-            (int) tutoringSession
-                .getDurata()
-                .toHours();
+        final int completedHours = (int) tutoringSession.getDurata().toHours();
 
-        it.unibo.tutoring.model.credit
-            .CreditService
-            .addCompletedHours(
-                tutoringSession
-                    .getTutorMatricola(),
-                completedHours
+        it.unibo.tutoring.AppConfig.getInstance()
+            .getEventBus()
+            .publish(
+                new it.unibo.tutoring.event.SessionCompletedEvent(
+                    tutoringSession.getTutorMatricola(),
+                    completedHours
+                )
             );
 
         tutoringSession.setStatoCorrente(

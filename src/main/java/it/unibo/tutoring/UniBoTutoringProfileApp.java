@@ -2,8 +2,10 @@ package it.unibo.tutoring;
 
 import java.nio.file.Path;
 
+import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
 import it.unibo.tutoring.model.credit.CreditService;
+import it.unibo.tutoring.model.user.UserRepository;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -28,6 +30,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.scene.control.ScrollPane;
 
 public final class UniBoTutoringProfileApp  {
 
@@ -41,17 +44,33 @@ public final class UniBoTutoringProfileApp  {
 
     public static Scene createScene() {
 
-        final UserAccount user = CurrentSession.getUser();
+        final ProfileController controller = new ProfileController(new UserRepository());
+        final UserAccount user = controller.getCurrentUser();
 
         final VBox root = new VBox();
         root.setBackground(new Background(
             new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)
         ));
 
+        final VBox scrollContent = new VBox();
+        final VBox mainContent = createContent(user, controller);
+        scrollContent.getChildren().addAll(
+            mainContent,
+            createFooterSection()
+        );
+        scrollContent.setMinHeight(Region.USE_PREF_SIZE);
+        VBox.setVgrow(mainContent, Priority.ALWAYS);
+
+        final ScrollPane scrollPane = new ScrollPane(scrollContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setBorder(Border.EMPTY);
+
         root.getChildren().addAll(
             createHeader(user),
-            createContent(user)
+            scrollPane
         );
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
         return new Scene(root, 1320, 920);
     }
@@ -105,7 +124,20 @@ public final class UniBoTutoringProfileApp  {
         separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
         separator.setPrefHeight(16);
 
-        final Button dashboardButton = new Button("Dashboard");
+        final Button dashboardButton = new Button("Vai alla Dashboard");
+        dashboardButton.setFont(Font.font("System", FontWeight.BOLD, 13));
+        dashboardButton.setTextFill(Color.WHITE);
+        dashboardButton.setPadding(new Insets(8, 16, 8, 16));
+        dashboardButton.setBackground(new Background(
+            new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)
+        ));
+        dashboardButton.setBorder(Border.EMPTY);
+        dashboardButton.setOnMouseEntered(e -> dashboardButton.setBackground(new Background(
+            new BackgroundFill(PRIMARY_RED.darker(), new CornerRadii(6), Insets.EMPTY)
+        )));
+        dashboardButton.setOnMouseExited(e -> dashboardButton.setBackground(new Background(
+            new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)
+        )));
 
         dashboardButton.setOnAction(event -> {
             final Stage stage =
@@ -133,11 +165,10 @@ public final class UniBoTutoringProfileApp  {
         return header;
     }
 
-    private static VBox createContent(final UserAccount user) {
+    private static VBox createContent(final UserAccount user, final ProfileController controller) {
 
         final VBox content = new VBox(20);
-        final CreditRecord creditRecord =
-    CreditService.getCreditRecord(user.getMatricola());
+        final CreditRecord creditRecord = controller.getCreditRecord(user.getMatricola());
 
     final Color badgeColor;
 
@@ -354,16 +385,10 @@ final Label totalCreditsLabel = createInfoLabel(
     "CFU ottenuti: "
         + creditRecord.getTotalCredits()
 );
-final int nextLevelHours = 80;
-
-final int currentHours =
-    creditRecord.getTotalHours();
-
-final int remainingHours =
-    nextLevelHours - currentHours;
-
-final double progress =
-    (double) currentHours / nextLevelHours;
+final int nextLevelHours = creditRecord.getNextLevelHours();
+final int currentHours = creditRecord.getTotalHours();
+final int remainingHours = Math.max(0, nextLevelHours - currentHours);
+final double progress = nextLevelHours == 0 ? 1.0 : (double) currentHours / nextLevelHours;
 
 final Label badgeLabel = new Label(
     creditRecord.getBadge().getDisplayName()
@@ -514,7 +539,9 @@ rightColumn.getChildren().addAll(
                 createCalendarCard()
         );
 
-        final HBox columns = new HBox(24);
+        final javafx.scene.layout.FlowPane columns = new javafx.scene.layout.FlowPane();
+        columns.setHgap(24);
+        columns.setVgap(24);
         columns.setAlignment(Pos.TOP_LEFT);
 
 
@@ -673,6 +700,43 @@ private static VBox createStatCard(
 
         itemBox.getChildren().addAll(lblMateria, lblData, lblPersona);
         return itemBox;
+    }
+
+    private static VBox createFooterSection() {
+        final VBox section = new VBox(20);
+        section.setPadding(new Insets(26, 40, 18, 40));
+        section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        final HBox cols = new HBox(50,
+            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
+            footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
+            footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
+        );
+
+        final Label copyright = new Label("© 2026 Università di Bologna - UniBo Tutoring. Tutti i diritti riservati.");
+        copyright.setTextFill(Color.rgb(255, 255, 255, 0.94));
+        copyright.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+
+        section.getChildren().addAll(cols, copyright);
+        return section;
+    }
+
+    private static VBox footerColumn(final String title, final String content) {
+        final VBox box = new VBox(8);
+        box.setPrefWidth(320);
+
+        final Label heading = new Label(title);
+        heading.setFont(Font.font("System", FontWeight.BOLD, 22));
+        heading.setTextFill(Color.WHITE);
+
+        final Label body = new Label(content);
+        body.setWrapText(true);
+        body.setMinHeight(Region.USE_PREF_SIZE);
+        body.setTextFill(Color.rgb(255, 255, 255, 0.93));
+        body.setFont(Font.font("System", FontWeight.NORMAL, 13));
+
+        box.getChildren().addAll(heading, body);
+        return box;
     }
 
 }

@@ -51,6 +51,7 @@ public class UniBoTutoringHomeApp extends Application {
             app.createFooterSection()
         );
         page.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
+        page.setMinHeight(Region.USE_PREF_SIZE);
 
         final ScrollPane scrollPane = new ScrollPane(page);
         scrollPane.setFitToWidth(true);
@@ -118,6 +119,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final Label title = new Label("Trova il tutor perfetto per il tuo percorso universitario");
         title.setWrapText(true);
+        title.setMinHeight(Region.USE_PREF_SIZE);
         title.setTextFill(Color.WHITE);
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 42));
 
@@ -126,6 +128,7 @@ public class UniBoTutoringHomeApp extends Application {
                 + "nelle materie universitarie. Condividi le tue conoscenze o trova l'aiuto di cui hai bisogno."
         );
         subtitle.setWrapText(true);
+        subtitle.setMinHeight(Region.USE_PREF_SIZE);
         subtitle.setTextFill(Color.rgb(255, 255, 255, 0.92));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
@@ -256,6 +259,7 @@ public class UniBoTutoringHomeApp extends Application {
         ctaSubtitle.setFont(Font.font("System", FontWeight.NORMAL, 15));
         ctaSubtitle.setTextAlignment(TextAlignment.CENTER);
         ctaSubtitle.setWrapText(true);
+        ctaSubtitle.setMinHeight(Region.USE_PREF_SIZE);
 
         final Button register = redButton("Crea il tuo account");
         register.setMaxWidth(Double.MAX_VALUE);
@@ -321,6 +325,7 @@ public class UniBoTutoringHomeApp extends Application {
 
             final Label body = new Label(content);
             body.setWrapText(true);
+            body.setMinHeight(Region.USE_PREF_SIZE);
             body.setTextFill(Color.rgb(255, 255, 255, 0.93));
             body.setFont(Font.font("System", FontWeight.NORMAL, 13));
 
@@ -352,6 +357,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final Label cardDescription = new Label(description);
         cardDescription.setWrapText(true);
+        cardDescription.setMinHeight(Region.USE_PREF_SIZE);
         cardDescription.setTextAlignment(TextAlignment.CENTER);
         cardDescription.setFont(Font.font("System", FontWeight.NORMAL, 13));
         cardDescription.setTextFill(Color.web("#525252"));
@@ -368,6 +374,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final Label detailLabel = new Label(detail);
         detailLabel.setWrapText(true);
+        detailLabel.setMinHeight(Region.USE_PREF_SIZE);
         detailLabel.setTextFill(Color.web("#5E5E5E"));
         detailLabel.setFont(Font.font("System", FontWeight.NORMAL, 14));
 
