@@ -5,12 +5,14 @@ import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserAccount;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -22,6 +24,7 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -58,9 +61,16 @@ public final class CreateAnnouncementViewApp {
         final UserAccount user =
             CurrentSession.getUser();
 
-        final VBox root = new VBox(24);
+        final String userNome =
+            user != null ? user.getName() : "Utente";
 
-        root.setPadding(new Insets(30));
+        final String userCognome =
+            user != null ? user.getSurname() : "sconosciuto";
+
+        final String userMatricola =
+            user != null ? user.getMatricola() : "N/D";
+
+        final VBox root = new VBox();
 
         root.setBackground(
             new Background(
@@ -72,7 +82,12 @@ public final class CreateAnnouncementViewApp {
             )
         );
 
+        final VBox pageContent = new VBox(24);
+        pageContent.setPadding(new Insets(30));
+        pageContent.setAlignment(Pos.TOP_CENTER);
+
         final HBox header = new HBox();
+        header.setMaxWidth(760);
 
         final Label title = new Label(
             "Nuovo Annuncio"
@@ -92,11 +107,18 @@ public final class CreateAnnouncementViewApp {
 
         HBox.setHgrow(
             spacer,
-            javafx.scene.layout.Priority.ALWAYS
+            Priority.ALWAYS
         );
 
         final Button dashboardButton =
             new Button("← Dashboard");
+
+        dashboardButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        dashboardButton.setTextFill(TEXT_DARK);
+        dashboardButton.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
+        dashboardButton.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+        dashboardButton.setPadding(new Insets(8, 14, 8, 14));
+        dashboardButton.setCursor(Cursor.HAND);
 
         dashboardButton.setOnAction(event -> {
 
@@ -121,9 +143,11 @@ public final class CreateAnnouncementViewApp {
             dashboardButton
         );
 
-        final VBox card = new VBox(18);
+        final VBox card = new VBox(6);
 
         card.setPadding(new Insets(30));
+        card.setMaxWidth(760);
+        card.setPrefWidth(760);
 
         card.setAlignment(Pos.TOP_LEFT);
 
@@ -151,9 +175,9 @@ public final class CreateAnnouncementViewApp {
         final Label sessionLabel =
             new Label(
                 "Sessione con "
-                + user.getName()
+                + userNome
                 + " "
-                + user.getSurname()
+                + userCognome
             );
 
         sessionLabel.setFont(
@@ -165,195 +189,213 @@ public final class CreateAnnouncementViewApp {
         );
 
         sessionLabel.setTextFill(TEXT_DARK);
+        VBox.setMargin(sessionLabel, new Insets(0, 0, 14, 0));
 
-        final ComboBox<String> corsoBox =
-    new ComboBox<>();
+        final ComboBox<String> corsoBox = new ComboBox<>();
+        corsoBox.getItems().addAll(
+            "Tecnologie dei Sistemi Informatici",
+            "Informatica",
+            "Ingegneria Informatica",
+            "Ingegneria Elettronica"
+        );
+        corsoBox.setValue("Tecnologie dei Sistemi Informatici");
+        styleField(corsoBox);
 
-corsoBox.getItems().addAll(
-    "Tecnologie dei Sistemi Informatici",
-    "Informatica",
-    "Ingegneria Informatica",
-    "Ingegneria Elettronica"
-);
+        final TextField materiaField = new TextField();
+        materiaField.setPromptText("Es. Programmazione ad Oggetti");
+        styleField(materiaField);
 
-corsoBox.setValue(
-    "Tecnologie dei Sistemi Informatici"
-);
+        final TextField argomentoField = new TextField();
+        argomentoField.setPromptText("Es. Pattern MVC");
+        styleField(argomentoField);
 
-final TextField materiaField =
-    new TextField();
+        final DatePicker dataPicker = new DatePicker();
+        styleField(dataPicker);
 
-materiaField.setPromptText(
-    "Es. Programmazione ad Oggetti"
-);
+        final TextField oraField = new TextField();
+        oraField.setPromptText("HH:mm");
+        styleField(oraField);
 
-final TextField argomentoField =
-    new TextField();
+        final Spinner<Integer> durataSpinner = new Spinner<>(1, 8, 2);
+        styleField(durataSpinner);
 
-argomentoField.setPromptText(
-    "Es. Pattern MVC"
-);
+        final ToggleGroup tipoGroup = new ToggleGroup();
 
-final DatePicker dataPicker =
-    new DatePicker();
+        final RadioButton offertaRadio = new RadioButton("Offerta Tutoraggio (offro aiuto)");
+        offertaRadio.setToggleGroup(tipoGroup);
+        offertaRadio.setSelected(true);
+        offertaRadio.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+        offertaRadio.setCursor(Cursor.HAND);
 
-final TextField oraField =
-    new TextField();
+        final RadioButton richiestaRadio = new RadioButton("Richiesta Tutoraggio (cerco aiuto)");
+        richiestaRadio.setToggleGroup(tipoGroup);
+        richiestaRadio.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+        richiestaRadio.setCursor(Cursor.HAND);
 
-oraField.setPromptText(
-    "HH:mm"
-);
+        final HBox tipoRow = new HBox(24, offertaRadio, richiestaRadio);
+        tipoRow.setAlignment(Pos.CENTER_LEFT);
 
-final Spinner<Integer> durataSpinner =
-    new Spinner<>(1, 8, 2);
+        final Label feedbackLabel = new Label();
+        feedbackLabel.setTextFill(PRIMARY_RED);
+        feedbackLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+        feedbackLabel.setWrapText(true);
+        feedbackLabel.setVisible(false);
+        feedbackLabel.setManaged(false);
 
-final ToggleGroup tipoGroup =
-    new ToggleGroup();
+        final Button publishButton = new Button("Pubblica Annuncio");
 
-final RadioButton offertaRadio =
-    new RadioButton(
-        "Offerta Tutoraggio"
-    );
+        publishButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
+        publishButton.setTextFill(Color.WHITE);
+        publishButton.setPadding(new Insets(11, 22, 11, 22));
+        publishButton.setCursor(Cursor.HAND);
 
-offertaRadio.setToggleGroup(
-    tipoGroup
-);
-
-offertaRadio.setSelected(true);
-
-final RadioButton richiestaRadio =
-    new RadioButton(
-        "Richiesta Tutoraggio"
-    );
-
-richiestaRadio.setToggleGroup(
-    tipoGroup
-);
-
-final Button publishButton =
-    new Button(
-        "Pubblica Annuncio"
-    );
-
-publishButton.setBackground(
-    new Background(
-        new BackgroundFill(
-            PRIMARY_RED,
-            new CornerRadii(8),
-            Insets.EMPTY
-        )
-    )
-);
-
-publishButton.setTextFill(
-    Color.WHITE
-);
-
-publishButton.setOnAction(event -> {
-
-    if (materiaField.getText().isBlank()
-        || argomentoField.getText().isBlank()
-        || dataPicker.getValue() == null
-        || oraField.getText().isBlank()) {
-
-        System.out.println(
-            "Compila tutti i campi"
+        publishButton.setBackground(
+            new Background(
+                new BackgroundFill(
+                    PRIMARY_RED,
+                    new CornerRadii(8),
+                    Insets.EMPTY
+                )
+            )
         );
 
-        return;
-    }
+        publishButton.setBorder(Border.EMPTY);
 
-    try {
+        publishButton.setOnAction(event -> {
 
-        final LocalTime ora =
-            LocalTime.parse(
-                oraField.getText()
-            );
+            if (materiaField.getText().isBlank()
+                || argomentoField.getText().isBlank()
+                || dataPicker.getValue() == null
+                || oraField.getText().isBlank()) {
 
-        final BoxType tipo =
-            offertaRadio.isSelected()
-                ? BoxType.OFFER
-                : BoxType.REQUEST;
+                feedbackLabel.setText("Compila tutti i campi prima di pubblicare.");
+                feedbackLabel.setVisible(true);
+                feedbackLabel.setManaged(true);
+                return;
+            }
 
-        final String titolo =
-            "Sessione con "
-            + user.getName()
-            + " "
-            + user.getSurname();
+            try {
 
-        final BoxTutoraggioImpl box =
-            new BoxTutoraggioImpl(
-                titolo,
-                corsoBox.getValue(),
-                materiaField.getText(),
-                argomentoField.getText(),
-                dataPicker.getValue(),
-                ora,
-                durataSpinner.getValue(),
-                user.getMatricola(),
-                tipo
-            );
+                final LocalTime ora = LocalTime.parse(oraField.getText());
 
-        BoxRepository.addBox(box);
+                final BoxType tipo =
+                    offertaRadio.isSelected()
+                        ? BoxType.OFFER
+                        : BoxType.REQUEST;
 
-        final Stage stage =
-            (Stage) publishButton
-                .getScene()
-                .getWindow();
+                final String titolo =
+                    "Sessione con "
+                    + userNome
+                    + " "
+                    + userCognome;
 
-        stage.setScene(
-            UniBoTutoringDashboardApp
-                .createScene()
+                final BoxTutoraggioImpl box =
+                    new BoxTutoraggioImpl(
+                        titolo,
+                        corsoBox.getValue(),
+                        materiaField.getText(),
+                        argomentoField.getText(),
+                        dataPicker.getValue(),
+                        ora,
+                        durataSpinner.getValue(),
+                        userMatricola,
+                        tipo
+                    );
+
+                BoxRepository.addBox(box);
+
+                final Stage stage =
+                    (Stage) publishButton
+                        .getScene()
+                        .getWindow();
+
+                stage.setScene(
+                    UniBoTutoringDashboardApp
+                        .createScene()
+                );
+
+                stage.setTitle(
+                    "UniBo Tutoring - Dashboard"
+                );
+
+            } catch (final Exception exception) {
+
+                feedbackLabel.setText("Formato orario non valido. Usa HH:mm (es. 15:00).");
+                feedbackLabel.setVisible(true);
+                feedbackLabel.setManaged(true);
+            }
+        });
+
+        final HBox publishRow = new HBox(publishButton);
+        publishRow.setAlignment(Pos.CENTER_LEFT);
+        VBox.setMargin(publishRow, new Insets(10, 0, 0, 0));
+
+        card.getChildren().addAll(
+            sessionLabel,
+
+            fieldLabel("Corso"),
+            corsoBox,
+
+            fieldLabel("Materia"),
+            materiaField,
+
+            fieldLabel("Argomento"),
+            argomentoField,
+
+            fieldLabel("Data"),
+            dataPicker,
+
+            fieldLabel("Orario"),
+            oraField,
+
+            fieldLabel("Durata (ore)"),
+            durataSpinner,
+
+            fieldLabel("Tipo annuncio"),
+            tipoRow,
+
+            feedbackLabel,
+            publishRow
         );
 
-        stage.setTitle(
-            "UniBo Tutoring - Dashboard"
-        );
-
-    } catch (final Exception exception) {
-
-        System.out.println(
-            "Formato orario non valido. Usa HH:mm"
-        );
-    }
-});
-card.getChildren().addAll(
-    sessionLabel,
-
-    new Label("Corso"),
-    corsoBox,
-
-    new Label("Materia"),
-    materiaField,
-
-    new Label("Argomento"),
-    argomentoField,
-
-    new Label("Data"),
-    dataPicker,
-
-    new Label("Orario"),
-    oraField,
-
-    new Label("Durata (ore)"),
-    durataSpinner,
-
-    new Label("Tipo"),
-    offertaRadio,
-    richiestaRadio,
-
-    publishButton
-);
-
-        root.getChildren().addAll(
+        pageContent.getChildren().addAll(
             header,
             card
         );
+
+        final ScrollPane scrollPane = new ScrollPane(pageContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setBorder(Border.EMPTY);
+
+        root.getChildren().add(scrollPane);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
         return new Scene(
             root,
             1320,
             920
+        );
+    }
+
+    private static Label fieldLabel(final String text) {
+        final Label label = new Label(text);
+        label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+        label.setTextFill(Color.web("#4A4A4A"));
+        VBox.setMargin(label, new Insets(8, 0, 0, 0));
+        return label;
+    }
+
+    private static void styleField(final javafx.scene.control.Control field) {
+        field.setPrefHeight(38);
+        field.setMaxWidth(Double.MAX_VALUE);
+        field.setStyle(
+            "-fx-background-color: white;"
+            + "-fx-border-color: #CFCFCF;"
+            + "-fx-border-radius: 7;"
+            + "-fx-background-radius: 7;"
+            + "-fx-font-family: 'System';"
+            + "-fx-font-size: 13px;"
         );
     }
 }

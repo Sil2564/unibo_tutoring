@@ -1,9 +1,14 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import it.unibo.tutoring.model.box.BoxRepository;
+import it.unibo.tutoring.model.box.BoxTutoraggio;
+import it.unibo.tutoring.model.box.BoxType;
 import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
@@ -13,6 +18,7 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -20,7 +26,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -284,6 +289,7 @@ return new Scene(root, 1320, 920);
 		createAnnouncement.setPadding(new Insets(9, 16, 9, 16));
 		createAnnouncement.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
 		createAnnouncement.setBorder(Border.EMPTY);
+		createAnnouncement.setCursor(Cursor.HAND);
 
 		titleRow.getChildren().addAll(titleBlock, spacer, createAnnouncement);
 
@@ -331,9 +337,13 @@ return new Scene(root, 1320, 920);
 		tabs.setBackground(new Background(new BackgroundFill(Color.web("#D7D7D7"), new CornerRadii(6), Insets.EMPTY)));
 		tabs.setPadding(new Insets(2));
 
-		final Button tabAll = tab("Tutte (5)", true);
-		final Button tabOffers = tab("Offerte (3)", false);
-		final Button tabRequests = tab("Richieste (2)", false);
+		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
+		final long offerCount = allBoxes.stream().filter(b -> b.getTipo() == BoxType.OFFER).count();
+		final long requestCount = allBoxes.size() - offerCount;
+
+		final Button tabAll = tab("Tutte (" + allBoxes.size() + ")", true);
+		final Button tabOffers = tab("Offerte (" + offerCount + ")", false);
+		final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 
 		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests);
 		for (final Button t : allTabs) {
@@ -355,13 +365,16 @@ return new Scene(root, 1320, 920);
 );
 
 
-		cards.getChildren().addAll(
-			announcementCard(true, "Analisi Matematica I", "Ingegneria Informatica", "Disponibile per spiegazioni e aiuto per preparazione esame.", "Mario Rossi", "15 Dic 2025", "1111111"),
-			announcementCard(false, "Programmazione ad Oggetti", "Informatica", "Cerco aiuto per ripetizioni su classi, ereditarieta e Java.", "Laura Bianchi", "16 Dic 2025","2323232"),
-			announcementCard(true, "Fisica Generale", "Ingegneria Elettronica", "Offro ripetizioni su cinematica, dinamica e termodinamica.", "Giuseppe Verdi", "10 Dic 2025","3333333"),
-			announcementCard(false, "Basi di Dati", "Informatica per il Management", "Cerco ripetizioni di SQL e progettazione database.", "Luca Ferrari", "17 Dic 2025","2323232"),
-			announcementCard(true, "Algoritmi e Strutture Dati", "Ingegneria Informatica", "Disponibile per spiegare alberi, grafi e algoritmi di ordinamento.", "Laura Colonna", "10 Dic 2025","4444444")
-		);
+		if (allBoxes.isEmpty()) {
+			final Label emptyLabel = new Label("Nessun annuncio disponibile. Crea il primo con \"+Crea Annuncio\".");
+			emptyLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
+			emptyLabel.setTextFill(TEXT_MEDIUM);
+			cards.getChildren().add(emptyLabel);
+		} else {
+			for (final BoxTutoraggio box : allBoxes) {
+				cards.getChildren().add(announcementCard(box));
+			}
+		}
 
 		content.getChildren().addAll(titleRow, filtersRow, tabs, cards);
 		return content;
@@ -378,18 +391,15 @@ return new Scene(root, 1320, 920);
 		return tab;
 	}
 
-	private VBox announcementCard(
-		final boolean offer,
-		final String title,
-		final String course,
-		final String description,
-		final String user,
-		final String date,
-        final String matricolaInserzionista
-	) {
+	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ITALIAN);
+
+	private VBox announcementCard(final BoxTutoraggio box) {
+		final boolean offer = box.getTipo() == BoxType.OFFER;
+
 		final VBox card = new VBox(8);
 		card.setPrefWidth(250);
 		card.setPadding(new Insets(10, 12, 10, 12));
+		card.setCursor(Cursor.HAND);
 		card.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(6), Insets.EMPTY)));
 		card.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(6), BorderWidths.DEFAULT)));
 
@@ -399,16 +409,17 @@ return new Scene(root, 1320, 920);
 		tag.setPadding(new Insets(2, 7, 2, 7));
 		tag.setBackground(new Background(new BackgroundFill(offer ? PRIMARY_RED : Color.web("#A1A1A1"), new CornerRadii(999), Insets.EMPTY)));
 
-		final Label titleLabel = new Label(title);
+		final String autoreNome = estraiNomeAutore(box.getTitolo());
+		final Label titleLabel = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
 		titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 12));
 		titleLabel.setTextFill(TEXT_DARK);
 		titleLabel.setWrapText(true);
 
-		final Label courseLabel = new Label(course);
+		final Label courseLabel = new Label(box.getCorso() + " · " + box.getMateria());
 		courseLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
 		courseLabel.setTextFill(TEXT_MEDIUM);
 
-		final Label descriptionLabel = new Label(description);
+		final Label descriptionLabel = new Label("Argomenti: " + box.getArgomento());
 		descriptionLabel.setWrapText(true);
 		descriptionLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
 		descriptionLabel.setTextFill(Color.web("#2D2D2D"));
@@ -417,12 +428,13 @@ return new Scene(root, 1320, 920);
 		divider.setStroke(Color.web("#E3E3E3"));
 
 		final ImageView userIcon = icon("user_gray.png", 11, 11);
-		final Label userLabel = new Label(user);
+		final Label userLabel = new Label(autoreNome);
 		userLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
 		userLabel.setTextFill(TEXT_MEDIUM);
 
 		final ImageView dateIcon = icon("calendar_gray.png", 11, 11);
-		final Label dateLabel = new Label(date);
+		final String dateText = box.getData().format(DATE_FORMAT) + " - " + box.getOra() + " - " + box.getDurataOre() + "h";
+		final Label dateLabel = new Label(dateText);
 		dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
 		dateLabel.setTextFill(TEXT_MEDIUM);
 
@@ -439,9 +451,10 @@ return new Scene(root, 1320, 920);
 		contact.setPadding(new Insets(4, 10, 4, 10));
 		contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
 		contact.setBorder(Border.EMPTY);
+		contact.setCursor(Cursor.HAND);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, title, user, offer, matricolaInserzionista));
+			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 		});
 
@@ -450,6 +463,11 @@ return new Scene(root, 1320, 920);
 
 		card.getChildren().addAll(tag, titleLabel, courseLabel, descriptionLabel, divider, bottom);
 		return card;
+	}
+
+	private static String estraiNomeAutore(final String titolo) {
+		final String prefix = "Sessione con ";
+		return titolo != null && titolo.startsWith(prefix) ? titolo.substring(prefix.length()) : titolo;
 	}
 
 	private VBox createFooterSection() {

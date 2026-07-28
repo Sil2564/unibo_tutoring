@@ -169,6 +169,8 @@ public final class UniBoTutoringRegistrationApp {
                 return;
             }
 
+            CurrentSession.setUser(AuthService.getInstance().getUser(matricola));
+
             stage.setScene(UniBoTutoringDashboardApp.createScene());
             stage.setTitle("UniBo Tutoring - Dashboard");
         });
