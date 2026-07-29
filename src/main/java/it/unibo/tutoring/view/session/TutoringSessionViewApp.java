@@ -76,6 +76,7 @@ public class TutoringSessionViewApp extends Application {
         stage.setTitle("UniBo Tutoring - Dettaglio Sessione");
         stage.setScene(createScene(stage));
         stage.show();
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
 
     public Scene createScene(final Stage stage) {
@@ -101,11 +102,15 @@ public class TutoringSessionViewApp extends Application {
         this.reviewOverlay = createReviewOverlay();
         this.notificationLabel = createNotificationLabel();
 
-        final StackPane stack = new StackPane(root, this.reviewOverlay, this.notificationLabel);
+        final ScrollPane pageScroll = new ScrollPane(root);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(pageScroll);
+
+        final StackPane stack = new StackPane(pageScroll, this.reviewOverlay, this.notificationLabel);
         StackPane.setAlignment(this.notificationLabel, Pos.TOP_CENTER);
         StackPane.setMargin(this.notificationLabel, new Insets(20, 0, 0, 0));
-        stack.setPrefSize(1320, 920);
-        return new Scene(stack, 1320, 920);
+        final Scene scene = new Scene(stack);
+        scene.getStylesheets().add(TutoringSessionViewApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 
     private HBox createMainArea() {

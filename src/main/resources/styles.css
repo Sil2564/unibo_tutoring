@@ -1,0 +1,7 @@
+.button,
+.toggle-button,
+.hyperlink,
+.menu-button,
+.split-menu-button {
+    -fx-cursor: hand;
+}

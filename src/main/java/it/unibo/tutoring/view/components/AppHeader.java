@@ -88,6 +88,7 @@ userName.setOnAction(event -> {
     );
 
     stage.setTitle("UniBo Tutoring - Profilo");
+    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 });
 
         final Separator separator = new Separator();

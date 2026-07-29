@@ -66,9 +66,7 @@ public final class UniBoTutoringProfileApp  {
         VBox.setVgrow(mainContent, Priority.ALWAYS);
 
         final ScrollPane scrollPane = new ScrollPane(scrollContent);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setBorder(Border.EMPTY);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
         root.getChildren().addAll(
             createHeader(user),
@@ -76,7 +74,9 @@ public final class UniBoTutoringProfileApp  {
         );
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        return new Scene(root, 1320, 920);
+        final Scene scene = new Scene(root);
+        scene.getStylesheets().add(UniBoTutoringProfileApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 
     private static HBox createHeader(final UserAccount user) {

@@ -67,6 +67,7 @@ public class UniBoTutoringStatisticApp extends Application {
         stage.setTitle("UniBo Tutoring - Statistiche");
         stage.setScene(createScene());
         stage.show();
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
 
     public static Scene createScene() {
@@ -89,7 +90,9 @@ public class UniBoTutoringStatisticApp extends Application {
         );
         VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
 
-        return new Scene(root);
+        final Scene scene = new Scene(root);
+        scene.getStylesheets().add(UniBoTutoringStatisticApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 
  private HBox createMainArea() {
@@ -148,6 +151,7 @@ public class UniBoTutoringStatisticApp extends Application {
             final Stage stage = (Stage) dashboardBtn.getScene().getWindow();
             stage.setScene(UniBoTutoringDashboardApp.createScene());
             stage.setTitle("UniBo Tutoring - Dashboard");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
         
         final Button statisticsBtn = navItem("graph_white.png", "Statistiche", "Ore e recensioni", true, nodesToHide);

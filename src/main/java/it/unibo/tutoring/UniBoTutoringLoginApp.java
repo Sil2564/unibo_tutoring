@@ -58,6 +58,7 @@ public final class UniBoTutoringLoginApp {
         backHomeButton.setOnAction(event -> {
             stage.setScene(UniBoTutoringHomeApp.createScene());
             stage.setTitle("UniBo Tutoring - Home");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
         backHomeButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
         backHomeButton.setTextFill(Color.web("#4A4A4A"));
@@ -147,6 +148,7 @@ public final class UniBoTutoringLoginApp {
 
         stage.setScene(UniBoTutoringDashboardApp.createScene());
         stage.setTitle("UniBo Tutoring - Dashboard");
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         return;
     }
 
@@ -161,6 +163,7 @@ public final class UniBoTutoringLoginApp {
         registerLink.setOnAction(event -> {
             stage.setScene(UniBoTutoringRegistrationApp.createScene(stage));
             stage.setTitle("UniBo Tutoring - Registrazione");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
         registerLink.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
         registerLink.setTextFill(PRIMARY_RED);
@@ -186,6 +189,11 @@ public final class UniBoTutoringLoginApp {
 
         root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
 
-        return new Scene(root, 1180, 900);
+        final javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(root);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
+
+        final Scene scene = new Scene(scrollPane);
+        scene.getStylesheets().add(UniBoTutoringLoginApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 }

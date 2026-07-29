@@ -21,6 +21,7 @@ public final class UserSession {
             CurrentSession.clear();
             stage.setScene(UniBoTutoringLoginApp.createScene(stage));
             stage.setTitle("UniBo Tutoring - Login");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         };
     }
 }

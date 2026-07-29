@@ -59,6 +59,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		stage.setTitle("UniBo Tutoring - Dashboard");
 		stage.setScene(createScene());
 		stage.show();
+		it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 	}
 
 	public static Scene createScene() {
@@ -79,9 +80,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		VBox.setVgrow(mainArea, Priority.ALWAYS);
 
 		final ScrollPane scrollPane = new ScrollPane(scrollContent);
-		scrollPane.setFitToWidth(true);
-		scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-		scrollPane.setBorder(Border.EMPTY);
+		it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
 		root.getChildren().addAll(
 			new AppHeader(userDisplayName, () -> {
@@ -89,12 +88,15 @@ public class UniBoTutoringDashboardApp extends Application {
 				final Stage stage = (Stage) root.getScene().getWindow();
 				stage.setScene(UniBoTutoringLoginApp.createScene(stage));
 				stage.setTitle("UniBo Tutoring - Login");
+				it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 			}),
 			scrollPane
 		);
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-return new Scene(root, 1320, 920);
+		final Scene scene = new Scene(root);
+		scene.getStylesheets().add(UniBoTutoringDashboardApp.class.getResource("/styles.css").toExternalForm());
+		return scene;
 	}
 
 	private HBox createMainArea() {
@@ -152,6 +154,7 @@ return new Scene(root, 1320, 920);
 			final Stage stage = (Stage) statisticsBtn.getScene().getWindow();
 			stage.setScene(UniBoTutoringStatisticApp.createScene());
 			stage.setTitle("UniBo Tutoring - Statistiche");
+			it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 		});
 		
 		menu.getChildren().addAll(dashboardBtn, statisticsBtn);
@@ -283,6 +286,7 @@ return new Scene(root, 1320, 920);
     stage.setTitle(
         "UniBo Tutoring - Nuovo Annuncio"
     );
+    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 });
 		createAnnouncement.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
 		createAnnouncement.setTextFill(Color.WHITE);
@@ -314,15 +318,25 @@ return new Scene(root, 1320, 920);
 		HBox.setHgrow(searchField, Priority.ALWAYS);
 		searchBox.getChildren().addAll(searchIcon, searchField);
 
-		final ComboBox<String> subjectCombo = new ComboBox<>();
-		subjectCombo.getItems().addAll(
-			"Tutte le materie",
+		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
+
+		final List<String> defaultSubjects = List.of(
 			"Analisi Matematica I",
 			"Programmazione ad Oggetti",
 			"Fisica Generale",
 			"Basi di Dati",
 			"Algoritmi e Strutture Dati"
 		);
+		final java.util.LinkedHashSet<String> subjectItems = new java.util.LinkedHashSet<>();
+		subjectItems.add("Tutte le materie");
+		subjectItems.addAll(defaultSubjects);
+		allBoxes.stream()
+			.map(BoxTutoraggio::getMateria)
+			.filter(m -> m != null && !m.isBlank())
+			.forEach(subjectItems::add);
+
+		final ComboBox<String> subjectCombo = new ComboBox<>();
+		subjectCombo.getItems().addAll(subjectItems);
 		subjectCombo.getSelectionModel().selectFirst();
 		subjectCombo.setPrefHeight(44);
 		subjectCombo.setPrefWidth(260);
@@ -337,7 +351,6 @@ return new Scene(root, 1320, 920);
 		tabs.setBackground(new Background(new BackgroundFill(Color.web("#D7D7D7"), new CornerRadii(6), Insets.EMPTY)));
 		tabs.setPadding(new Insets(2));
 
-		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
 		final long offerCount = allBoxes.stream().filter(b -> b.getTipo() == BoxType.OFFER).count();
 		final long requestCount = allBoxes.size() - offerCount;
 
@@ -346,38 +359,84 @@ return new Scene(root, 1320, 920);
 		final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 
 		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests);
+
+		// Tipo attualmente selezionato dai tab: null = "Tutte", altrimenti OFFER o REQUEST.
+		final BoxType[] selectedType = { null };
+
+		final FlowPane cards = new FlowPane();
+		cards.setHgap(14);
+		cards.setVgap(14);
+		cards.prefWrapLengthProperty().bind(
+			content.widthProperty().subtract(40)
+		);
+
+		final Runnable refreshCards = () -> {
+			final String query = searchField.getText() == null ? "" : searchField.getText().trim().toLowerCase(Locale.ITALIAN);
+			final String selectedSubject = subjectCombo.getValue();
+			final boolean allSubjects = selectedSubject == null || "Tutte le materie".equals(selectedSubject);
+
+			final List<BoxTutoraggio> filtered = allBoxes.stream()
+				.filter(b -> selectedType[0] == null || b.getTipo() == selectedType[0])
+				.filter(b -> allSubjects || selectedSubject.equalsIgnoreCase(b.getMateria()))
+				.filter(b -> {
+					if (query.isEmpty()) {
+						return true;
+					}
+					final String haystack = String.join(" ",
+						nullToEmpty(b.getMateria()),
+						nullToEmpty(b.getCorso()),
+						nullToEmpty(b.getArgomento()),
+						nullToEmpty(b.getTitolo())
+					).toLowerCase(Locale.ITALIAN);
+					return haystack.contains(query);
+				})
+				.toList();
+
+			cards.getChildren().clear();
+			if (filtered.isEmpty()) {
+				final Label emptyLabel = new Label(allBoxes.isEmpty()
+					? "Nessun annuncio disponibile. Crea il primo con \"+Crea Annuncio\"."
+					: "Nessun annuncio corrisponde ai filtri selezionati.");
+				emptyLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
+				emptyLabel.setTextFill(TEXT_MEDIUM);
+				cards.getChildren().add(emptyLabel);
+			} else {
+				for (final BoxTutoraggio box : filtered) {
+					cards.getChildren().add(announcementCard(box));
+				}
+			}
+		};
+
 		for (final Button t : allTabs) {
 			t.setOnAction(e -> {
 				for (final Button other : allTabs) {
 					final boolean isActive = (other == t);
 					other.setBackground(new Background(new BackgroundFill(isActive ? Color.WHITE : Color.TRANSPARENT, new CornerRadii(5), Insets.EMPTY)));
 				}
+				if (t == tabAll) {
+					selectedType[0] = null;
+				} else if (t == tabOffers) {
+					selectedType[0] = BoxType.OFFER;
+				} else {
+					selectedType[0] = BoxType.REQUEST;
+				}
+				refreshCards.run();
 			});
 		}
 
+		searchField.textProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
+		subjectCombo.valueProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
+
 		tabs.getChildren().addAll(tabAll, tabOffers, tabRequests);
 
-		final FlowPane cards = new FlowPane();
-		cards.setHgap(14);
-		cards.setVgap(14);
-		cards.prefWrapLengthProperty().bind(
-    content.widthProperty().subtract(40)
-);
-
-
-		if (allBoxes.isEmpty()) {
-			final Label emptyLabel = new Label("Nessun annuncio disponibile. Crea il primo con \"+Crea Annuncio\".");
-			emptyLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
-			emptyLabel.setTextFill(TEXT_MEDIUM);
-			cards.getChildren().add(emptyLabel);
-		} else {
-			for (final BoxTutoraggio box : allBoxes) {
-				cards.getChildren().add(announcementCard(box));
-			}
-		}
+		refreshCards.run();
 
 		content.getChildren().addAll(titleRow, filtersRow, tabs, cards);
 		return content;
+	}
+
+	private static String nullToEmpty(final String s) {
+		return s == null ? "" : s;
 	}
 
 	private Button tab(final String text, final boolean active) {
@@ -456,6 +515,7 @@ return new Scene(root, 1320, 920);
 			final Stage win = (Stage) contact.getScene().getWindow();
 			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
 		});
 
 		final HBox bottom = new HBox(8, meta, spacer, contact);

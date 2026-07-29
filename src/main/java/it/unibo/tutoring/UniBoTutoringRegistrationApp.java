@@ -173,6 +173,7 @@ public final class UniBoTutoringRegistrationApp {
 
             stage.setScene(UniBoTutoringDashboardApp.createScene());
             stage.setTitle("UniBo Tutoring - Dashboard");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
         final Label loginPrefix = new Label("Hai già un account?");
@@ -182,6 +183,7 @@ public final class UniBoTutoringRegistrationApp {
         loginLink.setOnAction(event -> {
             stage.setScene(UniBoTutoringLoginApp.createScene(stage));
             stage.setTitle("UniBo Tutoring - Login");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
         loginLink.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
         loginLink.setTextFill(PRIMARY_RED);
@@ -196,7 +198,12 @@ public final class UniBoTutoringRegistrationApp {
         formCard.getChildren().addAll(formTitle, formSubtitle, fieldsGrid, submitWrap, feedbackLabel, loginLine);
         root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
 
-        return new Scene(root, 1180, 900);
+        final javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(root);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
+
+        final Scene scene = new Scene(scrollPane);
+        scene.getStylesheets().add(UniBoTutoringRegistrationApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 
     private static void addField(final GridPane grid, final int column, final int row, final String labelText, final TextField field) {

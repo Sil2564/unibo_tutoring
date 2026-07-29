@@ -135,6 +135,7 @@ public final class CreateAnnouncementViewApp {
             stage.setTitle(
                 "UniBo Tutoring - Dashboard"
             );
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
         header.getChildren().addAll(
@@ -226,14 +227,38 @@ public final class CreateAnnouncementViewApp {
         offertaRadio.setSelected(true);
         offertaRadio.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
         offertaRadio.setCursor(Cursor.HAND);
+        offertaRadio.setTextFill(TEXT_DARK);
+        offertaRadio.setWrapText(true);
 
         final RadioButton richiestaRadio = new RadioButton("Richiesta Tutoraggio (cerco aiuto)");
         richiestaRadio.setToggleGroup(tipoGroup);
         richiestaRadio.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
         richiestaRadio.setCursor(Cursor.HAND);
+        richiestaRadio.setTextFill(TEXT_DARK);
+        richiestaRadio.setWrapText(true);
 
-        final HBox tipoRow = new HBox(24, offertaRadio, richiestaRadio);
+        final HBox offertaBox = new HBox(offertaRadio);
+        offertaBox.setAlignment(Pos.CENTER_LEFT);
+        offertaBox.setPadding(new Insets(10, 12, 10, 12));
+        offertaBox.setStyle("-fx-background-color: #F8F9FA; -fx-border-color: #D6D6D6; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        final HBox richiestaBox = new HBox(richiestaRadio);
+        richiestaBox.setAlignment(Pos.CENTER_LEFT);
+        richiestaBox.setPadding(new Insets(10, 12, 10, 12));
+        richiestaBox.setStyle("-fx-background-color: white; -fx-border-color: #D6D6D6; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        final HBox tipoRow = new HBox(12, offertaBox, richiestaBox);
         tipoRow.setAlignment(Pos.CENTER_LEFT);
+
+        tipoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            final boolean offerSelected = offertaRadio.isSelected();
+            offertaBox.setStyle(offerSelected
+                ? "-fx-background-color: #FFF5F7; -fx-border-color: #D91E43; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8;"
+                : "-fx-background-color: white; -fx-border-color: #D6D6D6; -fx-border-radius: 8; -fx-background-radius: 8;");
+            richiestaBox.setStyle(!offerSelected
+                ? "-fx-background-color: #FFF5F7; -fx-border-color: #D91E43; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8;"
+                : "-fx-background-color: white; -fx-border-color: #D6D6D6; -fx-border-radius: 8; -fx-background-radius: 8;");
+        });
 
         final Label feedbackLabel = new Label();
         feedbackLabel.setTextFill(PRIMARY_RED);
@@ -317,6 +342,7 @@ public final class CreateAnnouncementViewApp {
                 stage.setTitle(
                     "UniBo Tutoring - Dashboard"
                 );
+                it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 
             } catch (final Exception exception) {
 
@@ -364,18 +390,14 @@ public final class CreateAnnouncementViewApp {
         );
 
         final ScrollPane scrollPane = new ScrollPane(pageContent);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setBorder(Border.EMPTY);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
         root.getChildren().add(scrollPane);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        return new Scene(
-            root,
-            1320,
-            920
-        );
+        final Scene scene = new Scene(root);
+        scene.getStylesheets().add(CreateAnnouncementViewApp.class.getResource("/styles.css").toExternalForm());
+        return scene;
     }
 
     private static Label fieldLabel(final String text) {

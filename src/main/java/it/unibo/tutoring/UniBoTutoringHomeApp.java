@@ -40,6 +40,7 @@ public class UniBoTutoringHomeApp extends Application {
         stage.setTitle("UniBo Tutoring - Home");
         stage.setScene(scene);
         stage.show();
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
 
     public static Scene createScene() {
@@ -54,10 +55,12 @@ public class UniBoTutoringHomeApp extends Application {
         page.setMinHeight(Region.USE_PREF_SIZE);
 
         final ScrollPane scrollPane = new ScrollPane(page);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
-        return new Scene(scrollPane, 1180, 900);
+        final Scene scene = new Scene(scrollPane);
+        scene.getStylesheets().add(UniBoTutoringHomeApp.class.getResource("/styles.css").toExternalForm());
+        scene.setRoot(scrollPane);
+        return scene;
     }
 
     private VBox createHeroSection() {
@@ -289,12 +292,14 @@ public class UniBoTutoringHomeApp extends Application {
         final Stage stage = (Stage) sourceButton.getScene().getWindow();
         stage.setScene(UniBoTutoringLoginApp.createScene(stage));
         stage.setTitle("UniBo Tutoring - Login");
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
 
     private void openRegistrationPage(final Button sourceButton) {
         final Stage stage = (Stage) sourceButton.getScene().getWindow();
         stage.setScene(UniBoTutoringRegistrationApp.createScene(stage));
         stage.setTitle("UniBo Tutoring - Registrazione");
+        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
 
      private VBox createFooterSection() {
