@@ -81,6 +81,7 @@ public class TutoringSessionViewApp extends Application {
 
     public Scene createScene(final Stage stage) {
         final VBox root = new VBox();
+        root.getStyleClass().add("app-shell");
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final Stage window = stage;
@@ -108,8 +109,7 @@ public class TutoringSessionViewApp extends Application {
         final StackPane stack = new StackPane(pageScroll, this.reviewOverlay, this.notificationLabel);
         StackPane.setAlignment(this.notificationLabel, Pos.TOP_CENTER);
         StackPane.setMargin(this.notificationLabel, new Insets(20, 0, 0, 0));
-        final Scene scene = new Scene(stack);
-        scene.getStylesheets().add(TutoringSessionViewApp.class.getResource("/styles.css").toExternalForm());
+        final Scene scene = it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(stack);
         return scene;
     }
 
@@ -131,6 +131,7 @@ public class TutoringSessionViewApp extends Application {
 
     private VBox createSessionDetailsCard() {
         final VBox card = new VBox(15);
+        card.getStyleClass().add("soft-card");
         card.setPrefWidth(350);
         card.setPadding(new Insets(20));
         card.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(8), Insets.EMPTY)));
@@ -160,12 +161,14 @@ public class TutoringSessionViewApp extends Application {
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
         final Button btnConferma = new Button("Conferma Sessione");
+        btnConferma.getStyleClass().add("primary-btn");
         btnConferma.setFont(Font.font("System", FontWeight.BOLD, 14));
         btnConferma.setTextFill(Color.WHITE);
         btnConferma.setMaxWidth(Double.MAX_VALUE);
         btnConferma.setBackground(new Background(new BackgroundFill(Color.web("#28A745"), new CornerRadii(6), Insets.EMPTY)));
 
         final Button btnCompleta = new Button("Completa Sessione");
+        btnCompleta.getStyleClass().add("primary-btn");
         btnCompleta.setFont(Font.font("System", FontWeight.BOLD, 14));
         btnCompleta.setTextFill(Color.WHITE);
         btnCompleta.setMaxWidth(Double.MAX_VALUE);
@@ -206,6 +209,7 @@ public class TutoringSessionViewApp extends Application {
 
     private VBox createChatCard() {
         final VBox card = new VBox(0);
+        card.getStyleClass().add("soft-card");
         card.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(8), Insets.EMPTY)));
         card.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
 

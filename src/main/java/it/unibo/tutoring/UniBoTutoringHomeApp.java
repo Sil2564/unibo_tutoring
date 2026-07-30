@@ -51,6 +51,7 @@ public class UniBoTutoringHomeApp extends Application {
             app.createWhySection(),
             app.createFooterSection()
         );
+        page.getStyleClass().add("page-shell");
         page.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
         page.setMinHeight(Region.USE_PREF_SIZE);
 
@@ -65,11 +66,13 @@ public class UniBoTutoringHomeApp extends Application {
 
     private VBox createHeroSection() {
         final VBox section = new VBox(0);
+        section.getStyleClass().add("hero-shell");
         section.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox topBar = new HBox(12);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(8, 24, 8, 24));
+        topBar.getStyleClass().add("app-header");
         topBar.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final Image uniBoLogoImage = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
@@ -98,15 +101,41 @@ public class UniBoTutoringHomeApp extends Application {
         loginButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
         loginButton.setTextFill(PRIMARY_RED);
         loginButton.setPadding(new Insets(12, 10, 12, 10));
+        loginButton.getStyleClass().add("text-link");
         loginButton.setBackground(Background.EMPTY);
         loginButton.setBorder(Border.EMPTY);
+        loginButton.setOnMouseEntered(event -> {
+            loginButton.setScaleX(1.0);
+            loginButton.setScaleY(1.0);
+            loginButton.setTranslateX(0);
+            loginButton.setTranslateY(0);
+        });
+        loginButton.setOnMouseExited(event -> {
+            loginButton.setScaleX(1.0);
+            loginButton.setScaleY(1.0);
+            loginButton.setTranslateX(0);
+            loginButton.setTranslateY(0);
+        });
         loginButton.setOnAction(event -> openLoginPage(loginButton));
         final Button registerButton = new Button("Registrati");
         registerButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
         registerButton.setTextFill(Color.WHITE);
         registerButton.setPadding(new Insets(12, 14, 12, 14));
-        registerButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(14), Insets.EMPTY)));
+        registerButton.getStyleClass().add("primary-btn");
+        registerButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
         registerButton.setBorder(Border.EMPTY);
+        registerButton.setOnMouseEntered(event -> {
+            registerButton.setScaleX(1.0);
+            registerButton.setScaleY(1.0);
+            registerButton.setTranslateX(0);
+            registerButton.setTranslateY(0);
+        });
+        registerButton.setOnMouseExited(event -> {
+            registerButton.setScaleX(1.0);
+            registerButton.setScaleY(1.0);
+            registerButton.setTranslateX(0);
+            registerButton.setTranslateY(0);
+        });
         registerButton.setOnAction(event -> openRegistrationPage(registerButton));
         topBar.getChildren().addAll(brandBlock, spacer, loginButton, registerButton);
 
@@ -115,6 +144,7 @@ public class UniBoTutoringHomeApp extends Application {
         heroBody.setPadding(new Insets(22, 40, 28, 40));
 
         final VBox heroContent = new VBox(heroBody);
+        heroContent.getStyleClass().add("hero-panel");
         heroContent.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final VBox heroText = new VBox(14);
@@ -340,9 +370,10 @@ public class UniBoTutoringHomeApp extends Application {
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
         final VBox card = new VBox(10);
+        card.getStyleClass().add("soft-card");
         card.setAlignment(Pos.TOP_CENTER);
         card.setPrefWidth(200);
-        card.setPadding(new Insets(8, 6, 8, 6));
+        card.setPadding(new Insets(16, 12, 16, 12));
 
         final Image iconImage = new Image(Path.of(iconPath).toUri().toString());
         final ImageView icon = new ImageView(iconImage);
@@ -409,6 +440,7 @@ public class UniBoTutoringHomeApp extends Application {
 
     private Button redButton(final String text) {
         final Button button = new Button(text);
+        button.getStyleClass().add("primary-btn");
         button.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 18));
         button.setTextFill(Color.WHITE);
         button.setPadding(new Insets(10, 18, 10, 18));

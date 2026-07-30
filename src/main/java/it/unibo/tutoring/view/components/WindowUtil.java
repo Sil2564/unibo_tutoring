@@ -2,6 +2,7 @@ package it.unibo.tutoring.view.components;
 
 import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Border;
 import javafx.stage.Screen;
@@ -35,11 +36,17 @@ public final class WindowUtil {
         scrollPane.setBorder(Border.EMPTY);
     }
 
-    public static void applyFullWindowScene(final Stage stage, final javafx.scene.Parent root) {
+    public static javafx.scene.Scene createScrollableScene(final Parent root) {
         final ScrollPane scrollPane = new ScrollPane(root);
         applyStandardScrollPolicy(scrollPane);
+        scrollPane.setFitToHeight(false);
         final javafx.scene.Scene scene = new javafx.scene.Scene(scrollPane);
         scene.getStylesheets().add(WindowUtil.class.getResource("/styles.css").toExternalForm());
+        return scene;
+    }
+
+    public static void applyFullWindowScene(final Stage stage, final Parent root) {
+        final javafx.scene.Scene scene = createScrollableScene(root);
         stage.setScene(scene);
         maximize(stage);
     }

@@ -71,6 +71,9 @@ public final class CreateAnnouncementViewApp {
             user != null ? user.getMatricola() : "N/D";
 
         final VBox root = new VBox();
+        root.getStyleClass().add("app-shell");
+        root.setPrefSize(1200, 900);
+        root.setFillWidth(true);
 
         root.setBackground(
             new Background(
@@ -85,9 +88,12 @@ public final class CreateAnnouncementViewApp {
         final VBox pageContent = new VBox(24);
         pageContent.setPadding(new Insets(30));
         pageContent.setAlignment(Pos.TOP_CENTER);
+        pageContent.setFillWidth(true);
+        pageContent.setMaxWidth(Double.MAX_VALUE);
 
         final HBox header = new HBox();
         header.setMaxWidth(760);
+        header.setPrefWidth(760);
 
         final Label title = new Label(
             "Nuovo Annuncio"
@@ -113,6 +119,7 @@ public final class CreateAnnouncementViewApp {
         final Button dashboardButton =
             new Button("← Dashboard");
 
+        dashboardButton.getStyleClass().add("text-link");
         dashboardButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
         dashboardButton.setTextFill(TEXT_DARK);
         dashboardButton.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
@@ -145,10 +152,12 @@ public final class CreateAnnouncementViewApp {
         );
 
         final VBox card = new VBox(6);
+        card.getStyleClass().add("auth-card");
 
         card.setPadding(new Insets(30));
         card.setMaxWidth(760);
         card.setPrefWidth(760);
+        card.setMinWidth(0);
 
         card.setAlignment(Pos.TOP_LEFT);
 
@@ -269,6 +278,7 @@ public final class CreateAnnouncementViewApp {
 
         final Button publishButton = new Button("Pubblica Annuncio");
 
+        publishButton.getStyleClass().add("primary-btn");
         publishButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
         publishButton.setTextFill(Color.WHITE);
         publishButton.setPadding(new Insets(11, 22, 11, 22));
@@ -389,13 +399,14 @@ public final class CreateAnnouncementViewApp {
             card
         );
 
+        root.getChildren().add(pageContent);
+        VBox.setVgrow(pageContent, Priority.ALWAYS);
+
         final ScrollPane scrollPane = new ScrollPane(pageContent);
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
-
-        root.getChildren().add(scrollPane);
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
-
-        final Scene scene = new Scene(root);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setContent(pageContent);
+        final Scene scene = new Scene(new VBox(root, scrollPane));
         scene.getStylesheets().add(CreateAnnouncementViewApp.class.getResource("/styles.css").toExternalForm());
         return scene;
     }
@@ -411,6 +422,7 @@ public final class CreateAnnouncementViewApp {
     private static void styleField(final javafx.scene.control.Control field) {
         field.setPrefHeight(38);
         field.setMaxWidth(Double.MAX_VALUE);
+        field.getStyleClass().add("form-field");
         field.setStyle(
             "-fx-background-color: white;"
             + "-fx-border-color: #CFCFCF;"

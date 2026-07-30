@@ -38,6 +38,7 @@ public class AppHeader extends HBox {
     public AppHeader(final String userDisplayName, final Runnable onLogout) {
         super(12);
 
+        this.getStyleClass().add("app-header");
         this.setAlignment(Pos.CENTER_LEFT);
         this.setPadding(new Insets(10, 18, 10, 18));
         this.setPrefHeight(64);

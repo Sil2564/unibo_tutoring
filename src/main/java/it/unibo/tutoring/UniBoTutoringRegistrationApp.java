@@ -39,6 +39,7 @@ public final class UniBoTutoringRegistrationApp {
 
     public static Scene createScene(final Stage stage) {
         final VBox root = new VBox(16);
+        root.getStyleClass().add("app-shell");
         root.setAlignment(Pos.TOP_CENTER);
         root.setPadding(new Insets(22, 16, 22, 16));
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -81,6 +82,7 @@ public final class UniBoTutoringRegistrationApp {
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 22));
 
         final VBox formCard = new VBox(12);
+        formCard.getStyleClass().add("auth-card");
         formCard.setAlignment(Pos.CENTER_LEFT);
         formCard.setPadding(new Insets(18, 24, 16, 24));
         formCard.setMaxWidth(740);
@@ -121,6 +123,7 @@ public final class UniBoTutoringRegistrationApp {
         final HBox submitWrap = new HBox();
         submitWrap.setAlignment(Pos.CENTER);
         final Button registerButton = new Button("Registrati");
+        registerButton.getStyleClass().add("primary-btn");
         registerButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
         registerButton.setTextFill(Color.WHITE);
         registerButton.setMinWidth(300);
@@ -185,6 +188,7 @@ public final class UniBoTutoringRegistrationApp {
             stage.setTitle("UniBo Tutoring - Login");
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
+        loginLink.getStyleClass().add("text-link");
         loginLink.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
         loginLink.setTextFill(PRIMARY_RED);
         loginLink.setBackground(Background.EMPTY);
@@ -198,12 +202,7 @@ public final class UniBoTutoringRegistrationApp {
         formCard.getChildren().addAll(formTitle, formSubtitle, fieldsGrid, submitWrap, feedbackLabel, loginLine);
         root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
 
-        final javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(root);
-        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
-
-        final Scene scene = new Scene(scrollPane);
-        scene.getStylesheets().add(UniBoTutoringRegistrationApp.class.getResource("/styles.css").toExternalForm());
-        return scene;
+        return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
     }
 
     private static void addField(final GridPane grid, final int column, final int row, final String labelText, final TextField field) {

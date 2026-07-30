@@ -68,6 +68,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		final String userDisplayName = user != null ? user.getName() + " " + user.getSurname() : "Utente";
 
 		final VBox root = new VBox();
+		root.getStyleClass().addAll("app-shell", "content-shell");
 		root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		final VBox scrollContent = new VBox();
@@ -114,6 +115,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private VBox createSidebar() {
 		final VBox sidebar = new VBox(14);
+		sidebar.getStyleClass().add("sidebar-pane");
 		sidebar.setPrefWidth(250);
 		sidebar.setMinWidth(250);
 		sidebar.setMaxWidth(250);
@@ -240,6 +242,10 @@ public class UniBoTutoringDashboardApp extends Application {
 		content.setAlignment(Pos.CENTER_LEFT);
 
 		final Button item = new Button();
+		item.getStyleClass().add("sidebar-btn");
+		if (active) {
+			item.getStyleClass().add("active");
+		}
 		item.setGraphic(content);
 		item.setPrefWidth(Double.MAX_VALUE);
 		item.setAlignment(Pos.CENTER_LEFT);
@@ -252,6 +258,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private VBox createContent() {
 		final VBox content = new VBox(12);
+		content.getStyleClass().add("content-shell");
 		content.setPadding(new Insets(18, 24, 16, 24));
 
 		final HBox titleRow = new HBox();
@@ -288,12 +295,26 @@ public class UniBoTutoringDashboardApp extends Application {
     );
     it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
 });
+		createAnnouncement.getStyleClass().add("primary-btn");
 		createAnnouncement.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
 		createAnnouncement.setTextFill(Color.WHITE);
 		createAnnouncement.setPadding(new Insets(9, 16, 9, 16));
 		createAnnouncement.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
 		createAnnouncement.setBorder(Border.EMPTY);
 		createAnnouncement.setCursor(Cursor.HAND);
+		createAnnouncement.setStyle("-fx-padding: 9 16 9 16;");
+		createAnnouncement.setOnMouseEntered(event -> {
+			createAnnouncement.setScaleX(1.0);
+			createAnnouncement.setScaleY(1.0);
+			createAnnouncement.setTranslateX(0);
+			createAnnouncement.setTranslateY(0);
+		});
+		createAnnouncement.setOnMouseExited(event -> {
+			createAnnouncement.setScaleX(1.0);
+			createAnnouncement.setScaleY(1.0);
+			createAnnouncement.setTranslateX(0);
+			createAnnouncement.setTranslateY(0);
+		});
 
 		titleRow.getChildren().addAll(titleBlock, spacer, createAnnouncement);
 
@@ -302,6 +323,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final HBox searchBox = new HBox(8);
 		searchBox.setAlignment(Pos.CENTER_LEFT);
+		searchBox.getStyleClass().add("search-box");
 		searchBox.setPadding(new Insets(0, 10, 0, 10));
 		searchBox.setPrefHeight(44);
 		searchBox.setPrefWidth(410);
@@ -348,6 +370,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		tabs.setAlignment(Pos.CENTER_LEFT);
 		tabs.setPrefHeight(28);
 		tabs.setMaxWidth(315);
+		tabs.getStyleClass().add("chip-group");
 		tabs.setBackground(new Background(new BackgroundFill(Color.web("#D7D7D7"), new CornerRadii(6), Insets.EMPTY)));
 		tabs.setPadding(new Insets(2));
 
@@ -411,6 +434,10 @@ public class UniBoTutoringDashboardApp extends Application {
 			t.setOnAction(e -> {
 				for (final Button other : allTabs) {
 					final boolean isActive = (other == t);
+					other.getStyleClass().remove("chip-button-active");
+					if (isActive) {
+						other.getStyleClass().add("chip-button-active");
+					}
 					other.setBackground(new Background(new BackgroundFill(isActive ? Color.WHITE : Color.TRANSPARENT, new CornerRadii(5), Insets.EMPTY)));
 				}
 				if (t == tabAll) {
@@ -441,6 +468,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private Button tab(final String text, final boolean active) {
 		final Button tab = new Button(text);
+		tab.getStyleClass().add("chip-button");
 		tab.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
 		tab.setTextFill(Color.web("#222222"));
 		tab.setPrefHeight(24);
@@ -456,6 +484,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		final boolean offer = box.getTipo() == BoxType.OFFER;
 
 		final VBox card = new VBox(8);
+		card.getStyleClass().add("announcement-card");
 		card.setPrefWidth(250);
 		card.setPadding(new Insets(10, 12, 10, 12));
 		card.setCursor(Cursor.HAND);

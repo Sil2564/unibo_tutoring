@@ -76,6 +76,7 @@ public class UniBoTutoringStatisticApp extends Application {
         final String userDisplayName = user != null ? user.getName() + " " + user.getSurname() : "Utente";
 
         final VBox root = new VBox();
+        root.getStyleClass().add("app-shell");
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
         root.getChildren().addAll(
@@ -90,8 +91,7 @@ public class UniBoTutoringStatisticApp extends Application {
         );
         VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
 
-        final Scene scene = new Scene(root);
-        scene.getStylesheets().add(UniBoTutoringStatisticApp.class.getResource("/styles.css").toExternalForm());
+        final Scene scene = it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
         return scene;
     }
 
@@ -244,11 +244,11 @@ public class UniBoTutoringStatisticApp extends Application {
 
         // Intestazione Titoli
         final Label title = new Label("Statistiche e Recensioni");
-        title.setFont(Font.font("System", FontWeight.BOLD, 28));
+        title.setFont(Font.font("System", FontWeight.BOLD, 32));
         title.setTextFill(TEXT_DARK);
 
         final Label subtitle = new Label("Monitora le tue performance e i tuoi progressi");
-        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 14));
+        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
         subtitle.setTextFill(TEXT_MEDIUM);
 
         final VBox titleBox = new VBox(6, title, subtitle);
@@ -319,14 +319,15 @@ public class UniBoTutoringStatisticApp extends Application {
 
     private VBox createKpiCard(final String iconName, final String title, final String value, final String subtitle) {
         final VBox card = new VBox(12);
-        card.setPadding(new Insets(20));
-        card.setStyle("-fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-color: white; -fx-background-radius: 10; -fx-border-width: 1;");
+        card.getStyleClass().add("soft-card");
+        card.setPadding(new Insets(22));
+        card.setStyle("-fx-border-color: #E2E8F0; -fx-border-radius: 14; -fx-background-color: white; -fx-background-radius: 14; -fx-border-width: 1;");
 
         final HBox headerBox = new HBox();
         headerBox.setAlignment(Pos.CENTER_LEFT);
 
         final Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 15));
         titleLabel.setTextFill(TEXT_DARK);
 
         final Region spacer = new Region();
@@ -336,11 +337,11 @@ public class UniBoTutoringStatisticApp extends Application {
         headerBox.getChildren().addAll(titleLabel, spacer, iconView);
 
         final Label valueLabel = new Label(value);
-        valueLabel.setFont(Font.font("System", FontWeight.BOLD, 28));
+        valueLabel.setFont(Font.font("System", FontWeight.BOLD, 30));
         valueLabel.setTextFill(TEXT_DARK);
 
         final Label subtitleLabel = new Label(subtitle);
-        subtitleLabel.setFont(Font.font("System", FontWeight.NORMAL, 12));
+        subtitleLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
         subtitleLabel.setTextFill(TEXT_MEDIUM);
 
         card.getChildren().addAll(headerBox, valueLabel, subtitleLabel);
@@ -356,7 +357,7 @@ public class UniBoTutoringStatisticApp extends Application {
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
         final ImageView msgIcon = icon("mex_red.png", 18, 18);
         final Label sectionTitle = new Label("Recensioni ricevute");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
+        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
         sectionHeader.getChildren().addAll(msgIcon, sectionTitle);
 
@@ -368,7 +369,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         if (reviews.isEmpty()) {
             final Label none = new Label("Ancora nessuna recensione");
-            none.setFont(Font.font("System", FontWeight.NORMAL, 12));
+            none.setFont(Font.font("System", FontWeight.NORMAL, 13));
             none.setTextFill(TEXT_MEDIUM);
             reviewsList.getChildren().add(none);
         } else {
@@ -494,7 +495,7 @@ public class UniBoTutoringStatisticApp extends Application {
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
         final ImageView clockIcon = icon("clock_red.png", 18, 18);
         final Label sectionTitle = new Label("Sessioni recenti");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
+        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
         sectionHeader.getChildren().addAll(clockIcon, sectionTitle);
 
@@ -535,7 +536,7 @@ public class UniBoTutoringStatisticApp extends Application {
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
         final ImageView chartIcon = icon("graph_red.png", 18, 18);
         final Label sectionTitle = new Label("Sessioni mensili");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
+        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
         sectionHeader.getChildren().addAll(chartIcon, sectionTitle);
 

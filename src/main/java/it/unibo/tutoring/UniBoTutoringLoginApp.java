@@ -39,6 +39,7 @@ public final class UniBoTutoringLoginApp {
 
     public static Scene createScene(final Stage stage) {
         final VBox root = new VBox(16);
+        root.getStyleClass().add("app-shell");
         root.setAlignment(Pos.TOP_CENTER);
         root.setPadding(new Insets(22, 16, 22, 16));
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -82,6 +83,7 @@ public final class UniBoTutoringLoginApp {
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 22));
 
         final VBox formCard = new VBox(10);
+        formCard.getStyleClass().add("auth-card");
         formCard.setAlignment(Pos.CENTER_LEFT);
         formCard.setPadding(new Insets(20, 24, 18, 24));
         formCard.setMaxWidth(520);
@@ -103,6 +105,7 @@ public final class UniBoTutoringLoginApp {
 
         final TextField matricolaField = new TextField();
         matricolaField.setPromptText("es. 1234567");
+        matricolaField.getStyleClass().add("form-field");
         matricolaField.setFont(Font.font("System", FontWeight.NORMAL, 20));
         matricolaField.setPrefHeight(44);
 
@@ -111,15 +114,29 @@ public final class UniBoTutoringLoginApp {
 
         final PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("******");
+        passwordField.getStyleClass().add("form-field");
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
         passwordField.setPrefHeight(44);
 
         final Button loginButton = new Button("Accedi");
+        loginButton.getStyleClass().add("primary-btn");
         loginButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
         loginButton.setTextFill(Color.WHITE);
         loginButton.setPrefHeight(48);
         loginButton.setMaxWidth(Double.MAX_VALUE);
         loginButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
+        loginButton.setOnMouseEntered(event -> {
+            loginButton.setScaleX(1.0);
+            loginButton.setScaleY(1.0);
+            loginButton.setTranslateX(0);
+            loginButton.setTranslateY(0);
+        });
+        loginButton.setOnMouseExited(event -> {
+            loginButton.setScaleX(1.0);
+            loginButton.setScaleY(1.0);
+            loginButton.setTranslateX(0);
+            loginButton.setTranslateY(0);
+        });
 
         final Label feedbackLabel = new Label();
         feedbackLabel.setTextFill(PRIMARY_RED);
@@ -165,6 +182,7 @@ public final class UniBoTutoringLoginApp {
             stage.setTitle("UniBo Tutoring - Registrazione");
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
+        registerLink.getStyleClass().add("text-link");
         registerLink.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
         registerLink.setTextFill(PRIMARY_RED);
         registerLink.setBackground(Background.EMPTY);
@@ -189,11 +207,6 @@ public final class UniBoTutoringLoginApp {
 
         root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
 
-        final javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(root);
-        it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
-
-        final Scene scene = new Scene(scrollPane);
-        scene.getStylesheets().add(UniBoTutoringLoginApp.class.getResource("/styles.css").toExternalForm());
-        return scene;
+        return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
     }
 }
