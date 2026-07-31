@@ -59,6 +59,11 @@ public class AppHeader extends HBox {
 
         final HBox brandBlock = new HBox(8, logo, brand);
         brandBlock.setAlignment(Pos.CENTER_LEFT);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> {
+            final Stage stage = (Stage) brandBlock.getScene().getWindow();
+            NavigationHelper.goToHomeOrDashboard(stage);
+        });
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);

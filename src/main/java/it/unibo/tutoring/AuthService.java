@@ -35,6 +35,7 @@ public final class AuthService {
     private static final AuthService INSTANCE = new AuthService();
 
     private final Map<String, UserAccount> usersByMatricola = new HashMap<>();
+    private final Map<String, UserAccount> usersByEmail = new HashMap<>();
 
     private AuthService() {
         this.loadUsers();
@@ -59,8 +60,14 @@ public final class AuthService {
         if (!cleanMatricola.matches("\\d{10}")) {
             return new RegistrationResult(false, "La matricola deve contenere 10 cifre.");
         }
+        if (!isPasswordValid(password)) {
+            return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una lettera e un numero.");
+        }
         if (this.usersByMatricola.containsKey(cleanMatricola)) {
-            return new RegistrationResult(false, "Matricola gia registrata.");
+            return new RegistrationResult(false, "La matricola è già registrata.");
+        }
+        if (this.usersByEmail.containsKey(cleanEmail)) {
+            return new RegistrationResult(false, "L'email è già registrata.");
         }
 
         final UserAccount user = new UserAccount(
@@ -72,22 +79,40 @@ public final class AuthService {
         );
 
         this.usersByMatricola.put(cleanMatricola, user);
+        this.usersByEmail.put(cleanEmail, user);
         try {
             this.persistUsers();
             return new RegistrationResult(true, "Registrazione completata.");
         } catch (final IOException ex) {
             this.usersByMatricola.remove(cleanMatricola);
+            this.usersByEmail.remove(cleanEmail);
             return new RegistrationResult(false, "Errore nel salvataggio dei dati.");
         }
     }
 
     synchronized boolean authenticate(final String matricola, final String password) {
         final String cleanMatricola = matricola.trim();
+        if (!isPasswordValid(password)) {
+            return false;
+        }
         final UserAccount user = this.usersByMatricola.get(cleanMatricola);
         if (user == null) {
             return false;
         }
         return user.getPasswordHash().equals(hashPassword(password));
+    }
+
+    public static boolean isPasswordValid(final String password) {
+        if (password == null) {
+            return false;
+        }
+        final String cleanPassword = password.trim();
+        if (cleanPassword.length() < 6) {
+            return false;
+        }
+        final boolean hasLetter = cleanPassword.matches(".*[A-Za-z].*");
+        final boolean hasDigit = cleanPassword.matches(".*\\d.*");
+        return hasLetter && hasDigit;
     }
 
     private void loadUsers() {
@@ -106,6 +131,7 @@ public final class AuthService {
                 }
                 final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4]);
                 this.usersByMatricola.put(user.getMatricola(), user);
+                this.usersByEmail.put(user.getEmail(), user);
             }
         } catch (final IOException ex) {
             this.usersByMatricola.clear();

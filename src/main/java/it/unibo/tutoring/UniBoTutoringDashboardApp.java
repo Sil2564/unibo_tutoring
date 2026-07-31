@@ -9,6 +9,7 @@ import java.util.Locale;
 import it.unibo.tutoring.model.box.BoxRepository;
 import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.box.BoxType;
+import it.unibo.tutoring.view.box.AnnouncementDetailViewApp;
 import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
@@ -28,6 +29,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ComboBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -348,6 +350,7 @@ public class UniBoTutoringDashboardApp extends Application {
 			"Ingegneria e scienze informatiche",
 			"Ingegneria elettronica",
 			"Tecnologie dei sistemi informatici",
+			"Cesena",
 			"Ingegneria e scienze informatiche",
 			"Scienze e cultura della gastronomia",
 			"Tecnologie alimentari",
@@ -490,6 +493,12 @@ public class UniBoTutoringDashboardApp extends Application {
 		card.setCursor(Cursor.HAND);
 		card.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(6), Insets.EMPTY)));
 		card.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(6), BorderWidths.DEFAULT)));
+		card.setOnMouseClicked(event -> {
+			final Stage win = (Stage) card.getScene().getWindow();
+			win.setScene(AnnouncementDetailViewApp.createScene(win, box));
+			win.setTitle("UniBo Tutoring - Dettaglio Annuncio");
+			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+		});
 
 		final Label tag = new Label(offer ? "Offerta tutoraggio" : "Cerco tutor");
 		tag.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
@@ -546,6 +555,7 @@ public class UniBoTutoringDashboardApp extends Application {
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
 		});
+		contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
 
 		final HBox bottom = new HBox(8, meta, spacer, contact);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);

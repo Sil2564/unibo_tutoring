@@ -3,6 +3,7 @@ import java.nio.file.Path;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -93,6 +94,11 @@ public class UniBoTutoringHomeApp extends Application {
 
         final HBox brandBlock = new HBox(8, uniBoLogo, brand);
         brandBlock.setAlignment(Pos.CENTER_LEFT);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> {
+            final Stage stage = (Stage) brandBlock.getScene().getWindow();
+            it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage);
+        });
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -298,16 +304,12 @@ public class UniBoTutoringHomeApp extends Application {
 
     private void openLoginPage(final Button sourceButton) {
         final Stage stage = (Stage) sourceButton.getScene().getWindow();
-        stage.setScene(UniBoTutoringLoginApp.createScene(stage));
-        stage.setTitle("UniBo Tutoring - Login");
-        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+        it.unibo.tutoring.view.components.NavigationHelper.goToLogin(stage);
     }
 
     private void openRegistrationPage(final Button sourceButton) {
         final Stage stage = (Stage) sourceButton.getScene().getWindow();
-        stage.setScene(UniBoTutoringRegistrationApp.createScene(stage));
-        stage.setTitle("UniBo Tutoring - Registrazione");
-        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+        it.unibo.tutoring.view.components.NavigationHelper.goToRegistration(stage);
     }
 
      private VBox createFooterSection() {

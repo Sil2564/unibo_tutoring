@@ -19,9 +19,7 @@ public final class UserSession {
     public static Runnable createLogoutAction(final Stage stage) {
         return () -> {
             CurrentSession.clear();
-            stage.setScene(UniBoTutoringLoginApp.createScene(stage));
-            stage.setTitle("UniBo Tutoring - Login");
-            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+            it.unibo.tutoring.view.components.NavigationHelper.goToLogin(stage);
         };
     }
 }

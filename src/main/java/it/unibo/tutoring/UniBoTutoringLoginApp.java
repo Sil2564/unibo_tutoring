@@ -6,6 +6,7 @@ import it.unibo.tutoring.CurrentSession;
 import java.nio.file.Path;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -58,9 +59,7 @@ public final class UniBoTutoringLoginApp {
         final Button backHomeButton = new Button("Home", leftArrowView);
         backHomeButton.getStyleClass().add("back-button");
         backHomeButton.setOnAction(event -> {
-            stage.setScene(UniBoTutoringHomeApp.createScene());
-            stage.setTitle("UniBo Tutoring - Home");
-            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+            it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage);
         });
         topBar.getChildren().add(backHomeButton);
 
@@ -77,6 +76,11 @@ public final class UniBoTutoringLoginApp {
         final Label subtitle = new Label("Università di Bologna");
         subtitle.setTextFill(Color.web("#6B6B6B"));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 22));
+
+        final VBox brandBlock = new VBox(6, logoView, title, subtitle);
+        brandBlock.setAlignment(Pos.CENTER);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage));
 
         final VBox formCard = new VBox(10);
         formCard.getStyleClass().add("auth-card");
@@ -109,7 +113,7 @@ public final class UniBoTutoringLoginApp {
         passwordLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
 
         final PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("******");
+        passwordField.setPromptText("min 6 caratteri, 1 numero");
         passwordField.getStyleClass().add("form-field");
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
         passwordField.setPrefHeight(44);
@@ -142,15 +146,18 @@ public final class UniBoTutoringLoginApp {
         feedbackLabel.setVisible(true);
         return;
     }
+    if (!AuthService.isPasswordValid(password)) {
+        feedbackLabel.setText("La password deve avere almeno 6 caratteri, una lettera e un numero.");
+        feedbackLabel.setVisible(true);
+        return;
+    }
 
     if (AuthService.getInstance().authenticate(matricola, password)) {
 
         UserAccount user = AuthService.getInstance().getUser(matricola);
         CurrentSession.setUser(user);
 
-        stage.setScene(UniBoTutoringDashboardApp.createScene());
-        stage.setTitle("UniBo Tutoring - Dashboard");
-        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+        it.unibo.tutoring.view.components.NavigationHelper.goToDashboard(stage);
         return;
     }
 
@@ -190,7 +197,7 @@ public final class UniBoTutoringLoginApp {
             registerLine
         );
 
-        root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
+        root.getChildren().addAll(topBar, brandBlock, formCard);
 
         return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
     }

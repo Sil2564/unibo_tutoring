@@ -5,6 +5,7 @@ import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import java.nio.file.Path;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -58,8 +59,7 @@ public final class UniBoTutoringRegistrationApp {
         final Button backHomeButton = new Button("Home", leftArrowView);
         backHomeButton.getStyleClass().add("back-button");
         backHomeButton.setOnAction(event -> {
-            stage.setScene(UniBoTutoringHomeApp.createScene());
-            stage.setTitle("UniBo Tutoring - Home");
+            it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage);
         });
         topBar.getChildren().add(backHomeButton);
 
@@ -76,6 +76,11 @@ public final class UniBoTutoringRegistrationApp {
         final Label subtitle = new Label("Università di Bologna");
         subtitle.setTextFill(Color.web("#6B6B6B"));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 22));
+
+        final VBox brandBlock = new VBox(6, logoView, title, subtitle);
+        brandBlock.setAlignment(Pos.CENTER);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage));
 
         final VBox formCard = new VBox(12);
         formCard.getStyleClass().add("auth-card");
@@ -106,8 +111,8 @@ public final class UniBoTutoringRegistrationApp {
         final TextField matricolaField = createTextField("es. 1234567890");
         final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
         final TextField surnameField = createTextField("");
-        final PasswordField passwordField = createPasswordField("******");
-        final PasswordField confirmPasswordField = createPasswordField("******");
+        final PasswordField passwordField = createPasswordField("min 6 caratteri, 1 numero");
+        final PasswordField confirmPasswordField = createPasswordField("min 6 caratteri, 1 numero");
 
         addField(fieldsGrid, 0, 0, "Nome", nameField);
         addField(fieldsGrid, 1, 0, "Matricola", matricolaField);
@@ -155,6 +160,11 @@ public final class UniBoTutoringRegistrationApp {
                 feedbackLabel.setVisible(true);
                 return;
             }
+            if (!AuthService.isPasswordValid(password)) {
+                feedbackLabel.setText("La password deve avere almeno 6 caratteri, una lettera e un numero.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
             if (!password.equals(confirmPassword)) {
                 feedbackLabel.setText("Le password non coincidono.");
                 feedbackLabel.setVisible(true);
@@ -170,9 +180,7 @@ public final class UniBoTutoringRegistrationApp {
 
             CurrentSession.setUser(AuthService.getInstance().getUser(matricola));
 
-            stage.setScene(UniBoTutoringDashboardApp.createScene());
-            stage.setTitle("UniBo Tutoring - Dashboard");
-            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+            it.unibo.tutoring.view.components.NavigationHelper.goToDashboard(stage);
         });
 
         final Label loginPrefix = new Label("Hai già un account?");
@@ -196,7 +204,7 @@ public final class UniBoTutoringRegistrationApp {
         loginLine.setMaxWidth(Double.MAX_VALUE);
 
         formCard.getChildren().addAll(formTitle, formSubtitle, fieldsGrid, submitWrap, feedbackLabel, loginLine);
-        root.getChildren().addAll(topBar, logoView, title, subtitle, formCard);
+        root.getChildren().addAll(topBar, brandBlock, formCard);
 
         return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
     }

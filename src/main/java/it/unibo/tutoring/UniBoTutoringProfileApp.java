@@ -11,6 +11,7 @@ import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.TutoringSession;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -113,6 +114,11 @@ public final class UniBoTutoringProfileApp  {
 
         final HBox brandBlock = new HBox(8, logo, brand);
         brandBlock.setAlignment(Pos.CENTER_LEFT);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> {
+            final Stage stage = (Stage) brandBlock.getScene().getWindow();
+            it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage);
+        });
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
