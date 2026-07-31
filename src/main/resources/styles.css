@@ -6,16 +6,7 @@
 .primary-btn,
 .secondary-btn,
 .sidebar-btn,
-.chip-button {
-    -fx-cursor: hand;
-    -fx-background-insets: 0;
-    -fx-border-insets: 0;
-    -fx-scale-x: 1;
-    -fx-scale-y: 1;
-    -fx-translate-x: 0;
-    -fx-translate-y: 0;
-}
-
+.chip-button,
 .button:hover,
 .toggle-button:hover,
 .menu-button:hover,
@@ -24,7 +15,37 @@
 .primary-btn:hover,
 .secondary-btn:hover,
 .sidebar-btn:hover,
-.chip-button:hover {
+.chip-button:hover,
+.button:armed,
+.toggle-button:armed,
+.menu-button:armed,
+.split-menu-button:armed,
+.hyperlink:armed,
+.primary-btn:armed,
+.secondary-btn:armed,
+.sidebar-btn:armed,
+.chip-button:armed,
+.button:pressed,
+.toggle-button:pressed,
+.menu-button:pressed,
+.split-menu-button:pressed,
+.hyperlink:pressed,
+.primary-btn:pressed,
+.secondary-btn:pressed,
+.sidebar-btn:pressed,
+.chip-button:pressed,
+.button:focused,
+.toggle-button:focused,
+.menu-button:focused,
+.split-menu-button:focused,
+.hyperlink:focused,
+.primary-btn:focused,
+.secondary-btn:focused,
+.sidebar-btn:focused,
+.chip-button:focused {
+    -fx-cursor: hand;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
     -fx-scale-x: 1;
     -fx-scale-y: 1;
     -fx-translate-x: 0;
@@ -178,4 +199,27 @@
     -fx-text-fill: #1b1b1b;
     -fx-font-size: 24px;
     -fx-font-weight: 800;
+}
+
+/* Back button: clean, static, slightly elevated */
+.back-button {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: #e6e6e6;
+    -fx-border-width: 1px;
+    -fx-text-fill: #363636;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+    -fx-padding: 8 12 8 12;
+    -fx-graphic-text-gap: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 6, 0.2, 0, 2);
+}
+
+/* Keep interactions static: only change background color on hover (no transforms/animations) */
+.back-button:hover {
+    -fx-background-color: #f5f5f5;
+}
+.back-button:focused, .back-button:pressed {
+    -fx-background-color: #efefef;
 }

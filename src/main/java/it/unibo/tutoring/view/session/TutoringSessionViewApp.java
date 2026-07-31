@@ -44,8 +44,8 @@ public class TutoringSessionViewApp extends Application {
                 "Progettazione e Sviluppo del Software",
                 "Mario Rossi",
                 true,
-                "0000001",
-                "0000002");
+                "0000000001",
+                "0000000002");
     }
 
     private TutoringSessionViewApp(
@@ -89,8 +89,8 @@ public class TutoringSessionViewApp extends Application {
                 UserSession.getDisplayName(),
                 window != null ? UserSession.createLogoutAction(window) : null);
 
-        final Button btnBack = new Button("< Torna indietro");
-        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #6A6A6A; -fx-font-weight: bold;");
+        final Button btnBack = new Button("← Torna indietro");
+        btnBack.getStyleClass().add("back-button");
         VBox.setMargin(btnBack, new Insets(10, 0, 0, 15));
         if (stage != null) {
             btnBack.setOnAction(e -> {

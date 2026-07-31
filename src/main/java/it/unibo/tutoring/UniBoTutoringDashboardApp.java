@@ -342,29 +342,29 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
 
-		final List<String> defaultSubjects = List.of(
-			"Analisi Matematica I",
-			"Programmazione ad Oggetti",
-			"Fisica Generale",
-			"Basi di Dati",
-			"Algoritmi e Strutture Dati"
+		final List<String> corsiDisponibili = List.of(
+			"Architettura",
+			"Ingegneria biomedica",
+			"Ingegneria e scienze informatiche",
+			"Ingegneria elettronica",
+			"Tecnologie dei sistemi informatici",
+			"Ingegneria e scienze informatiche",
+			"Scienze e cultura della gastronomia",
+			"Tecnologie alimentari",
+			"Viticoltura ed enologia"
 		);
-		final java.util.LinkedHashSet<String> subjectItems = new java.util.LinkedHashSet<>();
-		subjectItems.add("Tutte le materie");
-		subjectItems.addAll(defaultSubjects);
-		allBoxes.stream()
-			.map(BoxTutoraggio::getMateria)
-			.filter(m -> m != null && !m.isBlank())
-			.forEach(subjectItems::add);
+		final java.util.LinkedHashSet<String> courseItems = new java.util.LinkedHashSet<>();
+		courseItems.add("Tutti i corsi");
+		courseItems.addAll(corsiDisponibili);
 
-		final ComboBox<String> subjectCombo = new ComboBox<>();
-		subjectCombo.getItems().addAll(subjectItems);
-		subjectCombo.getSelectionModel().selectFirst();
-		subjectCombo.setPrefHeight(44);
-		subjectCombo.setPrefWidth(260);
-		subjectCombo.setStyle("-fx-background-color: white; -fx-border-color: #CFCFCF; -fx-border-radius: 7; -fx-background-radius: 7; -fx-font-family: 'System'; -fx-font-weight: 600; -fx-font-size: 14px;");
+		final ComboBox<String> courseCombo = new ComboBox<>();
+		courseCombo.getItems().addAll(courseItems);
+		courseCombo.getSelectionModel().selectFirst();
+		courseCombo.setPrefHeight(44);
+		courseCombo.setPrefWidth(260);
+		courseCombo.setStyle("-fx-background-color: white; -fx-border-color: #CFCFCF; -fx-border-radius: 7; -fx-background-radius: 7; -fx-font-family: 'System'; -fx-font-weight: 600; -fx-font-size: 14px;");
 
-		filtersRow.getChildren().addAll(searchBox, subjectCombo);
+		filtersRow.getChildren().addAll(searchBox, courseCombo);
 
 		final HBox tabs = new HBox(0);
 		tabs.setAlignment(Pos.CENTER_LEFT);
@@ -395,12 +395,12 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final Runnable refreshCards = () -> {
 			final String query = searchField.getText() == null ? "" : searchField.getText().trim().toLowerCase(Locale.ITALIAN);
-			final String selectedSubject = subjectCombo.getValue();
-			final boolean allSubjects = selectedSubject == null || "Tutte le materie".equals(selectedSubject);
+			final String selectedCourse = courseCombo.getValue();
+			final boolean allCourses = selectedCourse == null || "Tutti i corsi".equals(selectedCourse);
 
 			final List<BoxTutoraggio> filtered = allBoxes.stream()
 				.filter(b -> selectedType[0] == null || b.getTipo() == selectedType[0])
-				.filter(b -> allSubjects || selectedSubject.equalsIgnoreCase(b.getMateria()))
+				.filter(b -> allCourses || selectedCourse.equalsIgnoreCase(b.getCorso()))
 				.filter(b -> {
 					if (query.isEmpty()) {
 						return true;
@@ -452,7 +452,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		}
 
 		searchField.textProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
-		subjectCombo.valueProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
+		courseCombo.valueProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
 
 		tabs.getChildren().addAll(tabAll, tabOffers, tabRequests);
 

@@ -104,18 +104,7 @@ public class UniBoTutoringHomeApp extends Application {
         loginButton.getStyleClass().add("text-link");
         loginButton.setBackground(Background.EMPTY);
         loginButton.setBorder(Border.EMPTY);
-        loginButton.setOnMouseEntered(event -> {
-            loginButton.setScaleX(1.0);
-            loginButton.setScaleY(1.0);
-            loginButton.setTranslateX(0);
-            loginButton.setTranslateY(0);
-        });
-        loginButton.setOnMouseExited(event -> {
-            loginButton.setScaleX(1.0);
-            loginButton.setScaleY(1.0);
-            loginButton.setTranslateX(0);
-            loginButton.setTranslateY(0);
-        });
+        loginButton.setStyle("-fx-scale-x: 1; -fx-scale-y: 1; -fx-translate-x: 0; -fx-translate-y: 0;");
         loginButton.setOnAction(event -> openLoginPage(loginButton));
         final Button registerButton = new Button("Registrati");
         registerButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
@@ -124,18 +113,7 @@ public class UniBoTutoringHomeApp extends Application {
         registerButton.getStyleClass().add("primary-btn");
         registerButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
         registerButton.setBorder(Border.EMPTY);
-        registerButton.setOnMouseEntered(event -> {
-            registerButton.setScaleX(1.0);
-            registerButton.setScaleY(1.0);
-            registerButton.setTranslateX(0);
-            registerButton.setTranslateY(0);
-        });
-        registerButton.setOnMouseExited(event -> {
-            registerButton.setScaleX(1.0);
-            registerButton.setScaleY(1.0);
-            registerButton.setTranslateX(0);
-            registerButton.setTranslateY(0);
-        });
+        registerButton.setStyle("-fx-scale-x: 1; -fx-scale-y: 1; -fx-translate-x: 0; -fx-translate-y: 0;");
         registerButton.setOnAction(event -> openRegistrationPage(registerButton));
         topBar.getChildren().addAll(brandBlock, spacer, loginButton, registerButton);
 

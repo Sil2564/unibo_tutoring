@@ -56,8 +56,8 @@ public final class AuthService {
         final String cleanMatricola = matricola.trim();
         final String cleanEmail = email.trim().toLowerCase();
 
-        if (!cleanMatricola.matches("\\d{7}")) {
-            return new RegistrationResult(false, "La matricola deve contenere 7 cifre.");
+        if (!cleanMatricola.matches("\\d{10}")) {
+            return new RegistrationResult(false, "La matricola deve contenere 10 cifre.");
         }
         if (this.usersByMatricola.containsKey(cleanMatricola)) {
             return new RegistrationResult(false, "Matricola gia registrata.");

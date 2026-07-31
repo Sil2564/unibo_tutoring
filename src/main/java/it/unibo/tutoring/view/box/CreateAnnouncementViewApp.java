@@ -399,14 +399,17 @@ public final class CreateAnnouncementViewApp {
             card
         );
 
-        root.getChildren().add(pageContent);
-        VBox.setVgrow(pageContent, Priority.ALWAYS);
-
         final ScrollPane scrollPane = new ScrollPane(pageContent);
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
-        scrollPane.setFitToHeight(false);
-        scrollPane.setContent(pageContent);
-        final Scene scene = new Scene(new VBox(root, scrollPane));
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+        scrollPane.setBackground(Background.EMPTY);
+
+        root.getChildren().add(scrollPane);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        final Scene scene = new Scene(root, 1200, 900);
         scene.getStylesheets().add(CreateAnnouncementViewApp.class.getResource("/styles.css").toExternalForm());
         return scene;
     }

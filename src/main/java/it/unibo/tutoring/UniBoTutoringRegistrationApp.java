@@ -56,15 +56,11 @@ public final class UniBoTutoringRegistrationApp {
         leftArrowView.setSmooth(true);
 
         final Button backHomeButton = new Button("Home", leftArrowView);
+        backHomeButton.getStyleClass().add("back-button");
         backHomeButton.setOnAction(event -> {
             stage.setScene(UniBoTutoringHomeApp.createScene());
             stage.setTitle("UniBo Tutoring - Home");
         });
-        backHomeButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        backHomeButton.setTextFill(Color.web("#4A4A4A"));
-        backHomeButton.setBackground(Background.EMPTY);
-        backHomeButton.setBorder(Border.EMPTY);
-        backHomeButton.setPadding(new Insets(0));
         topBar.getChildren().add(backHomeButton);
 
         final Image logo = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
@@ -107,7 +103,7 @@ public final class UniBoTutoringRegistrationApp {
         fieldsGrid.setVgap(10);
 
         final TextField nameField = createTextField("");
-        final TextField matricolaField = createTextField("es. 1234567");
+        final TextField matricolaField = createTextField("es. 1234567890");
         final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
         final TextField surnameField = createTextField("");
         final PasswordField passwordField = createPasswordField("******");
@@ -149,8 +145,8 @@ public final class UniBoTutoringRegistrationApp {
                 feedbackLabel.setVisible(true);
                 return;
             }
-            if (!matricola.matches("\\d{7}")) {
-                feedbackLabel.setText("La matricola deve contenere 7 cifre.");
+            if (!matricola.matches("\\d{10}")) {
+                feedbackLabel.setText("La matricola deve contenere 10 cifre.");
                 feedbackLabel.setVisible(true);
                 return;
             }

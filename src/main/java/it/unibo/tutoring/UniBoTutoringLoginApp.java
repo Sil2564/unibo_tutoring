@@ -56,16 +56,12 @@ public final class UniBoTutoringLoginApp {
         leftArrowView.setSmooth(true);
 
         final Button backHomeButton = new Button("Home", leftArrowView);
+        backHomeButton.getStyleClass().add("back-button");
         backHomeButton.setOnAction(event -> {
             stage.setScene(UniBoTutoringHomeApp.createScene());
             stage.setTitle("UniBo Tutoring - Home");
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
-        backHomeButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        backHomeButton.setTextFill(Color.web("#4A4A4A"));
-        backHomeButton.setBackground(Background.EMPTY);
-        backHomeButton.setBorder(Border.EMPTY);
-        backHomeButton.setPadding(new Insets(0));
         topBar.getChildren().add(backHomeButton);
 
         final Image logo = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
@@ -104,7 +100,7 @@ public final class UniBoTutoringLoginApp {
         matricolaLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
 
         final TextField matricolaField = new TextField();
-        matricolaField.setPromptText("es. 1234567");
+        matricolaField.setPromptText("es. 1234567890");
         matricolaField.getStyleClass().add("form-field");
         matricolaField.setFont(Font.font("System", FontWeight.NORMAL, 20));
         matricolaField.setPrefHeight(44);
@@ -125,18 +121,7 @@ public final class UniBoTutoringLoginApp {
         loginButton.setPrefHeight(48);
         loginButton.setMaxWidth(Double.MAX_VALUE);
         loginButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
-        loginButton.setOnMouseEntered(event -> {
-            loginButton.setScaleX(1.0);
-            loginButton.setScaleY(1.0);
-            loginButton.setTranslateX(0);
-            loginButton.setTranslateY(0);
-        });
-        loginButton.setOnMouseExited(event -> {
-            loginButton.setScaleX(1.0);
-            loginButton.setScaleY(1.0);
-            loginButton.setTranslateX(0);
-            loginButton.setTranslateY(0);
-        });
+        loginButton.setStyle("-fx-scale-x: 1; -fx-scale-y: 1; -fx-translate-x: 0; -fx-translate-y: 0;");
 
         final Label feedbackLabel = new Label();
         feedbackLabel.setTextFill(PRIMARY_RED);
@@ -147,8 +132,8 @@ public final class UniBoTutoringLoginApp {
     final String matricola = matricolaField.getText().trim();
     final String password = passwordField.getText();
 
-    if (!matricola.matches("\\d{7}")) {
-        feedbackLabel.setText("Inserisci una matricola valida di 7 cifre.");
+    if (!matricola.matches("\\d{10}")) {
+        feedbackLabel.setText("Inserisci una matricola valida di 10 cifre.");
         feedbackLabel.setVisible(true);
         return;
     }
