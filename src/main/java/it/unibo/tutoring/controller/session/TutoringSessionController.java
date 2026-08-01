@@ -50,6 +50,24 @@ public class TutoringSessionController {
             final boolean tutorOffer,
             final String matricolaInserzionista,
             final String userMatricola) {
+        this(
+                materia,
+                nomeInserzionista,
+                tutorOffer,
+                matricolaInserzionista,
+                userMatricola,
+                LocalDateTime.now(),
+                Duration.ofHours(DEFAULT_COMPLETED_HOURS));
+    }
+
+    public TutoringSessionController(
+            final String materia,
+            final String nomeInserzionista,
+            final boolean tutorOffer,
+            final String matricolaInserzionista,
+            final String userMatricola,
+            final LocalDateTime dataOra,
+            final Duration durata) {
 
         this.materia = requireText(materia, "materia");
         this.nomeInserzionista = requireText(nomeInserzionista, "nomeInserzionista");
@@ -67,8 +85,8 @@ public class TutoringSessionController {
 
         this.model = new TutoringSessionImpl(
                 this.materia,
-                LocalDateTime.now(),
-                Duration.ofHours(DEFAULT_COMPLETED_HOURS),
+                dataOra,
+                durata,
                 this.tutorMatricola);
 
         this.fileCondivisoPath = SESSION_FOLDER.resolve(buildFileName());
@@ -192,8 +210,10 @@ public class TutoringSessionController {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("STATO;")) {
                     ripristinaStato(line.substring("STATO;".length()));
+                } else if (line.startsWith("MSG2;")) {
+                    ripristinaMessaggio(line.substring("MSG2;".length()));
                 } else if (line.startsWith("MSG;")) {
-                    ripristinaMessaggio(line.substring("MSG;".length()));
+                    ripristinaMessaggioLegacy(line.substring("MSG;".length()));
                 } else if (line.startsWith("REVIEW;")) {
                     // Legge i dati della recensione salvata se presenti.
                     ripristinaRecensione(line.substring("REVIEW;".length()));
@@ -214,15 +234,27 @@ public class TutoringSessionController {
     }
 
     private void ripristinaMessaggio(final String payload) {
-        final String[] campi = payload.split("\\|", 2);
-        if (campi.length != 2) {
+        final String[] campi = payload.split(";", 3);
+        if (campi.length != 3) {
             return;
         }
 
-        final String mittenteID = campi[0];
-        final String testo = campi[1];
-        if (!mittenteID.isBlank() && !testo.isBlank()) {
-            this.model.inviaMessaggio(testo, mittenteID);
+        try {
+            final LocalDateTime timestamp = LocalDateTime.parse(campi[0]);
+            final String mittenteID = campi[1];
+            final String testo = campi[2];
+            if (!mittenteID.isBlank() && !testo.isBlank()) {
+                this.model.inviaMessaggio(testo, mittenteID, timestamp);
+            }
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // Ignora soltanto la riga non valida e continua a caricare la sessione.
+        }
+    }
+
+    private void ripristinaMessaggioLegacy(final String payload) {
+        final String[] campi = payload.split("\\|", 2);
+        if (campi.length == 2 && !campi[0].isBlank() && !campi[1].isBlank()) {
+            this.model.inviaMessaggio(campi[1], campi[0]);
         }
     }
 
@@ -249,11 +281,27 @@ public class TutoringSessionController {
             Files.createDirectories(SESSION_FOLDER);
 
             try (BufferedWriter writer = Files.newBufferedWriter(this.fileCondivisoPath, StandardCharsets.UTF_8)) {
+                writer.write("MATERIA;" + sanitizeLine(this.model.getMateria()));
+                writer.newLine();
+                writer.write("DATA_ORA;" + this.model.getDataOra());
+                writer.newLine();
+                writer.write("DURATA;" + this.model.getDurata());
+                writer.newLine();
+                writer.write("TUTOR;" + this.tutorMatricola);
+                writer.newLine();
+                writer.write("STUDENTE;" + this.studenteMatricola);
+                writer.newLine();
                 writer.write("STATO;" + getNomeStatoCorrente());
                 writer.newLine();
 
                 for (Message message : this.model.getStoricoChat()) {
-                    writer.write("MSG;" + message.getIdMittente() + "|" + message.getTesto());
+                    writer.write(
+                            "MSG2;"
+                                    + message.getTimestamp()
+                                    + ";"
+                                    + message.getIdMittente()
+                                    + ";"
+                                    + sanitizeLine(message.getTesto()));
                     writer.newLine();
                 }
 
@@ -290,6 +338,10 @@ public class TutoringSessionController {
             return "";
         }
         return comment.replace("\n", " ").replace("\r", " ").replace("|", "/");
+    }
+
+    private static String sanitizeLine(final String value) {
+        return value == null ? "" : value.replace('\n', ' ').replace('\r', ' ');
     }
 
     private static String requireText(final String value, final String fieldName) {

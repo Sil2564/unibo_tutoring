@@ -1,85 +1,119 @@
 package it.unibo.tutoring.model.session;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class SessionRepository {
 
-    private static final Path SESSION_FOLDER = Paths.get("data", "sessions");
+    private static final Path SESSION_FOLDER = Path.of("data", "sessions");
 
     /**
-     * Cerca e restituisce tutte le sessioni in stato "Confirmed" a cui partecipa l'utente.
+     * Restituisce le sessioni in stato "Confirmed" a cui partecipa l'utente.
      */
-    public List<TutoringSession> getConfirmedSessionsForUser(String matricola) {
-        List<TutoringSession> confirmedSessions = new ArrayList<>();
+    public List<TutoringSession> getConfirmedSessionsForUser(final String matricola) {
+        final List<TutoringSession> sessions = new ArrayList<>();
 
-        if (!Files.exists(SESSION_FOLDER) || !Files.isDirectory(SESSION_FOLDER)) {
-            return confirmedSessions;
+        if (!Files.isDirectory(SESSION_FOLDER)) {
+            return sessions;
         }
 
+        final LocalDateTime now = LocalDateTime.now();
         try (Stream<Path> paths = Files.list(SESSION_FOLDER)) {
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().startsWith("SESS_"))
-                    .filter(path -> path.getFileName().toString().contains(matricola))
-                    .forEach(path -> {
-                        TutoringSession session = parseSessionFile(path);
-                        if (session != null) {
-                            confirmedSessions.add(session);
-                        }
-                    });
+                    .filter(path -> path.getFileName().toString().endsWith(".csv"))
+                    .map(path -> parseSessionFile(path, matricola))
+                    .filter(session -> session != null)
+                    .filter(session -> !session.getDataOra().isBefore(now))
+                    .sorted(Comparator.comparing(TutoringSession::getDataOra))
+                    .forEach(sessions::add);
         } catch (IOException e) {
             System.err.println("Errore nella lettura della cartella sessioni: " + e.getMessage());
         }
 
-        return confirmedSessions;
+        return sessions;
     }
 
     /**
      * Legge il file CSV e ricostruisce l'oggetto TutoringSession se lo stato è Confirmed.
      */
-    private TutoringSession parseSessionFile(Path filePath) {
-        try (BufferedReader br = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
-            String line;
+    private TutoringSession parseSessionFile(final Path filePath, final String matricola) {
+        try {
             String stato = "";
-            String tutorInfo = "";
+            String materia = "";
+            String dataOra = "";
+            String durata = "";
+            String tutor = "";
+            String studente = "";
 
-            while ((line = br.readLine()) != null) {
-                if (line.startsWith("STATO;")) stato = line.split(";", 2)[1];
-                else if (line.startsWith("TUTOR;")) tutorInfo = line.split(";", 2)[1];
-                else if (line.startsWith("MSG;")) break;
+            for (final String line : Files.readAllLines(filePath, StandardCharsets.UTF_8)) {
+                if (line.startsWith("STATO;")) {
+                    stato = valueOf(line);
+                } else if (line.startsWith("MATERIA;")) {
+                    materia = valueOf(line);
+                } else if (line.startsWith("DATA_ORA;")) {
+                    dataOra = valueOf(line);
+                } else if (line.startsWith("DURATA;")) {
+                    durata = valueOf(line);
+                } else if (line.startsWith("TUTOR;")) {
+                    tutor = valueOf(line);
+                } else if (line.startsWith("STUDENTE;")) {
+                    studente = valueOf(line);
+                }
             }
 
-            if ("Confirmed".equals(stato)) {
-                // Ricava la materia dal nome del file
-                String fileName = filePath.getFileName().toString();
-                String[] nameParts = fileName.replace(".csv", "").split("_");
-                String materia = nameParts.length > 1 ? nameParts[1].replace("-", " ") : "Materia";
-                String matricolaTutor = tutorInfo.split("\\|")[0];
-
-                TutoringSession session = new TutoringSessionImpl(
-                        materia,
-                        LocalDateTime.now(),// TODO temporaneo
-                        Duration.ofHours(2),
-                        matricolaTutor
-                );
-
-                // Impostiamo lo stato interno su Confirmed
-                session.conferma();
-
-                return session;
+            if (!"Confirmed".equals(stato)) {
+                return null;
             }
-        } catch (IOException e) {
+
+            final String[] participants = participantsFromFileName(filePath);
+            if (tutor.isBlank()) {
+                tutor = participants[0];
+            }
+            if (studente.isBlank()) {
+                studente = participants[1];
+            }
+            if (!matricola.equals(tutor) && !matricola.equals(studente)) {
+                return null;
+            }
+
+            if (materia.isBlank() || dataOra.isBlank() || durata.isBlank() || tutor.isBlank()) {
+                return null;
+            }
+
+            final TutoringSession session = new TutoringSessionImpl(
+                    materia,
+                    LocalDateTime.parse(dataOra),
+                    Duration.parse(durata),
+                    tutor);
+            session.conferma();
+            return session;
+        } catch (IOException | DateTimeParseException e) {
             System.err.println("Errore nella lettura del file " + filePath.getFileName() + ": " + e.getMessage());
+            return null;
         }
-        return null;
+    }
+
+    private static String valueOf(final String line) {
+        return line.substring(line.indexOf(';') + 1).trim();
+    }
+
+    private static String[] participantsFromFileName(final Path filePath) {
+        final String fileName = filePath.getFileName().toString();
+        final String withoutExtension = fileName.substring(0, fileName.length() - ".csv".length());
+        final String[] parts = withoutExtension.split("_");
+        if (parts.length < 4) {
+            return new String[] {"", ""};
+        }
+        return new String[] {parts[parts.length - 2], parts[parts.length - 1]};
     }
 }

@@ -21,6 +21,7 @@ public interface TutoringSession {
 
     // PATTERN FACADE: Metodi delegati alla Chat
     void inviaMessaggio(String testo, String idMittente);
+    void inviaMessaggio(String testo, String idMittente, LocalDateTime timestamp);
 
     List<Message> getStoricoChat();
 

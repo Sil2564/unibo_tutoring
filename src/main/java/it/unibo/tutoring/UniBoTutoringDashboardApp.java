@@ -551,7 +551,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setCursor(Cursor.HAND);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
+			win.setScene(TutoringSessionViewApp.createScene(win, box, autoreNome));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
 		});
