@@ -34,6 +34,7 @@ public final class UniBoTutoringLoginApp {
     private static final Color PRIMARY_RED = Color.web("#D91E43");
     private static final Color PAGE_BG = Color.web("#ECECEC");
     private static final Color CARD_BG = Color.web("#ffffff");
+    private static final Color TEXT_DARK = Color.web("#111111");
 
     private UniBoTutoringLoginApp() {
     }
@@ -92,6 +93,7 @@ public final class UniBoTutoringLoginApp {
 
         final Label formTitle = new Label("Accedi al tuo account");
         formTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 30));
+        formTitle.setTextFill(TEXT_DARK);
         formTitle.setMaxWidth(Double.MAX_VALUE);
         formTitle.setTextAlignment(TextAlignment.CENTER);
         formTitle.setAlignment(Pos.CENTER);
@@ -102,6 +104,7 @@ public final class UniBoTutoringLoginApp {
 
         final Label matricolaLabel = new Label("Matricola");
         matricolaLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
+        matricolaLabel.setTextFill(TEXT_DARK);
 
         final TextField matricolaField = new TextField();
         matricolaField.setPromptText("es. 1234567890");
@@ -111,6 +114,7 @@ public final class UniBoTutoringLoginApp {
 
         final Label passwordLabel = new Label("Password");
         passwordLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
+        passwordLabel.setTextFill(TEXT_DARK);
 
         final PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("min 6 caratteri, 1 numero");
@@ -167,6 +171,7 @@ public final class UniBoTutoringLoginApp {
 
         final Label registerPrefix = new Label("Non hai un account?");
         registerPrefix.setFont(Font.font("System", FontWeight.NORMAL, 20));
+        registerPrefix.setTextFill(TEXT_DARK);
 
         final Button registerLink = new Button("Registrati");
         registerLink.setOnAction(event -> {

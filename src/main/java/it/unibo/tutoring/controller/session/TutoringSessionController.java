@@ -4,6 +4,7 @@ import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.credit.CompletedSessionRepository;
+import it.unibo.tutoring.model.credit.ReviewRepository;
 import it.unibo.tutoring.model.session.CompletedState;
 import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.model.session.ProposedState;
@@ -163,6 +164,13 @@ public class TutoringSessionController {
         this.reviewComment = commento != null ? commento.trim() : "";
         this.reviewAuthor = autoreRecensione != null ? autoreRecensione.trim() : "";
         this.reviewSaved = true;
+        ReviewRepository.saveReview(
+            this.reviewAuthor.isBlank() ? this.userMatricola : this.reviewAuthor,
+            this.materia,
+            stelle,
+            this.reviewComment,
+            this.tutorOffer ? this.tutorMatricola : this.studenteMatricola
+        );
         salvaSuFile();
     }
 

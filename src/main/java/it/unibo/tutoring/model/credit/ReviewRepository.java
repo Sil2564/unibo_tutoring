@@ -1,9 +1,13 @@
 package it.unibo.tutoring.model.credit;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +19,8 @@ public final class ReviewRepository {
 
     private static final Path DB = Paths.get("data", "reviews.csv");
     private static final String SEP = ";";
+    private static final String HEADER = "reviewerName;subject;date;stars;comment;recipientMatricola";
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private ReviewRepository() {
     }
@@ -35,6 +41,38 @@ public final class ReviewRepository {
      * @param matricola id del tutor che ha ricevuto la recensione
      * @return lista di Review per quella matricola
      */
+    public static void saveReview(
+        final String reviewerName,
+        final String subject,
+        final int stars,
+        final String comment,
+        final String recipientMatricola
+    ) {
+        try {
+            Files.createDirectories(DB.getParent());
+
+            final String line = String.join(SEP,
+                reviewerName == null ? "" : reviewerName.trim(),
+                subject == null ? "" : subject.trim(),
+                LocalDate.now().format(DATE_FORMAT),
+                Integer.toString(stars),
+                sanitizeComment(comment),
+                recipientMatricola == null ? "" : recipientMatricola.trim()
+            );
+
+            if (!Files.exists(DB)) {
+                Files.writeString(DB, HEADER + System.lineSeparator() + line + System.lineSeparator(), StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                return;
+            }
+
+            Files.writeString(DB, System.lineSeparator() + line, StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (final IOException e) {
+            throw new IllegalStateException("Impossibile salvare la recensione in " + DB, e);
+        }
+    }
+
     public static List<Review> loadReviewsForRecipient(final String matricola) {
         final List<Review> reviews = new ArrayList<>();
 
@@ -78,5 +116,12 @@ public final class ReviewRepository {
         }
 
         return reviews;
+    }
+
+    private static String sanitizeComment(final String comment) {
+        if (comment == null) {
+            return "";
+        }
+        return comment.replace("\n", " ").replace("\r", " ").replace(SEP, ",").trim();
     }
 }

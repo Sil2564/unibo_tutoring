@@ -237,6 +237,7 @@ public class UniBoTutoringHomeApp extends Application {
         HBox.setHgrow(left, Priority.ALWAYS);
 
         final Label leftTitle = new Label("Perché scegliere UniBo Tutoring?");
+        leftTitle.setTextFill(Color.web("#111111"));
         leftTitle.setFont(Font.font("System", FontWeight.BOLD, 30));
 
         left.getChildren().addAll(
@@ -269,6 +270,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         
         final Label ctaTitle = new Label("Pronto a iniziare?");
+        ctaTitle.setTextFill(Color.web("#111111"));
         ctaTitle.setFont(Font.font("System", FontWeight.BOLD, 32));
 
         final Label ctaSubtitle = new Label("Registrati ora con la tua matricola universitaria");
@@ -370,6 +372,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final Label cardTitle = new Label(title);
         cardTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
+        cardTitle.setTextFill(Color.web("#111111"));
 
         final Label cardDescription = new Label(description);
         cardDescription.setWrapText(true);
@@ -413,8 +416,8 @@ public class UniBoTutoringHomeApp extends Application {
         button.setFont(Font.font("System", FontWeight.BOLD, 13));
         button.setTextFill(Color.WHITE);
         button.setPadding(new Insets(8, 16, 8, 16));
-        button.setBackground(new Background(new BackgroundFill(Color.rgb(255, 255, 255, 0.2), new CornerRadii(8), Insets.EMPTY)));
-        button.setBorder(new Border(new BorderStroke(Color.rgb(255, 255, 255, 0.45), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+        button.setStyle("-fx-background-color: #FF536A;");
+        button.setBorder(Border.EMPTY);
         return button;
     }
 

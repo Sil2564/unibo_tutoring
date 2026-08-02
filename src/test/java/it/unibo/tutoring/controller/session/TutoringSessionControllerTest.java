@@ -1,5 +1,6 @@
 package it.unibo.tutoring.controller.session;
 
+import it.unibo.tutoring.model.credit.ReviewRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +42,12 @@ class TutoringSessionControllerTest {
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
         assertTrue(lines.stream().anyMatch(line -> line.equals("REVIEW;4|Esperienza positiva")));
 
+        List<ReviewRepository.Review> savedReviews = ReviewRepository.loadReviewsForRecipient("0001");
+        assertTrue(!savedReviews.isEmpty());
+        ReviewRepository.Review savedReview = savedReviews.get(savedReviews.size() - 1);
+        assertEquals("Esperienza positiva", savedReview.comment());
+        assertEquals(4, savedReview.stars());
+
         TutoringSessionController loadedController = new TutoringSessionController(
                 "Test Materia",
                 "Test Tutor",
@@ -52,4 +59,5 @@ class TutoringSessionControllerTest {
         assertEquals(4, loadedController.getReviewStars());
         assertEquals("Esperienza positiva", loadedController.getReviewComment());
     }
+
 }

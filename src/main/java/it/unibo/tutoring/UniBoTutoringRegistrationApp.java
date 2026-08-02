@@ -34,6 +34,7 @@ public final class UniBoTutoringRegistrationApp {
     private static final Color PRIMARY_RED = Color.web("#D91E43");
     private static final Color PAGE_BG = Color.web("#ECECEC");
     private static final Color CARD_BG = Color.web("#ffffff");
+    private static final Color TEXT_DARK = Color.web("#111111");
 
     private UniBoTutoringRegistrationApp() {
     }
@@ -71,6 +72,7 @@ public final class UniBoTutoringRegistrationApp {
         logoView.setSmooth(true);
 
         final Label title = new Label("UniBo Tutoring");
+        title.setTextFill(Color.web("#111111"));
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 36));
 
         final Label subtitle = new Label("Università di Bologna");
@@ -92,6 +94,7 @@ public final class UniBoTutoringRegistrationApp {
 
         final Label formTitle = new Label("Registra un nuovo account");
         formTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 28));
+        formTitle.setTextFill(TEXT_DARK);
         formTitle.setMaxWidth(Double.MAX_VALUE);
         formTitle.setTextAlignment(TextAlignment.CENTER);
         formTitle.setAlignment(Pos.CENTER);
@@ -107,10 +110,10 @@ public final class UniBoTutoringRegistrationApp {
         fieldsGrid.setHgap(16);
         fieldsGrid.setVgap(10);
 
-        final TextField nameField = createTextField("");
+        final TextField nameField = createTextField("Mario");
         final TextField matricolaField = createTextField("es. 1234567890");
         final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
-        final TextField surnameField = createTextField("");
+        final TextField surnameField = createTextField("Rossi");
         final PasswordField passwordField = createPasswordField("min 6 caratteri, 1 numero");
         final PasswordField confirmPasswordField = createPasswordField("min 6 caratteri, 1 numero");
 
@@ -185,6 +188,7 @@ public final class UniBoTutoringRegistrationApp {
 
         final Label loginPrefix = new Label("Hai già un account?");
         loginPrefix.setFont(Font.font("System", FontWeight.NORMAL, 20));
+        loginPrefix.setTextFill(TEXT_DARK);
 
         final Button loginLink = new Button("Accedi");
         loginLink.setOnAction(event -> {
@@ -213,6 +217,7 @@ public final class UniBoTutoringRegistrationApp {
         final VBox cell = new VBox(6);
         final Label label = new Label(labelText);
         label.setFont(Font.font("System", FontWeight.NORMAL, 22));
+        label.setTextFill(TEXT_DARK);
         cell.getChildren().addAll(label, field);
         grid.add(cell, column, row);
     }

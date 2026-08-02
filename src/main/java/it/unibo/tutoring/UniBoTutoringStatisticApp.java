@@ -115,6 +115,7 @@ public class UniBoTutoringStatisticApp extends Application {
 }
     private VBox createSidebar() {
         final VBox sidebar = new VBox(14);
+        sidebar.getStyleClass().add("sidebar-pane");
         sidebar.setPrefWidth(250);
         sidebar.setMinWidth(250);
         sidebar.setMaxWidth(250);
@@ -225,6 +226,10 @@ public class UniBoTutoringStatisticApp extends Application {
         content.setAlignment(Pos.CENTER_LEFT);
 
         final Button item = new Button();
+        item.getStyleClass().add("sidebar-btn");
+        if (active) {
+            item.getStyleClass().add("active");
+        }
         item.setGraphic(content);
         item.setPrefWidth(Double.MAX_VALUE);
         item.setAlignment(Pos.CENTER_LEFT);
