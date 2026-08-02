@@ -1,7 +1,10 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
@@ -43,6 +46,8 @@ public final class UniBoTutoringProfileApp  {
     private static final Color PAGE_BG = Color.web("#EFEFEF");
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
+    private static final DateTimeFormatter SESSION_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale.ITALIAN);
 
     private UniBoTutoringProfileApp() {
     }
@@ -698,7 +703,9 @@ private static VBox createStatCard(
 
                 VBox agendaRow = createAgendaItem(
                         session.getMateria(),
-                        "Data da concordare",
+                        session.getDataOra().format(SESSION_DATE_FORMAT)
+                                + " • "
+                                + formatDuration(session.getDurata()),
                         persona
                 );
 
@@ -711,6 +718,14 @@ private static VBox createStatCard(
         }
 
         return card;
+    }
+
+    private static String formatDuration(final Duration duration) {
+        final long minutes = duration.toMinutes();
+        if (minutes % 60 == 0) {
+            return minutes / 60 + " h";
+        }
+        return minutes + " min";
     }
 
     private static VBox createAgendaItem(final String materia, final String data, final String persona) {

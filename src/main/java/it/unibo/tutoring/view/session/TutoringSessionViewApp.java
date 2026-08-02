@@ -3,7 +3,11 @@ package it.unibo.tutoring.view.session;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
+import it.unibo.tutoring.model.box.BoxTutoraggio;
+import it.unibo.tutoring.model.box.BoxType;
 import it.unibo.tutoring.model.chat.Message;
+import it.unibo.tutoring.model.session.CompletedState;
+import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.view.components.AppHeader;
 
 import javafx.application.Application;
@@ -25,6 +29,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,25 +54,23 @@ public class TutoringSessionViewApp extends Application {
     }
 
     private TutoringSessionViewApp(
-            final String materiaAnnuncio,
-            final String nomeInserzionista,
-            final boolean tutorOffer,
-            final String matricolaInserzionista) {
+            final BoxTutoraggio box,
+            final String nomeInserzionista) {
         this.controller = new TutoringSessionController(
-                materiaAnnuncio,
+                box.getMateria(),
                 nomeInserzionista,
-                tutorOffer,
-                matricolaInserzionista,
-                UserSession.getMatricola());
+                box.getTipo() == BoxType.OFFER,
+                box.getAutoreMatricola(),
+                UserSession.getMatricola(),
+                LocalDateTime.of(box.getData(), box.getOra()),
+                java.time.Duration.ofHours(box.getDurataOre()));
     }
 
     public static Scene createScene(
             final Stage stage,
-            final String materiaAnnuncio,
-            final String nomeInserzionista,
-            final boolean tutorOffer,
-            final String tutorMatricola) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
+            final BoxTutoraggio box,
+            final String nomeInserzionista) {
+        final TutoringSessionViewApp app = new TutoringSessionViewApp(box, nomeInserzionista);
         return app.createScene(stage);
     }
 
@@ -173,7 +176,8 @@ public class TutoringSessionViewApp extends Application {
         btnCompleta.setTextFill(Color.WHITE);
         btnCompleta.setMaxWidth(Double.MAX_VALUE);
         btnCompleta.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)));
-        btnCompleta.setDisable(true); // All'inizio non si può completare
+
+        aggiornaControlliStato(lblStatoValue, btnConferma, btnCompleta);
 
         // PATTERN STATE
         btnConferma.setOnAction(e -> {
@@ -205,6 +209,25 @@ public class TutoringSessionViewApp extends Application {
 
         card.getChildren().addAll(spacer, btnConferma, btnCompleta);
         return card;
+    }
+
+    private void aggiornaControlliStato(
+            final Label stato,
+            final Button conferma,
+            final Button completa) {
+        if (this.controller.getModel().getStatoCorrente() instanceof CompletedState) {
+            stato.setText("Completata");
+            conferma.setDisable(true);
+            completa.setDisable(true);
+        } else if (this.controller.getModel().getStatoCorrente() instanceof ConfirmedState) {
+            stato.setText("Confermata");
+            conferma.setDisable(true);
+            completa.setDisable(false);
+        } else {
+            stato.setText("Proposta");
+            conferma.setDisable(false);
+            completa.setDisable(true);
+        }
     }
 
     private VBox createChatCard() {

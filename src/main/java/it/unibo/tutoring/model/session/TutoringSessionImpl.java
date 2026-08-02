@@ -78,8 +78,14 @@ public class TutoringSessionImpl implements TutoringSession {
     }
 
     @Override
-    public void inviaMessaggio(String testo, String idMittente) {
-        Message msg = new MessageImpl(testo, idMittente);
+    public void inviaMessaggio(final String testo, final String idMittente) {
+        inviaMessaggio(testo, idMittente, LocalDateTime.now());
+    }
+
+    @Override
+    public void inviaMessaggio(final String testo, final String idMittente,
+            final LocalDateTime timestamp) {
+        final Message msg = new MessageImpl(testo, idMittente, timestamp);
         this.chat.aggiungiMessaggio(msg);
     }
 

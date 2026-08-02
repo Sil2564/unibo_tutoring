@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +45,7 @@ class TutoringSessionControllerTest {
         assertTrue(lines.stream().anyMatch(line -> line.equals("REVIEW;4|Esperienza positiva")));
 
         List<ReviewRepository.Review> savedReviews = ReviewRepository.loadReviewsForRecipient("0001");
-        assertTrue(!savedReviews.isEmpty());
+        assertFalse(savedReviews.isEmpty());
         ReviewRepository.Review savedReview = savedReviews.get(savedReviews.size() - 1);
         assertEquals("Esperienza positiva", savedReview.comment());
         assertEquals(4, savedReview.stars());
@@ -60,4 +62,44 @@ class TutoringSessionControllerTest {
         assertEquals("Esperienza positiva", loadedController.getReviewComment());
     }
 
+    @Test
+    void shouldPersistCalendarDataAndReadableMessages() throws IOException {
+        final LocalDateTime dataOra = LocalDateTime.of(2026, 9, 15, 14, 30);
+        final Duration durata = Duration.ofHours(2);
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                dataOra,
+                durata);
+
+        controller.confermaSessione();
+        controller.inviaMessaggio("Ciao; ci vediamo?\nPerfetto");
+
+        final List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+        assertTrue(lines.contains("MATERIA;Test Materia"));
+        assertTrue(lines.contains("DATA_ORA;2026-09-15T14:30"));
+        assertTrue(lines.contains("DURATA;PT2H"));
+        assertTrue(lines.contains("TUTOR;0001"));
+        assertTrue(lines.contains("STUDENTE;9999"));
+        assertTrue(lines.stream().anyMatch(line ->
+                line.startsWith("MSG2;")
+                        && line.endsWith(";9999;Ciao; ci vediamo? Perfetto")));
+
+        final var originalMessage = controller.getModel().getStoricoChat().get(0);
+        final TutoringSessionController loadedController = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                dataOra,
+                durata);
+        final var loadedMessage = loadedController.getModel().getStoricoChat().get(0);
+
+        assertEquals(originalMessage.getTimestamp(), loadedMessage.getTimestamp());
+        assertEquals("Ciao; ci vediamo? Perfetto", loadedMessage.getTesto());
+    }
 }

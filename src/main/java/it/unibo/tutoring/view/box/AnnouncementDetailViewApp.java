@@ -145,7 +145,7 @@ public final class AnnouncementDetailViewApp {
         contactButton.setBorder(Border.EMPTY);
         contactButton.setOnAction(event -> {
             final Stage win = (Stage) contactButton.getScene().getWindow();
-            win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
+            win.setScene(TutoringSessionViewApp.createScene(win, box, autoreNome));
             win.setTitle("UniBo Tutoring - Dettaglio Sessione");
             it.unibo.tutoring.view.components.WindowUtil.maximize(win);
         });
