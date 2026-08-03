@@ -1,13 +1,9 @@
 package it.unibo.tutoring.model.credit;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +15,6 @@ public final class ReviewRepository {
 
     private static final Path DB = Paths.get("data", "reviews.csv");
     private static final String SEP = ";";
-    private static final String HEADER = "reviewerName;subject;date;stars;comment;recipientMatricola";
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private ReviewRepository() {
     }
@@ -41,38 +35,6 @@ public final class ReviewRepository {
      * @param matricola id del tutor che ha ricevuto la recensione
      * @return lista di Review per quella matricola
      */
-    public static void saveReview(
-        final String reviewerName,
-        final String subject,
-        final int stars,
-        final String comment,
-        final String recipientMatricola
-    ) {
-        try {
-            Files.createDirectories(DB.getParent());
-
-            final String line = String.join(SEP,
-                reviewerName == null ? "" : reviewerName.trim(),
-                subject == null ? "" : subject.trim(),
-                LocalDate.now().format(DATE_FORMAT),
-                Integer.toString(stars),
-                sanitizeComment(comment),
-                recipientMatricola == null ? "" : recipientMatricola.trim()
-            );
-
-            if (!Files.exists(DB)) {
-                Files.writeString(DB, HEADER + System.lineSeparator() + line + System.lineSeparator(), StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                return;
-            }
-
-            Files.writeString(DB, System.lineSeparator() + line, StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (final IOException e) {
-            throw new IllegalStateException("Impossibile salvare la recensione in " + DB, e);
-        }
-    }
-
     public static List<Review> loadReviewsForRecipient(final String matricola) {
         final List<Review> reviews = new ArrayList<>();
 
@@ -112,16 +74,62 @@ public final class ReviewRepository {
 
                 reviews.add(new Review(reviewerName, subject, date, stars, comment));
             }
-        } catch (final IOException | RuntimeException e) {
+        } catch (final IOException e) {
+            // ignora errori di lettura per non bloccare l'app
         }
 
         return reviews;
     }
 
-    private static String sanitizeComment(final String comment) {
-        if (comment == null) {
-            return "";
+    /**
+     * Salva una recensione in coda al file data/reviews.csv, creando header e
+     * cartella se necessario.
+     *
+     * @param reviewerName nome di chi lascia la recensione (lo studente)
+     * @param subject materia della sessione
+     * @param date data della sessione (stringa gia' formattata)
+     * @param stars valutazione da 0 a 5
+     * @param comment commento libero
+     * @param recipientMatricola matricola del tutor che riceve la recensione
+     */
+    public static synchronized void saveReview(
+        final String reviewerName,
+        final String subject,
+        final String date,
+        final int stars,
+        final String comment,
+        final String recipientMatricola
+    ) {
+        try {
+            if (DB.getParent() != null) {
+                Files.createDirectories(DB.getParent());
+            }
+
+            final String header = "reviewerName;subject;date;stars;comment;tutorMatricola";
+            if (!Files.exists(DB)) {
+                Files.writeString(DB, header + System.lineSeparator(), java.nio.file.StandardOpenOption.CREATE_NEW);
+            }
+
+            final String line = String.join(SEP,
+                sanitize(reviewerName),
+                sanitize(subject),
+                sanitize(date),
+                Integer.toString(stars),
+                sanitize(comment),
+                sanitize(recipientMatricola)
+            );
+            Files.writeString(
+                DB,
+                line + System.lineSeparator(),
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.APPEND
+            );
+        } catch (final IOException e) {
+            // ignora errori di scrittura per non bloccare l'app
         }
-        return comment.replace("\n", " ").replace("\r", " ").replace(SEP, ",").trim();
+    }
+
+    private static String sanitize(final String value) {
+        return value == null ? "" : value.replace(SEP, ",").replace("\n", " ").replace("\r", " ").trim();
     }
 }

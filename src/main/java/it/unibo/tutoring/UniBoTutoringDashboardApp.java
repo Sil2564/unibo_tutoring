@@ -9,9 +9,11 @@ import java.util.Locale;
 import it.unibo.tutoring.model.box.BoxRepository;
 import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.box.BoxType;
+import it.unibo.tutoring.controller.session.TutoringSessionController;
 import it.unibo.tutoring.view.box.AnnouncementDetailViewApp;
 import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.session.SessionLinkUtil;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -372,22 +374,38 @@ public class UniBoTutoringDashboardApp extends Application {
 		final HBox tabs = new HBox(0);
 		tabs.setAlignment(Pos.CENTER_LEFT);
 		tabs.setPrefHeight(28);
-		tabs.setMaxWidth(315);
+		tabs.setMaxWidth(430);
 		tabs.getStyleClass().add("chip-group");
 		tabs.setBackground(new Background(new BackgroundFill(Color.web("#D7D7D7"), new CornerRadii(6), Insets.EMPTY)));
 		tabs.setPadding(new Insets(2));
 
-		final long offerCount = allBoxes.stream().filter(b -> b.getTipo() == BoxType.OFFER).count();
-		final long requestCount = allBoxes.size() - offerCount;
+		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 
-		final Button tabAll = tab("Tutte (" + allBoxes.size() + ")", true);
+		// Nelle tab Tutte/Offerte/Richieste compaiono solo gli annunci ancora
+		// "aperti" (nessun candidato confermato): appena l'autore conferma
+		// qualcuno, l'annuncio sparisce da qui e resta solo in "Le mie sessioni".
+		final List<BoxTutoraggio> openBoxes = allBoxes.stream()
+			.filter(b -> b.getConfermato() == null)
+			.toList();
+		final List<BoxTutoraggio> mySessionsBoxes = allBoxes.stream()
+			.filter(b -> isVisibleInMieSessioni(b, me))
+			.toList();
+
+		final long offerCount = openBoxes.stream().filter(b -> b.getTipo() == BoxType.OFFER).count();
+		final long requestCount = openBoxes.size() - offerCount;
+
+		final Button tabAll = tab("Tutte (" + openBoxes.size() + ")", true);
 		final Button tabOffers = tab("Offerte (" + offerCount + ")", false);
 		final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
+		final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 
-		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests);
+		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests, tabMySessions);
 
-		// Tipo attualmente selezionato dai tab: null = "Tutte", altrimenti OFFER o REQUEST.
+		// Modalita' di visualizzazione: ALL/OFFERS/REQUESTS filtrano tra gli
+		// annunci ancora aperti; MY_SESSIONS mostra invece i miei annunci e le
+		// mie candidature/conferme, a prescindere dal tipo.
 		final BoxType[] selectedType = { null };
+		final boolean[] mySessionsMode = { false };
 
 		final FlowPane cards = new FlowPane();
 		cards.setHgap(14);
@@ -401,8 +419,12 @@ public class UniBoTutoringDashboardApp extends Application {
 			final String selectedCourse = courseCombo.getValue();
 			final boolean allCourses = selectedCourse == null || "Tutti i corsi".equals(selectedCourse);
 
-			final List<BoxTutoraggio> filtered = allBoxes.stream()
-				.filter(b -> selectedType[0] == null || b.getTipo() == selectedType[0])
+			final List<BoxTutoraggio> base = mySessionsMode[0]
+				? allBoxes.stream().filter(b -> isVisibleInMieSessioni(b, me)).toList()
+				: openBoxes;
+
+			final List<BoxTutoraggio> filtered = base.stream()
+				.filter(b -> mySessionsMode[0] || selectedType[0] == null || b.getTipo() == selectedType[0])
 				.filter(b -> allCourses || selectedCourse.equalsIgnoreCase(b.getCorso()))
 				.filter(b -> {
 					if (query.isEmpty()) {
@@ -422,7 +444,9 @@ public class UniBoTutoringDashboardApp extends Application {
 			if (filtered.isEmpty()) {
 				final Label emptyLabel = new Label(allBoxes.isEmpty()
 					? "Nessun annuncio disponibile. Crea il primo con \"+Crea Annuncio\"."
-					: "Nessun annuncio corrisponde ai filtri selezionati.");
+					: mySessionsMode[0]
+						? "Non hai ancora nessuna sessione: pubblica un annuncio o candidati a uno esistente."
+						: "Nessun annuncio corrisponde ai filtri selezionati.");
 				emptyLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
 				emptyLabel.setTextFill(TEXT_MEDIUM);
 				cards.getChildren().add(emptyLabel);
@@ -443,11 +467,12 @@ public class UniBoTutoringDashboardApp extends Application {
 					}
 					other.setBackground(new Background(new BackgroundFill(isActive ? Color.WHITE : Color.TRANSPARENT, new CornerRadii(5), Insets.EMPTY)));
 				}
+				mySessionsMode[0] = (t == tabMySessions);
 				if (t == tabAll) {
 					selectedType[0] = null;
 				} else if (t == tabOffers) {
 					selectedType[0] = BoxType.OFFER;
-				} else {
+				} else if (t == tabRequests) {
 					selectedType[0] = BoxType.REQUEST;
 				}
 				refreshCards.run();
@@ -457,7 +482,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		searchField.textProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
 		courseCombo.valueProperty().addListener((obs, oldVal, newVal) -> refreshCards.run());
 
-		tabs.getChildren().addAll(tabAll, tabOffers, tabRequests);
+		tabs.getChildren().addAll(tabAll, tabOffers, tabRequests, tabMySessions);
 
 		refreshCards.run();
 
@@ -467,6 +492,34 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private static String nullToEmpty(final String s) {
 		return s == null ? "" : s;
+	}
+
+	/**
+	 * Un annuncio compare in "Le mie sessioni" se l'utente ne e' l'autore,
+	 * si e' candidato (in attesa di conferma), oppure e' il candidato
+	 * confermato. Se la sessione confermata risulta pero' gia' completata da
+	 * entrambe le parti, sparisce da qui (resta visibile solo nelle Statistiche).
+	 */
+	private static boolean isVisibleInMieSessioni(final BoxTutoraggio box, final String me) {
+		if (me == null) {
+			return false;
+		}
+
+		final boolean isAutore = me.equals(box.getAutoreMatricola());
+		final boolean isCandidato = box.isCandidato(me);
+		final boolean isConfermato = me.equals(box.getConfermato());
+
+		if (!isAutore && !isCandidato && !isConfermato) {
+			return false;
+		}
+
+		if (box.getConfermato() != null) {
+			final TutoringSessionController controller =
+				SessionLinkUtil.buildController(box, box.getConfermato(), box.getAutoreMatricola());
+			return !controller.isCompletataDaEntrambi();
+		}
+
+		return true;
 	}
 
 	private Button tab(final String text, final boolean active) {
@@ -505,6 +558,20 @@ public class UniBoTutoringDashboardApp extends Application {
 		tag.setTextFill(Color.WHITE);
 		tag.setPadding(new Insets(2, 7, 2, 7));
 		tag.setBackground(new Background(new BackgroundFill(offer ? PRIMARY_RED : Color.web("#A1A1A1"), new CornerRadii(999), Insets.EMPTY)));
+
+		final HBox tagRow = new HBox(6, tag);
+		tagRow.setAlignment(Pos.CENTER_LEFT);
+		final String statusText = statusChipText(box);
+		if (statusText != null) {
+			final Label statusChip = new Label(statusText);
+			statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
+			statusChip.setTextFill(Color.WHITE);
+			statusChip.setPadding(new Insets(2, 7, 2, 7));
+			statusChip.setBackground(new Background(new BackgroundFill(
+				box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9"),
+				new CornerRadii(999), Insets.EMPTY)));
+			tagRow.getChildren().add(statusChip);
+		}
 
 		final String autoreNome = estraiNomeAutore(box.getTitolo());
 		final Label titleLabel = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
@@ -551,7 +618,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setCursor(Cursor.HAND);
 		contact.setOnAction(event -> {
 			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, box, autoreNome));
+			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
 		});
@@ -560,8 +627,20 @@ public class UniBoTutoringDashboardApp extends Application {
 		final HBox bottom = new HBox(8, meta, spacer, contact);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);
 
-		card.getChildren().addAll(tag, titleLabel, courseLabel, descriptionLabel, divider, bottom);
+		card.getChildren().addAll(tagRow, titleLabel, courseLabel, descriptionLabel, divider, bottom);
 		return card;
+	}
+
+	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
+	private static String statusChipText(final BoxTutoraggio box) {
+		if (box.getConfermato() != null) {
+			return "Confermata";
+		}
+		final int n = box.getCandidati().size();
+		if (n > 0) {
+			return n + " candidat" + (n == 1 ? "o" : "i");
+		}
+		return null;
 	}
 
 	private static String estraiNomeAutore(final String titolo) {

@@ -2,6 +2,9 @@ package it.unibo.tutoring.model.box;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class BoxTutoraggioImpl
@@ -26,6 +29,10 @@ public class BoxTutoraggioImpl
     private final String autoreMatricola;
 
     private final BoxType tipo;
+
+    private final List<String> candidati = new ArrayList<>();
+
+    private String confermato;
 
     public BoxTutoraggioImpl(
         final String titolo,
@@ -108,5 +115,50 @@ public class BoxTutoraggioImpl
     @Override
     public BoxType getTipo() {
         return this.tipo;
+    }
+
+    @Override
+    public List<String> getCandidati() {
+        return Collections.unmodifiableList(this.candidati);
+    }
+
+    @Override
+    public String getConfermato() {
+        return this.confermato;
+    }
+
+    @Override
+    public boolean isCandidato(final String matricola) {
+        return matricola != null && this.candidati.contains(matricola);
+    }
+
+    @Override
+    public void aggiungiCandidato(final String matricola) {
+        if (matricola == null || matricola.isBlank()) {
+            return;
+        }
+        if (this.confermato != null) {
+            return;
+        }
+        if (matricola.equals(this.autoreMatricola)) {
+            return;
+        }
+        if (!this.candidati.contains(matricola)) {
+            this.candidati.add(matricola);
+        }
+    }
+
+    @Override
+    public void rimuoviCandidato(final String matricola) {
+        this.candidati.remove(matricola);
+    }
+
+    @Override
+    public void confermaCandidato(final String matricola) {
+        if (matricola == null || !this.candidati.contains(matricola)) {
+            return;
+        }
+        this.confermato = matricola;
+        this.candidati.remove(matricola);
     }
 }

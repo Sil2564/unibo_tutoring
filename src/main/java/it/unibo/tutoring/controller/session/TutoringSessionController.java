@@ -2,9 +2,8 @@ package it.unibo.tutoring.controller.session;
 
 import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.model.chat.Message;
-import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.credit.CompletedSessionRepository;
-import it.unibo.tutoring.model.credit.ReviewRepository;
+import it.unibo.tutoring.model.session.CancelledState;
 import it.unibo.tutoring.model.session.CompletedState;
 import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.model.session.ProposedState;
@@ -45,30 +44,17 @@ public class TutoringSessionController {
     private String reviewAuthor = "";
     private boolean reviewSaved = false;
 
-    public TutoringSessionController(
-            final String materia,
-            final String nomeInserzionista,
-            final boolean tutorOffer,
-            final String matricolaInserzionista,
-            final String userMatricola) {
-        this(
-                materia,
-                nomeInserzionista,
-                tutorOffer,
-                matricolaInserzionista,
-                userMatricola,
-                LocalDateTime.now(),
-                Duration.ofHours(DEFAULT_COMPLETED_HOURS));
-    }
+    // Flag di completamento indipendenti per ciascun lato: la sessione si
+    // considera davvero completata solo quando entrambi sono true.
+    private boolean completatoTutor = false;
+    private boolean completatoStudente = false;
 
     public TutoringSessionController(
             final String materia,
             final String nomeInserzionista,
             final boolean tutorOffer,
             final String matricolaInserzionista,
-            final String userMatricola,
-            final LocalDateTime dataOra,
-            final Duration durata) {
+            final String userMatricola) {
 
         this.materia = requireText(materia, "materia");
         this.nomeInserzionista = requireText(nomeInserzionista, "nomeInserzionista");
@@ -86,8 +72,8 @@ public class TutoringSessionController {
 
         this.model = new TutoringSessionImpl(
                 this.materia,
-                dataOra,
-                durata,
+                LocalDateTime.now(),
+                Duration.ofHours(DEFAULT_COMPLETED_HOURS),
                 this.tutorMatricola);
 
         this.fileCondivisoPath = SESSION_FOLDER.resolve(buildFileName());
@@ -106,6 +92,10 @@ public class TutoringSessionController {
         return this.tutorMatricola;
     }
 
+    public String getStudenteMatricola() {
+        return this.studenteMatricola;
+    }
+
     public String getUserMatricola() {
         return this.userMatricola;
     }
@@ -117,19 +107,59 @@ public class TutoringSessionController {
         return this.model;
     }
 
+    /**
+     * Crea/persiste la proposta iniziale (stato Proposed) quando un candidato
+     * accetta un annuncio. Se il file esiste gia' (es. ri-candidatura dopo un
+     * ritiro) lo stato viene comunque riportato a Proposed.
+     */
+    public void proponi() {
+        if (!(this.model.getStatoCorrente() instanceof ProposedState)) {
+            setStatoCorrente(new ProposedState());
+        }
+        salvaSuFile();
+    }
+
     public void confermaSessione() {
         this.model.conferma();
         salvaSuFile();
     }
 
-    public void completaSessione() {
+    /**
+     * Annulla la candidatura/sessione: usato sia per "Ritira candidatura" da
+     * parte del candidato, sia per "Rifiuta" da parte dell'autore.
+     */
+    public void annullaSessione() {
+        this.model.annulla();
+        salvaSuFile();
+    }
+
+    /**
+     * L'utente corrente segnala che, dal suo lato, la sessione si e' svolta.
+     * Solo quando ENTRAMBI i lati hanno segnalato il completamento la sessione
+     * passa realmente a Completed (con relativo accredito ore/crediti).
+     */
+    public void segnalaCompletamento() {
         if (this.model.getStatoCorrente() instanceof CompletedState) {
             throw new IllegalStateException("La sessione e' gia' stata completata.");
         }
         if (!(this.model.getStatoCorrente() instanceof ConfirmedState)) {
-            throw new IllegalStateException("Solo una sessione confermata puo essere completata.");
+            throw new IllegalStateException("Solo una sessione confermata puo' essere completata.");
         }
 
+        if (this.userMatricola.equals(this.tutorMatricola)) {
+            this.completatoTutor = true;
+        } else {
+            this.completatoStudente = true;
+        }
+
+        if (this.completatoTutor && this.completatoStudente) {
+            finalizzaCompletamento();
+        }
+
+        salvaSuFile();
+    }
+
+    private void finalizzaCompletamento() {
         final int completedHours = (int) this.model.getDurata().toHours();
         final int creditsGiven = completedHours / 2;
         final String subject = this.model.getMateria();
@@ -155,7 +185,40 @@ public class TutoringSessionController {
                     completedHours
                 )
             );
-        salvaSuFile();
+    }
+
+    public boolean isCompletatoDaTutor() {
+        return this.completatoTutor;
+    }
+
+    public boolean isCompletatoDaStudente() {
+        return this.completatoStudente;
+    }
+
+    public boolean isCompletataDaEntrambi() {
+        return this.model.getStatoCorrente() instanceof CompletedState;
+    }
+
+    /** True se l'utente corrente ha gia' segnalato il proprio completamento. */
+    public boolean haGiaSegnalatoCompletamento() {
+        return this.userMatricola.equals(this.tutorMatricola) ? this.completatoTutor : this.completatoStudente;
+    }
+
+    public boolean isProposta() {
+        return this.model.getStatoCorrente() instanceof ProposedState;
+    }
+
+    public boolean isConfermata() {
+        return this.model.getStatoCorrente() instanceof ConfirmedState;
+    }
+
+    public boolean isAnnullata() {
+        return this.model.getStatoCorrente() instanceof CancelledState;
+    }
+
+    /** True se l'utente corrente e' lo studente: e' lui/lei a dover lasciare la recensione al tutor. */
+    public boolean isReviewer() {
+        return this.userMatricola.equals(this.studenteMatricola);
     }
 
     public void inviaMessaggio(final String testo) {
@@ -182,13 +245,16 @@ public class TutoringSessionController {
         this.reviewComment = commento != null ? commento.trim() : "";
         this.reviewAuthor = autoreRecensione != null ? autoreRecensione.trim() : "";
         this.reviewSaved = true;
-        ReviewRepository.saveReview(
-            this.reviewAuthor.isBlank() ? this.userMatricola : this.reviewAuthor,
+
+        it.unibo.tutoring.model.credit.ReviewRepository.saveReview(
+            this.reviewAuthor,
             this.materia,
-            stelle,
+            this.model.getDataOra().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+            this.reviewStars,
             this.reviewComment,
-            this.tutorOffer ? this.tutorMatricola : this.studenteMatricola
+            this.tutorMatricola
         );
+
         salvaSuFile();
     }
 
@@ -205,7 +271,7 @@ public class TutoringSessionController {
     }
 
     public boolean shouldAskForReview() {
-        return this.model.getStatoCorrente() instanceof CompletedState && !this.reviewSaved;
+        return isCompletataDaEntrambi() && isReviewer() && !this.reviewSaved;
     }
 
     private void caricaDaFileSePresente() {
@@ -218,13 +284,15 @@ public class TutoringSessionController {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("STATO;")) {
                     ripristinaStato(line.substring("STATO;".length()));
-                } else if (line.startsWith("MSG2;")) {
-                    ripristinaMessaggio(line.substring("MSG2;".length()));
                 } else if (line.startsWith("MSG;")) {
-                    ripristinaMessaggioLegacy(line.substring("MSG;".length()));
+                    ripristinaMessaggio(line.substring("MSG;".length()));
                 } else if (line.startsWith("REVIEW;")) {
                     // Legge i dati della recensione salvata se presenti.
                     ripristinaRecensione(line.substring("REVIEW;".length()));
+                } else if (line.startsWith("COMPLETO_TUTOR;")) {
+                    this.completatoTutor = Boolean.parseBoolean(line.substring("COMPLETO_TUTOR;".length()).trim());
+                } else if (line.startsWith("COMPLETO_STUDENTE;")) {
+                    this.completatoStudente = Boolean.parseBoolean(line.substring("COMPLETO_STUDENTE;".length()).trim());
                 }
             }
         } catch (IOException e) {
@@ -237,32 +305,21 @@ public class TutoringSessionController {
             case "Proposed" -> setStatoCorrente(new ProposedState());
             case "Confirmed" -> setStatoCorrente(new ConfirmedState());
             case "Completed" -> setStatoCorrente(new CompletedState());
+            case "Cancelled" -> setStatoCorrente(new CancelledState());
             default -> throw new IllegalArgumentException("Stato sessione non riconosciuto: " + statoSalvato);
         }
     }
 
     private void ripristinaMessaggio(final String payload) {
-        final String[] campi = payload.split(";", 3);
-        if (campi.length != 3) {
+        final String[] campi = payload.split("\\|", 2);
+        if (campi.length != 2) {
             return;
         }
 
-        try {
-            final LocalDateTime timestamp = LocalDateTime.parse(campi[0]);
-            final String mittenteID = campi[1];
-            final String testo = campi[2];
-            if (!mittenteID.isBlank() && !testo.isBlank()) {
-                this.model.inviaMessaggio(testo, mittenteID, timestamp);
-            }
-        } catch (java.time.format.DateTimeParseException ignored) {
-            // Ignora soltanto la riga non valida e continua a caricare la sessione.
-        }
-    }
-
-    private void ripristinaMessaggioLegacy(final String payload) {
-        final String[] campi = payload.split("\\|", 2);
-        if (campi.length == 2 && !campi[0].isBlank() && !campi[1].isBlank()) {
-            this.model.inviaMessaggio(campi[1], campi[0]);
+        final String mittenteID = campi[0];
+        final String testo = campi[1];
+        if (!mittenteID.isBlank() && !testo.isBlank()) {
+            this.model.inviaMessaggio(testo, mittenteID);
         }
     }
 
@@ -289,27 +346,16 @@ public class TutoringSessionController {
             Files.createDirectories(SESSION_FOLDER);
 
             try (BufferedWriter writer = Files.newBufferedWriter(this.fileCondivisoPath, StandardCharsets.UTF_8)) {
-                writer.write("MATERIA;" + sanitizeLine(this.model.getMateria()));
-                writer.newLine();
-                writer.write("DATA_ORA;" + this.model.getDataOra());
-                writer.newLine();
-                writer.write("DURATA;" + this.model.getDurata());
-                writer.newLine();
-                writer.write("TUTOR;" + this.tutorMatricola);
-                writer.newLine();
-                writer.write("STUDENTE;" + this.studenteMatricola);
-                writer.newLine();
                 writer.write("STATO;" + getNomeStatoCorrente());
                 writer.newLine();
 
+                writer.write("COMPLETO_TUTOR;" + this.completatoTutor);
+                writer.newLine();
+                writer.write("COMPLETO_STUDENTE;" + this.completatoStudente);
+                writer.newLine();
+
                 for (Message message : this.model.getStoricoChat()) {
-                    writer.write(
-                            "MSG2;"
-                                    + message.getTimestamp()
-                                    + ";"
-                                    + message.getIdMittente()
-                                    + ";"
-                                    + sanitizeLine(message.getTesto()));
+                    writer.write("MSG;" + message.getIdMittente() + "|" + message.getTesto());
                     writer.newLine();
                 }
 
@@ -346,10 +392,6 @@ public class TutoringSessionController {
             return "";
         }
         return comment.replace("\n", " ").replace("\r", " ").replace("|", "/");
-    }
-
-    private static String sanitizeLine(final String value) {
-        return value == null ? "" : value.replace('\n', ' ').replace('\r', ' ');
     }
 
     private static String requireText(final String value, final String fieldName) {

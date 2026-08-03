@@ -3,11 +3,7 @@ package it.unibo.tutoring.view.session;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
-import it.unibo.tutoring.model.box.BoxTutoraggio;
-import it.unibo.tutoring.model.box.BoxType;
 import it.unibo.tutoring.model.chat.Message;
-import it.unibo.tutoring.model.session.CompletedState;
-import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.view.components.AppHeader;
 
 import javafx.application.Application;
@@ -29,7 +25,6 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,28 +44,30 @@ public class TutoringSessionViewApp extends Application {
                 "Progettazione e Sviluppo del Software",
                 "Mario Rossi",
                 true,
-                "0000000001",
-                "0000000002");
+                "0000001",
+                "0000002");
     }
 
     private TutoringSessionViewApp(
-            final BoxTutoraggio box,
-            final String nomeInserzionista) {
+            final String materiaAnnuncio,
+            final String nomeInserzionista,
+            final boolean tutorOffer,
+            final String matricolaInserzionista) {
         this.controller = new TutoringSessionController(
-                box.getMateria(),
+                materiaAnnuncio,
                 nomeInserzionista,
-                box.getTipo() == BoxType.OFFER,
-                box.getAutoreMatricola(),
-                UserSession.getMatricola(),
-                LocalDateTime.of(box.getData(), box.getOra()),
-                java.time.Duration.ofHours(box.getDurataOre()));
+                tutorOffer,
+                matricolaInserzionista,
+                UserSession.getMatricola());
     }
 
     public static Scene createScene(
             final Stage stage,
-            final BoxTutoraggio box,
-            final String nomeInserzionista) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(box, nomeInserzionista);
+            final String materiaAnnuncio,
+            final String nomeInserzionista,
+            final boolean tutorOffer,
+            final String tutorMatricola) {
+        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
         return app.createScene(stage);
     }
 
@@ -92,8 +89,8 @@ public class TutoringSessionViewApp extends Application {
                 UserSession.getDisplayName(),
                 window != null ? UserSession.createLogoutAction(window) : null);
 
-        final Button btnBack = new Button("← Torna indietro");
-        btnBack.getStyleClass().add("back-button");
+        final Button btnBack = new Button("< Torna indietro");
+        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #6A6A6A; -fx-font-weight: bold;");
         VBox.setMargin(btnBack, new Insets(10, 0, 0, 15));
         if (stage != null) {
             btnBack.setOnAction(e -> {
@@ -144,8 +141,22 @@ public class TutoringSessionViewApp extends Application {
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 22));
         title.setTextFill(TEXT_DARK);
 
-        // Etichetta dello stato Dinamica
-        final Label lblStatoValue = new Label("Proposta");
+        // Etichetta dello stato, in sola lettura: le azioni (accetta, conferma,
+        // completata) si trovano ora nella pagina "Dettaglio Annuncio".
+        final String statoText;
+        if (controller.isCompletataDaEntrambi()) {
+            statoText = "Completata";
+        } else if (controller.isConfermata()) {
+            statoText = "Confermata";
+        } else if (controller.isAnnullata()) {
+            statoText = "Annullata";
+        } else if (controller.isProposta()) {
+            statoText = "In attesa di conferma";
+        } else {
+            statoText = "-";
+        }
+
+        final Label lblStatoValue = new Label(statoText);
         lblStatoValue.setFont(Font.font("System", FontWeight.NORMAL, 15));
         lblStatoValue.setTextFill(TEXT_DARK);
         VBox rowStato = new VBox(2,
@@ -153,81 +164,49 @@ public class TutoringSessionViewApp extends Application {
                 lblStatoValue
         );
 
+        final Label hint = new Label("Le azioni per accettare, confermare o completare la sessione si trovano nella pagina dell'annuncio.");
+        hint.setFont(Font.font("System", FontWeight.NORMAL, 11));
+        hint.setTextFill(TEXT_MEDIUM);
+        hint.setWrapText(true);
+
         card.getChildren().addAll(
                 title, new Separator(),
                 infoRow("Materia:", controller.getModel().getMateria()),
                 infoRow(controller.getRuoloInserzionista(), controller.getNomeInserzionista()),
-                rowStato
+                rowStato,
+                hint
         );
 
         final Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
+        card.getChildren().add(spacer);
 
-        final Button btnConferma = new Button("Conferma Sessione");
-        btnConferma.getStyleClass().add("primary-btn");
-        btnConferma.setFont(Font.font("System", FontWeight.BOLD, 14));
-        btnConferma.setTextFill(Color.WHITE);
-        btnConferma.setMaxWidth(Double.MAX_VALUE);
-        btnConferma.setBackground(new Background(new BackgroundFill(Color.web("#28A745"), new CornerRadii(6), Insets.EMPTY)));
-
-        final Button btnCompleta = new Button("Completa Sessione");
-        btnCompleta.getStyleClass().add("primary-btn");
-        btnCompleta.setFont(Font.font("System", FontWeight.BOLD, 14));
-        btnCompleta.setTextFill(Color.WHITE);
-        btnCompleta.setMaxWidth(Double.MAX_VALUE);
-        btnCompleta.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)));
-
-        aggiornaControlliStato(lblStatoValue, btnConferma, btnCompleta);
-
-        // PATTERN STATE
-        btnConferma.setOnAction(e -> {
-            try {
-                controller.confermaSessione();
-                lblStatoValue.setText("Confermata");
-                btnConferma.setDisable(true); // Non puoi ri-confermare
-                btnCompleta.setDisable(false); // Ora puoi completare
-            } catch (IllegalStateException ex) {
-                System.out.println("Errore di stato: " + ex.getMessage());
-            }
-        });
-
-        btnCompleta.setOnAction(e -> {
-            try {
-                controller.completaSessione();
-                lblStatoValue.setText("Completata");
-                btnCompleta.setDisable(true);
-                // Se la sessione è completata e non c'è ancora recensione salvata,
-                // mostriamo il pannello modale per lasciare una recensione.
-                if (controller.shouldAskForReview() && this.reviewOverlay != null) {
+        // Il pulsante per lasciare la recensione compare solo per chi ha
+        // ricevuto la lezione (lo studente), a sessione completata da entrambi,
+        // e solo se non e' gia' stata lasciata una recensione.
+        if (controller.shouldAskForReview()) {
+            final Button btnRecensione = new Button("Lascia una recensione");
+            btnRecensione.getStyleClass().add("primary-btn");
+            btnRecensione.setFont(Font.font("System", FontWeight.BOLD, 14));
+            btnRecensione.setTextFill(Color.WHITE);
+            btnRecensione.setMaxWidth(Double.MAX_VALUE);
+            btnRecensione.setBackground(new Background(new BackgroundFill(Color.web("#F0C419"), new CornerRadii(6), Insets.EMPTY)));
+            btnRecensione.setOnAction(e -> {
+                if (this.reviewOverlay != null) {
                     this.reviewOverlay.setVisible(true);
                     this.reviewOverlay.setManaged(true);
                 }
-            } catch (IllegalStateException ex) {
-                System.out.println("Errore di stato: " + ex.getMessage());
-            }
-        });
-
-        card.getChildren().addAll(spacer, btnConferma, btnCompleta);
-        return card;
-    }
-
-    private void aggiornaControlliStato(
-            final Label stato,
-            final Button conferma,
-            final Button completa) {
-        if (this.controller.getModel().getStatoCorrente() instanceof CompletedState) {
-            stato.setText("Completata");
-            conferma.setDisable(true);
-            completa.setDisable(true);
-        } else if (this.controller.getModel().getStatoCorrente() instanceof ConfirmedState) {
-            stato.setText("Confermata");
-            conferma.setDisable(true);
-            completa.setDisable(false);
-        } else {
-            stato.setText("Proposta");
-            conferma.setDisable(false);
-            completa.setDisable(true);
+            });
+            card.getChildren().add(btnRecensione);
+        } else if (controller.isReviewer() && controller.isReviewSaved()) {
+            final Label doneLabel = new Label("Hai gia' lasciato una recensione. Grazie!");
+            doneLabel.setFont(Font.font("System", FontWeight.NORMAL, 12));
+            doneLabel.setTextFill(TEXT_MEDIUM);
+            doneLabel.setWrapText(true);
+            card.getChildren().add(doneLabel);
         }
+
+        return card;
     }
 
     private VBox createChatCard() {
