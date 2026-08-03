@@ -16,7 +16,6 @@ on:
 
 jobs:
   Build:
-    if: contains(github.repository, 'sample-javafx-project') && !github.event.repository.fork
     strategy:
       matrix:
         os: [windows, macos, ubuntu]

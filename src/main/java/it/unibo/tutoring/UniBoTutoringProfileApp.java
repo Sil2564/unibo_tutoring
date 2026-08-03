@@ -699,7 +699,9 @@ private static VBox createStatCard(
                 TutoringSession session = impegni.get(i);
 
                 // Inserisce nome del tutor
-                String persona = session.getTutorMatricola().equals(miaMatricola) ? "Sessione da Tutor" : "Tutor: " + session.getTutorMatricola();
+                final String tutorMatricola = session.getTutorMatricola();
+                final UserAccount tutor = AuthService.getInstance().getUser(tutorMatricola);
+                final String persona = formatTutorLabel(miaMatricola, tutorMatricola, tutor);
 
                 VBox agendaRow = createAgendaItem(
                         session.getMateria(),
@@ -718,6 +720,22 @@ private static VBox createStatCard(
         }
 
         return card;
+    }
+
+    static String formatTutorLabel(
+            final String currentUserMatricola,
+            final String tutorMatricola,
+            final UserAccount tutor) {
+        if (tutorMatricola.equals(currentUserMatricola)) {
+            return "Sessione da Tutor";
+        }
+
+        if (tutor == null) {
+            return "Tutor: " + tutorMatricola;
+        }
+
+        final String tutorName = (tutor.getName() + " " + tutor.getSurname()).trim();
+        return tutorName.isEmpty() ? "Tutor: " + tutorMatricola : "Tutor: " + tutorName;
     }
 
     private static String formatDuration(final Duration duration) {
