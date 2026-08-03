@@ -16,6 +16,11 @@ on:
 
 jobs:
   Build:
+    if: contains(github.repository, 'sample-javafx-project') && !github.event.repository.fork
+    strategy:
+      matrix:
+        os: [windows, macos, ubuntu]
+        jvm_version: [17, 18, 19]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout
