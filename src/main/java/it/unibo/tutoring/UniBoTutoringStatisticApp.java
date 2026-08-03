@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.unibo.tutoring.model.credit.CreditRepository;
 import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.credit.ReviewRepository;
 import it.unibo.tutoring.model.credit.ReviewRepository.Review;
@@ -304,7 +303,8 @@ public class UniBoTutoringStatisticApp extends Application {
         List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
         int totalHours = sessions.stream().mapToInt(CompletedSession::hours).sum();
         int totalCredits = sessions.stream().mapToInt(CompletedSession::creditsGiven).sum();
-        double avgRating = CreditRepository.loadRecord(matricola).map(r -> r.getRating()).orElse(4.6);
+        List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
+        double avgRating = reviews.stream().mapToInt(Review::stars).average().orElse(0.0);
         
         int totalSessions = sessions.size();
 
