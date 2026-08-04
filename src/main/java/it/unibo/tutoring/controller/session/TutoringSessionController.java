@@ -35,6 +35,7 @@ public class TutoringSessionController {
     private final String userMatricola;
     private final String tutorMatricola;
     private final String studenteMatricola;
+    private final String conversationId;
     private final Path fileCondivisoPath;
 
     // Dati della recensione salvata per la sessione.
@@ -55,12 +56,54 @@ public class TutoringSessionController {
             final boolean tutorOffer,
             final String matricolaInserzionista,
             final String userMatricola) {
+        this(
+                materia,
+                nomeInserzionista,
+                tutorOffer,
+                matricolaInserzionista,
+                userMatricola,
+                LocalDateTime.now(),
+                Duration.ofHours(DEFAULT_COMPLETED_HOURS),
+                null
+        );
+    }
+
+    public TutoringSessionController(
+            final String materia,
+            final String nomeInserzionista,
+            final boolean tutorOffer,
+            final String matricolaInserzionista,
+            final String userMatricola,
+            final LocalDateTime dataOra,
+            final Duration durata) {
+        this(
+                materia,
+                nomeInserzionista,
+                tutorOffer,
+                matricolaInserzionista,
+                userMatricola,
+                dataOra,
+                durata,
+                null
+        );
+    }
+
+    public TutoringSessionController(
+            final String materia,
+            final String nomeInserzionista,
+            final boolean tutorOffer,
+            final String matricolaInserzionista,
+            final String userMatricola,
+            final LocalDateTime dataOra,
+            final Duration durata,
+            final String conversationId) {
 
         this.materia = requireText(materia, "materia");
         this.nomeInserzionista = requireText(nomeInserzionista, "nomeInserzionista");
         this.tutorOffer = tutorOffer;
         final String inserzionista = requireText(matricolaInserzionista, "matricolaInserzionista");
         this.userMatricola = requireText(userMatricola, "userMatricola");
+        this.conversationId = conversationId == null ? "" : conversationId.trim();
 
         if (this.tutorOffer) {
             this.tutorMatricola = inserzionista;
@@ -72,8 +115,8 @@ public class TutoringSessionController {
 
         this.model = new TutoringSessionImpl(
                 this.materia,
-                LocalDateTime.now(),
-                Duration.ofHours(DEFAULT_COMPLETED_HOURS),
+                dataOra,
+                durata,
                 this.tutorMatricola);
 
         this.fileCondivisoPath = SESSION_FOLDER.resolve(buildFileName());
@@ -161,19 +204,23 @@ public class TutoringSessionController {
 
     private void finalizzaCompletamento() {
         final int completedHours = (int) this.model.getDurata().toHours();
-        final int creditsGiven = completedHours / 2;
+        final var creditService = it.unibo.tutoring.AppConfig.getInstance().getCreditService();
+        final var currentCreditRecord = creditService.getCreditRecord(this.tutorMatricola);
+        final int creditsGiven =
+                (currentCreditRecord.getTotalHours() + completedHours) / 2
+                        - currentCreditRecord.getTotalCredits();
         final String subject = this.model.getMateria();
         final String date = this.model.getDataOra().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
 
         final String studentName = getStudentName();
 
         CompletedSessionRepository.saveCompletedSession(
-            studentName,
-            subject,
-            date,
-            completedHours,
-            creditsGiven,
-            this.tutorMatricola
+                studentName,
+                subject,
+                date,
+                completedHours,
+                creditsGiven,
+                this.tutorMatricola
         );
 
         setStatoCorrente(new CompletedState());
@@ -284,8 +331,10 @@ public class TutoringSessionController {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("STATO;")) {
                     ripristinaStato(line.substring("STATO;".length()));
+                } else if (line.startsWith("MSG2;")) {
+                    ripristinaMessaggioConTimestamp(line.substring("MSG2;".length()));
                 } else if (line.startsWith("MSG;")) {
-                    ripristinaMessaggio(line.substring("MSG;".length()));
+                    ripristinaMessaggioLegacy(line.substring("MSG;".length()));
                 } else if (line.startsWith("REVIEW;")) {
                     // Legge i dati della recensione salvata se presenti.
                     ripristinaRecensione(line.substring("REVIEW;".length()));
@@ -310,7 +359,25 @@ public class TutoringSessionController {
         }
     }
 
-    private void ripristinaMessaggio(final String payload) {
+    private void ripristinaMessaggioConTimestamp(final String payload) {
+        final String[] campi = payload.split(";", 3);
+        if (campi.length != 3) {
+            return;
+        }
+
+        try {
+            final LocalDateTime timestamp = LocalDateTime.parse(campi[0]);
+            final String mittenteID = campi[1];
+            final String testo = campi[2];
+            if (!mittenteID.isBlank() && !testo.isBlank()) {
+                this.model.inviaMessaggio(testo, mittenteID, timestamp);
+            }
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // Ignora la singola riga non valida e continua a caricare la chat.
+        }
+    }
+
+    private void ripristinaMessaggioLegacy(final String payload) {
         final String[] campi = payload.split("\\|", 2);
         if (campi.length != 2) {
             return;
@@ -346,6 +413,20 @@ public class TutoringSessionController {
             Files.createDirectories(SESSION_FOLDER);
 
             try (BufferedWriter writer = Files.newBufferedWriter(this.fileCondivisoPath, StandardCharsets.UTF_8)) {
+                if (!this.conversationId.isBlank()) {
+                    writer.write("CONVERSATION_ID;" + sanitizeLine(this.conversationId));
+                    writer.newLine();
+                }
+                writer.write("MATERIA;" + sanitizeLine(this.model.getMateria()));
+                writer.newLine();
+                writer.write("DATA_ORA;" + this.model.getDataOra());
+                writer.newLine();
+                writer.write("DURATA;" + this.model.getDurata());
+                writer.newLine();
+                writer.write("TUTOR;" + sanitizeLine(this.tutorMatricola));
+                writer.newLine();
+                writer.write("STUDENTE;" + sanitizeLine(this.studenteMatricola));
+                writer.newLine();
                 writer.write("STATO;" + getNomeStatoCorrente());
                 writer.newLine();
 
@@ -355,7 +436,14 @@ public class TutoringSessionController {
                 writer.newLine();
 
                 for (Message message : this.model.getStoricoChat()) {
-                    writer.write("MSG;" + message.getIdMittente() + "|" + message.getTesto());
+                    writer.write(
+                            "MSG2;"
+                                    + message.getTimestamp()
+                                    + ";"
+                                    + sanitizeLine(message.getIdMittente())
+                                    + ";"
+                                    + sanitizeLine(message.getTesto())
+                    );
                     writer.newLine();
                 }
 
@@ -383,8 +471,21 @@ public class TutoringSessionController {
     }
 
     private String buildFileName() {
+        if (!this.conversationId.isBlank()) {
+            return FILE_PREFIX
+                    + sanitizeFilePart(this.conversationId)
+                    + "_"
+                    + sanitizeFilePart(this.tutorMatricola)
+                    + "_"
+                    + sanitizeFilePart(this.studenteMatricola)
+                    + FILE_EXTENSION;
+        }
         final String materiaSenzaSpazi = this.materia.replaceAll("\\s+", "");
         return FILE_PREFIX + materiaSenzaSpazi + "_" + this.tutorMatricola + "_" + this.studenteMatricola + FILE_EXTENSION;
+    }
+
+    private static String sanitizeFilePart(final String value) {
+        return value.replaceAll("[^A-Za-z0-9_-]", "_");
     }
 
     private static String sanitizeReviewComment(final String comment) {
@@ -392,6 +493,10 @@ public class TutoringSessionController {
             return "";
         }
         return comment.replace("\n", " ").replace("\r", " ").replace("|", "/");
+    }
+
+    private static String sanitizeLine(final String value) {
+        return value == null ? "" : value.replace('\n', ' ').replace('\r', ' ');
     }
 
     private static String requireText(final String value, final String fieldName) {

@@ -3,6 +3,7 @@ package it.unibo.tutoring.view.session;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
+import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.view.components.AppHeader;
 
@@ -59,6 +60,22 @@ public class TutoringSessionViewApp extends Application {
                 tutorOffer,
                 matricolaInserzionista,
                 UserSession.getMatricola());
+    }
+
+    private TutoringSessionViewApp(final TutoringSessionController controller) {
+        this.controller = controller;
+    }
+
+    public static Scene createSceneForBox(
+            final Stage stage,
+            final BoxTutoraggio box,
+            final String counterpartyMatricola) {
+        final TutoringSessionController controller = SessionLinkUtil.buildController(
+                box,
+                counterpartyMatricola,
+                UserSession.getMatricola()
+        );
+        return new TutoringSessionViewApp(controller).createScene(stage);
     }
 
     public static Scene createScene(

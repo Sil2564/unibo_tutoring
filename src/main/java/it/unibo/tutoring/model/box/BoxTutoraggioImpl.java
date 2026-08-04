@@ -32,6 +32,8 @@ public class BoxTutoraggioImpl
 
     private final List<String> candidati = new ArrayList<>();
 
+    private final List<String> contatti = new ArrayList<>();
+
     private String confermato;
 
     public BoxTutoraggioImpl(
@@ -133,6 +135,21 @@ public class BoxTutoraggioImpl
     }
 
     @Override
+    public List<String> getContatti() {
+        return Collections.unmodifiableList(this.contatti);
+    }
+
+    @Override
+    public void aggiungiContatto(final String matricola) {
+        if (matricola == null || matricola.isBlank() || matricola.equals(this.autoreMatricola)) {
+            return;
+        }
+        if (!this.contatti.contains(matricola)) {
+            this.contatti.add(matricola);
+        }
+    }
+
+    @Override
     public void aggiungiCandidato(final String matricola) {
         if (matricola == null || matricola.isBlank()) {
             return;
@@ -143,6 +160,7 @@ public class BoxTutoraggioImpl
         if (matricola.equals(this.autoreMatricola)) {
             return;
         }
+        aggiungiContatto(matricola);
         if (!this.candidati.contains(matricola)) {
             this.candidati.add(matricola);
         }

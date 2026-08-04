@@ -42,6 +42,18 @@ public interface BoxTutoraggio {
     boolean isCandidato(String matricola);
 
     /**
+     * Matricole degli utenti che hanno aperto una conversazione con l'autore.
+     * Ogni contatto identifica una chat distinta per questo annuncio.
+     */
+    List<String> getContatti();
+
+    /**
+     * Registra un contatto senza trasformarlo automaticamente in candidatura.
+     * L'autore dell'annuncio non puo' essere aggiunto come proprio contatto.
+     */
+    void aggiungiContatto(String matricola);
+
+    /**
      * Aggiunge una candidatura. Non ha effetto se l'annuncio e' gia' stato
      * assegnato, se la matricola coincide con l'autore, o se la matricola e'
      * gia' candidata.

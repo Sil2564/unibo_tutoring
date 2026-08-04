@@ -536,8 +536,13 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ITALIAN);
 
-	private VBox announcementCard(final BoxTutoraggio box) {
-		final boolean offer = box.getTipo() == BoxType.OFFER;
+    private VBox announcementCard(final BoxTutoraggio box) {
+        final boolean offer = box.getTipo() == BoxType.OFFER;
+        final String currentUserMatricola = CurrentSession.getUser() != null
+                ? CurrentSession.getUser().getMatricola()
+                : null;
+        final boolean isAuthor = currentUserMatricola != null
+                && currentUserMatricola.equals(box.getAutoreMatricola());
 
 		final VBox card = new VBox(8);
 		card.getStyleClass().add("announcement-card");
@@ -626,6 +631,29 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final HBox bottom = new HBox(8, meta, spacer, contact);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);
+        final Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        final HBox bottom = new HBox(8, meta, spacer);
+        bottom.setAlignment(Pos.BOTTOM_LEFT);
+
+        if (!isAuthor && currentUserMatricola != null) {
+            final Button contact = new Button("Contatta");
+            contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
+            contact.setTextFill(Color.WHITE);
+            contact.setPadding(new Insets(4, 10, 4, 10));
+            contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
+            contact.setBorder(Border.EMPTY);
+            contact.setCursor(Cursor.HAND);
+            contact.setOnAction(event -> {
+                box.aggiungiContatto(currentUserMatricola);
+                final Stage win = (Stage) contact.getScene().getWindow();
+                win.setScene(TutoringSessionViewApp.createSceneForBox(win, box, box.getAutoreMatricola()));
+                win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+                it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+            });
+            contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
+            bottom.getChildren().add(contact);
+        }
 
 		card.getChildren().addAll(tagRow, titleLabel, courseLabel, descriptionLabel, divider, bottom);
 		return card;
