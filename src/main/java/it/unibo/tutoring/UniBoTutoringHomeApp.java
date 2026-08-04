@@ -141,8 +141,8 @@ public class UniBoTutoringHomeApp extends Application {
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 42));
 
         final Label subtitle = new Label(
-            "UniBo Tutoring mette in contatto studenti che offrono e cercano supporto "
-                + "nelle materie universitarie. Condividi le tue conoscenze o trova l'aiuto di cui hai bisogno."
+            "UniBo Tutoring mette in contatto studenti che offrono e cercano supporto nelle materie universitarie."
+                + " \nCondividi le tue conoscenze o trova l'aiuto di cui hai bisogno."
         );
         subtitle.setWrapText(true);
         subtitle.setMinHeight(Region.USE_PREF_SIZE);
@@ -196,7 +196,7 @@ public class UniBoTutoringHomeApp extends Application {
 
     Label subtitle = new Label(
             "Una piattaforma semplice e intuitiva per connettere studenti\n" +
-            "dell'Università di Bologna"
+            "dell'Università di Bologna presso la sede di Cesena"
     );
     subtitle.setFont(Font.font("System", 16));
     subtitle.setTextFill(Color.web("#6B6B6B"));
@@ -242,7 +242,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         left.getChildren().addAll(
             leftTitle,
-            bullet("Sicuro e affidabile", "Accesso riservato agli studenti UniBo con matricola universitaria"),
+            bullet("Sicuro e affidabile", "Accesso riservato agli studenti UniBo con matricola universitaria presso la sede di Cesena"),
             bullet("Recensioni e feedback", "Sistema di valutazioni per garantire la qualità del tutoraggio"),
             bullet("Gestione semplificata", "Dashboard intuitiva per tenere traccia di tutte le tue attività"),
             bullet("Statistiche dettagliate", "Monitora le tue ore di tutoraggio, crediti e recensioni ricevute")
@@ -320,7 +320,7 @@ public class UniBoTutoringHomeApp extends Application {
         section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
+            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna presso la sede di Cesena.\n\nVia dell'Università 50\n47521 Cesena, Italia"),
             footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
             footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
         );

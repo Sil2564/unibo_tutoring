@@ -654,7 +654,7 @@ public class UniBoTutoringDashboardApp extends Application {
         section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
+            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna presso la sede di Cesena.\n\nVia dell'Università 50\n47521 Cesena, Italia"),
             footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
             footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
         );
