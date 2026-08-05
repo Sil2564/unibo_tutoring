@@ -152,7 +152,7 @@ public class TutoringSessionController {
 
     /**
      * Crea/persiste la proposta iniziale (stato Proposed) quando un candidato
-     * accetta un annuncio. Se il file esiste gia' (es. ri-candidatura dopo un
+     * si candida a un annuncio. Se il file esiste gia' (es. ri-candidatura dopo un
      * ritiro) lo stato viene comunque riportato a Proposed.
      */
     public void proponi() {
@@ -187,6 +187,11 @@ public class TutoringSessionController {
         }
         if (!(this.model.getStatoCorrente() instanceof ConfirmedState)) {
             throw new IllegalStateException("Solo una sessione confermata puo' essere completata.");
+        }
+        if (!puoSegnalareCompletamento()) {
+            throw new IllegalStateException(
+                    "La sessione puo' essere completata solo dopo la fine prevista: "
+                            + getFinePrevista());
         }
 
         if (this.userMatricola.equals(this.tutorMatricola)) {
@@ -244,6 +249,28 @@ public class TutoringSessionController {
 
     public boolean isCompletataDaEntrambi() {
         return this.model.getStatoCorrente() instanceof CompletedState;
+    }
+
+    /**
+     * Istante in cui termina la sessione, calcolato da data/ora iniziale e
+     * durata concordata.
+     */
+    public LocalDateTime getFinePrevista() {
+        return this.model.getDataOra().plus(this.model.getDurata());
+    }
+
+    /**
+     * Il completamento diventa disponibile esattamente alla fine prevista.
+     */
+    public boolean puoSegnalareCompletamento() {
+        return puoSegnalareCompletamento(LocalDateTime.now());
+    }
+
+    boolean puoSegnalareCompletamento(final LocalDateTime adesso) {
+        if (adesso == null) {
+            throw new IllegalArgumentException("L'istante corrente e' obbligatorio.");
+        }
+        return !adesso.isBefore(getFinePrevista());
     }
 
     /** True se l'utente corrente ha gia' segnalato il proprio completamento. */

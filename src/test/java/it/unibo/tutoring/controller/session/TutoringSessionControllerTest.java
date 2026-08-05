@@ -142,4 +142,44 @@ class TutoringSessionControllerTest {
                 "Messaggio del secondo annuncio",
                 secondConversation.getModel().getStoricoChat().get(0).getTesto());
     }
+
+    @Test
+    void completionShouldBecomeAvailableExactlyAtScheduledEnd() {
+        final LocalDateTime start = LocalDateTime.of(2026, 8, 5, 11, 0);
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                start,
+                Duration.ofHours(2));
+
+        assertEquals(LocalDateTime.of(2026, 8, 5, 13, 0), controller.getFinePrevista());
+        assertFalse(controller.puoSegnalareCompletamento(
+                LocalDateTime.of(2026, 8, 5, 12, 59, 59)));
+        assertTrue(controller.puoSegnalareCompletamento(
+                LocalDateTime.of(2026, 8, 5, 13, 0)));
+    }
+
+    @Test
+    void shouldRejectCompletionBeforeScheduledEnd() {
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                LocalDateTime.now().plusDays(1),
+                Duration.ofHours(2));
+
+        controller.confermaSessione();
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                controller::segnalaCompletamento);
+        assertTrue(error.getMessage().contains("solo dopo la fine prevista"));
+        assertFalse(controller.isCompletatoDaTutor());
+        assertFalse(controller.isCompletatoDaStudente());
+    }
 }
