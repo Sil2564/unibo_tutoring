@@ -346,18 +346,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
 
-		final List<String> corsiDisponibili = List.of(
-			"Architettura",
-			"Ingegneria biomedica",
-			"Ingegneria e scienze informatiche",
-			"Ingegneria elettronica",
-			"Tecnologie dei sistemi informatici",
-			"Cesena",
-			"Ingegneria e scienze informatiche",
-			"Scienze e cultura della gastronomia",
-			"Tecnologie alimentari",
-			"Viticoltura ed enologia"
-		);
+		final List<String> corsiDisponibili = it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI;
 		final java.util.LinkedHashSet<String> courseItems = new java.util.LinkedHashSet<>();
 		courseItems.add("Tutti i corsi");
 		courseItems.addAll(corsiDisponibili);

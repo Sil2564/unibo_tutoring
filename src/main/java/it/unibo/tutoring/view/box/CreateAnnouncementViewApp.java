@@ -202,13 +202,8 @@ public final class CreateAnnouncementViewApp {
         VBox.setMargin(sessionLabel, new Insets(0, 0, 14, 0));
 
         final ComboBox<String> corsoBox = new ComboBox<>();
-        corsoBox.getItems().addAll(
-            "Tecnologie dei Sistemi Informatici",
-            "Informatica",
-            "Ingegneria Informatica",
-            "Ingegneria Elettronica"
-        );
-        corsoBox.setValue("Tecnologie dei Sistemi Informatici");
+        corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
+        corsoBox.setPromptText("Seleziona il corso");
         styleField(corsoBox);
 
         final TextField materiaField = new TextField();
@@ -298,7 +293,8 @@ public final class CreateAnnouncementViewApp {
 
         publishButton.setOnAction(event -> {
 
-            if (materiaField.getText().isBlank()
+            if (corsoBox.getValue() == null
+                || materiaField.getText().isBlank()
                 || argomentoField.getText().isBlank()
                 || dataPicker.getValue() == null
                 || oraField.getText().isBlank()) {
