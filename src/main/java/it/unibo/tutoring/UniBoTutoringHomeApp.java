@@ -76,12 +76,7 @@ public class UniBoTutoringHomeApp extends Application {
         topBar.getStyleClass().add("app-header");
         topBar.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        final Image uniBoLogoImage = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
-        final ImageView uniBoLogo = new ImageView(uniBoLogoImage);
-        uniBoLogo.setFitWidth(34);
-        uniBoLogo.setFitHeight(34);
-        uniBoLogo.setPreserveRatio(true);
-        uniBoLogo.setSmooth(true);
+        final ImageView uniBoLogo = imageView("src/icons/logo.png", 34, 34);
 
         final VBox brand = new VBox(2);
         final Label brandTitle = new Label("UniBo Tutoring");
@@ -146,7 +141,7 @@ public class UniBoTutoringHomeApp extends Application {
         );
         subtitle.setWrapText(true);
         subtitle.setMinHeight(Region.USE_PREF_SIZE);
-        subtitle.setTextFill(Color.rgb(255, 255, 255, 0.92));
+        subtitle.setTextFill(Color.gray(0.95));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
         final Button startNowButton = primaryWhiteButton("Inizia Subito");
@@ -159,12 +154,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final VBox imageCard = new VBox();
         imageCard.setAlignment(Pos.CENTER);
-        final Image image = new Image(Path.of("src", "icons", "comp.png").toUri().toString());
-        final ImageView imageView = new ImageView(image);
-        imageView.setFitWidth(392);
-        imageView.setFitHeight(228);
-        imageView.setPreserveRatio(true);
-        imageView.setSmooth(true);
+        final ImageView imageView = imageView("src/icons/comp.png", 392, 228);
 
         final Rectangle roundedClip = new Rectangle(392, 228);
         roundedClip.setArcWidth(24);
@@ -222,9 +212,52 @@ public class UniBoTutoringHomeApp extends Application {
     );
 
     cards.setAlignment(Pos.CENTER);
-    section.getChildren().addAll(title, subtitle, cards);
-    return section;
+        // Sezione esclusiva per il campus di Cesena
+        final VBox exclusiveSection = new VBox(20);
+        exclusiveSection.setAlignment(Pos.CENTER);
+        exclusiveSection.setPadding(new Insets(40, 40, 40, 40));
+        exclusiveSection.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        final Label exclTitle = new Label("Esclusivamente per il Campus di Cesena");
+        exclTitle.setFont(Font.font("System", FontWeight.BOLD, 30));
+        exclTitle.setTextFill(Color.web("#111111"));
+
+        final Label exclSubtitle = new Label("UniBo Tutoring è una piattaforma dedicata agli studenti dell'Università di Bologna presso la sede di Cesena.");
+        exclSubtitle.setFont(Font.font("System", 15));
+        exclSubtitle.setTextFill(Color.web("#6B6B6B"));
+        exclSubtitle.setWrapText(true);
+        exclSubtitle.setTextAlignment(TextAlignment.CENTER);
+        exclSubtitle.setMinHeight(Region.USE_PREF_SIZE);
+
+     final HBox exclCards = new HBox(30,
+    infoCardWithBorder(
+        "src/icons/campus.png",
+        "Campus di Cesena",
+        "Il servizio è attivo esclusivamente per gli studenti frequentanti il campus di Cesena dell'Università di Bologna. Non è disponibile per altri dipartimenti o sedi."
+    ),
+
+    infoCardWithBorder(
+        "src/icons/matricola.png",
+        "Matricola universitaria",
+        "Per registrarti devi essere uno studente attivo e possedere un codice matricola UniBo valido. La matricola viene verificata in fase di registrazione per garantire l'accesso solo agli aventi diritto."
+    ),
+
+    infoCardWithBorder(
+        "src/icons/verified.png",
+        "Ambiente sicuro e verificato",
+        "Grazie alla verifica tramite matricola, tutti gli utenti della piattaforma sono studenti reali dell'ateneo. Nessun accesso anonimo o esterno è consentito."
+    )
+);
+
+exclCards.setAlignment(Pos.CENTER);
+exclCards.setPadding(new Insets(10, 0, 0, 0));
+
+        exclusiveSection.getChildren().addAll(exclTitle, exclSubtitle, exclCards);
+
+        section.getChildren().addAll(title, subtitle, cards, exclusiveSection);
+        return section;
 }
+
 
     private HBox createWhySection() {
         final HBox section = new HBox(24);
@@ -255,12 +288,7 @@ public class UniBoTutoringHomeApp extends Application {
         cta.setBackground(new Background(new BackgroundFill(CARD_BACKGROUND, new CornerRadii(12), Insets.EMPTY)));
         cta.setBorder(new Border(new BorderStroke(Color.web("#E0E0E0"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)));
 
-        final Image ctaIconImage = new Image(Path.of("src", "icons", "whitebook.png").toUri().toString());
-        final ImageView ctaIcon = new ImageView(ctaIconImage);
-        ctaIcon.setFitWidth(28);
-        ctaIcon.setFitHeight(28);
-        ctaIcon.setPreserveRatio(true);
-        ctaIcon.setSmooth(true);
+        final ImageView ctaIcon = imageView("src/icons/whitebook.png", 28, 28);
 
         final StackPane ctaIconCircle = new StackPane(ctaIcon);
         ctaIconCircle.setPrefSize(58, 58);
@@ -352,17 +380,11 @@ public class UniBoTutoringHomeApp extends Application {
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
         final VBox card = new VBox(10);
-        card.getStyleClass().add("soft-card");
         card.setAlignment(Pos.TOP_CENTER);
         card.setPrefWidth(200);
         card.setPadding(new Insets(16, 12, 16, 12));
 
-        final Image iconImage = new Image(Path.of(iconPath).toUri().toString());
-        final ImageView icon = new ImageView(iconImage);
-        icon.setFitWidth(28);
-        icon.setFitHeight(28);
-        icon.setPreserveRatio(true);
-        icon.setSmooth(true);
+        final ImageView icon = imageView(iconPath, 28, 28);
 
         final StackPane iconBox = new StackPane(icon);
         iconBox.setPrefSize(56, 56);
@@ -385,6 +407,64 @@ public class UniBoTutoringHomeApp extends Application {
         return card;
     }
 
+    private static VBox infoCardWithBorder(
+        final String iconPath,
+        final String title,
+        final String description) {
+
+    final ImageView icon = imageView(iconPath, 22, 22);
+
+    final StackPane iconContainer = new StackPane(icon);
+    iconContainer.setPrefSize(52, 52);
+    iconContainer.setMinSize(52, 52);
+    iconContainer.setMaxSize(52, 52);
+
+    iconContainer.setBackground(new Background(
+            new BackgroundFill(
+                    Color.web("#FCECEF"),
+                    new CornerRadii(16),
+                    Insets.EMPTY)));
+
+    final Label cardTitle = new Label(title);
+    cardTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
+    cardTitle.setTextFill(Color.web("#D91E43"));
+
+    final HBox header = new HBox(16, iconContainer, cardTitle);
+    header.setAlignment(Pos.CENTER_LEFT);
+
+    final Label body = new Label(description);
+    body.setWrapText(true);
+    body.setFont(Font.font("System", 15));
+    body.setTextFill(Color.web("#374151"));
+    body.setLineSpacing(5);
+
+    final VBox card = new VBox(20, header, body);
+    card.setAlignment(Pos.TOP_LEFT);
+
+    card.setPrefWidth(450);
+    card.setMaxWidth(450);
+    card.setMinHeight(250);
+
+    card.setPadding(new Insets(30));
+
+    card.setBackground(new Background(
+            new BackgroundFill(
+                    Color.WHITE,
+                    new CornerRadii(20),
+                    Insets.EMPTY)));
+
+    card.setBorder(new Border(
+            new BorderStroke(
+                    Color.web("#E5E7EB"),
+                    BorderStrokeStyle.SOLID,
+                    new CornerRadii(20),
+                    new BorderWidths(1))));
+
+    card.setStyle(
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0.20, 0, 3);");
+
+    return card;
+}
     private VBox bullet(final String title, final String detail) {
         final VBox box = new VBox(2);
         final Label titleLabel = new Label("• " + title);
@@ -399,6 +479,15 @@ public class UniBoTutoringHomeApp extends Application {
 
         box.getChildren().addAll(titleLabel, detailLabel);
         return box;
+    }
+
+    private static ImageView imageView(final String path, final double width, final double height) {
+        final ImageView image = new ImageView(new Image(Path.of(path).toUri().toString()));
+        image.setFitWidth(width);
+        image.setFitHeight(height);
+        image.setPreserveRatio(true);
+        image.setSmooth(true);
+        return image;
     }
 
     
