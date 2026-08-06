@@ -1,5 +1,8 @@
 package it.unibo.tutoring.view.session;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.UserAccount;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
@@ -41,7 +44,17 @@ public final class SessionLinkUtil {
         final String counterpartyMatricola,
         final String viewerMatricola
     ) {
+        if (counterpartyMatricola == null || viewerMatricola == null) {
+            throw new IllegalArgumentException("I partecipanti della conversazione sono obbligatori.");
+        }
+        if (counterpartyMatricola.equals(viewerMatricola)) {
+            throw new IllegalArgumentException("Non e' possibile aprire una conversazione con se stessi.");
+        }
+
         final boolean counterpartyIsAuthor = counterpartyMatricola.equals(box.getAutoreMatricola());
+        final String externalParticipant = counterpartyIsAuthor
+                ? viewerMatricola
+                : counterpartyMatricola;
 
         // tutorOfferParam indica se la CONTROPARTE (non chi guarda) offre tutoraggio.
         final boolean tutorOfferParam = counterpartyIsAuthor
@@ -53,8 +66,32 @@ public final class SessionLinkUtil {
             nomeCompleto(counterpartyMatricola),
             tutorOfferParam,
             counterpartyMatricola,
-            viewerMatricola
+            viewerMatricola,
+            sessionDateTime(box),
+            Duration.ofHours(Math.max(1, box.getDurataOre())),
+            conversationId(box, externalParticipant)
         );
+    }
+
+    public static String conversationId(
+            final BoxTutoraggio box,
+            final String externalParticipantMatricola
+    ) {
+        if (box == null || externalParticipantMatricola == null
+                || externalParticipantMatricola.isBlank()) {
+            throw new IllegalArgumentException("Annuncio e partecipante sono obbligatori.");
+        }
+        if (externalParticipantMatricola.equals(box.getAutoreMatricola())) {
+            throw new IllegalArgumentException("L'autore non puo' contattare se stesso.");
+        }
+        return box.getId() + "_" + externalParticipantMatricola;
+    }
+
+    private static LocalDateTime sessionDateTime(final BoxTutoraggio box) {
+        if (box.getData() == null || box.getOra() == null) {
+            return LocalDateTime.now();
+        }
+        return box.getData().atTime(box.getOra());
     }
 
     public static String nomeCompleto(final String matricola) {

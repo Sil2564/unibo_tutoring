@@ -17,12 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class TutoringSessionControllerTest {
 
     private final Path filePath = Path.of("data", "sessions", "SESS_TestMateria_0001_9999.csv");
+    private final Path firstConversationPath = Path.of(
+            "data", "sessions", "SESS_BOX_A_0000000002_0000000001_0000000002.csv");
+    private final Path secondConversationPath = Path.of(
+            "data", "sessions", "SESS_BOX_B_0000000002_0000000001_0000000002.csv");
 
     @AfterEach
     void cleanup() throws IOException {
         if (Files.exists(filePath)) {
             Files.delete(filePath);
         }
+        Files.deleteIfExists(firstConversationPath);
+        Files.deleteIfExists(secondConversationPath);
     }
 
     @Test
@@ -35,8 +41,6 @@ class TutoringSessionControllerTest {
                 "0001",
                 "9999");
 
-        controller.confermaSessione();
-        controller.completaSessione();
         controller.registraRecensione(4, "Esperienza positiva");
 
         assertTrue(Files.exists(filePath));
@@ -101,5 +105,81 @@ class TutoringSessionControllerTest {
 
         assertEquals(originalMessage.getTimestamp(), loadedMessage.getTimestamp());
         assertEquals("Ciao; ci vediamo? Perfetto", loadedMessage.getTesto());
+    }
+
+    @Test
+    void shouldSeparateChatsForDifferentAnnouncementsWithSameParticipants() {
+        final LocalDateTime dataOra = LocalDateTime.of(2026, 9, 15, 14, 30);
+        final Duration durata = Duration.ofHours(1);
+        final TutoringSessionController firstConversation = new TutoringSessionController(
+                "OOP",
+                "Tutor Uno",
+                true,
+                "0000000001",
+                "0000000002",
+                dataOra,
+                durata,
+                "BOX_A_0000000002");
+        final TutoringSessionController secondConversation = new TutoringSessionController(
+                "OOP",
+                "Tutor Uno",
+                true,
+                "0000000001",
+                "0000000002",
+                dataOra,
+                durata,
+                "BOX_B_0000000002");
+
+        firstConversation.inviaMessaggio("Messaggio del primo annuncio");
+        secondConversation.inviaMessaggio("Messaggio del secondo annuncio");
+
+        assertEquals(1, firstConversation.getModel().getStoricoChat().size());
+        assertEquals(1, secondConversation.getModel().getStoricoChat().size());
+        assertEquals(
+                "Messaggio del primo annuncio",
+                firstConversation.getModel().getStoricoChat().get(0).getTesto());
+        assertEquals(
+                "Messaggio del secondo annuncio",
+                secondConversation.getModel().getStoricoChat().get(0).getTesto());
+    }
+
+    @Test
+    void completionShouldBecomeAvailableExactlyAtScheduledEnd() {
+        final LocalDateTime start = LocalDateTime.of(2026, 8, 5, 11, 0);
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                start,
+                Duration.ofHours(2));
+
+        assertEquals(LocalDateTime.of(2026, 8, 5, 13, 0), controller.getFinePrevista());
+        assertFalse(controller.puoSegnalareCompletamento(
+                LocalDateTime.of(2026, 8, 5, 12, 59, 59)));
+        assertTrue(controller.puoSegnalareCompletamento(
+                LocalDateTime.of(2026, 8, 5, 13, 0)));
+    }
+
+    @Test
+    void shouldRejectCompletionBeforeScheduledEnd() {
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                LocalDateTime.now().plusDays(1),
+                Duration.ofHours(2));
+
+        controller.confermaSessione();
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                controller::segnalaCompletamento);
+        assertTrue(error.getMessage().contains("solo dopo la fine prevista"));
+        assertFalse(controller.isCompletatoDaTutor());
+        assertFalse(controller.isCompletatoDaStudente());
     }
 }

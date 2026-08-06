@@ -346,18 +346,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
 
-		final List<String> corsiDisponibili = List.of(
-			"Architettura",
-			"Ingegneria biomedica",
-			"Ingegneria e scienze informatiche",
-			"Ingegneria elettronica",
-			"Tecnologie dei sistemi informatici",
-			"Cesena",
-			"Ingegneria e scienze informatiche",
-			"Scienze e cultura della gastronomia",
-			"Tecnologie alimentari",
-			"Viticoltura ed enologia"
-		);
+		final List<String> corsiDisponibili = it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI;
 		final java.util.LinkedHashSet<String> courseItems = new java.util.LinkedHashSet<>();
 		courseItems.add("Tutti i corsi");
 		courseItems.addAll(corsiDisponibili);
@@ -617,6 +606,9 @@ public class UniBoTutoringDashboardApp extends Application {
 		contact.setBorder(Border.EMPTY);
 		contact.setCursor(Cursor.HAND);
 		contact.setOnAction(event -> {
+			final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
+			box.aggiungiContatto(me);
+			BoxRepository.saveAll();
 			final Stage win = (Stage) contact.getScene().getWindow();
 			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
 			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
@@ -654,7 +646,7 @@ public class UniBoTutoringDashboardApp extends Application {
         section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna presso la sede di Cesena.\n\nVia dell'Università 50\n47521 Cesena, Italia"),
+            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
             footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
             footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
         );

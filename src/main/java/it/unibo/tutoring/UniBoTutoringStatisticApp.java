@@ -4,11 +4,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.unibo.tutoring.model.credit.CreditService;
+import it.unibo.tutoring.model.credit.CreditRecord;
 import it.unibo.tutoring.model.credit.ReviewRepository;
 import it.unibo.tutoring.model.credit.ReviewRepository.Review;
 import it.unibo.tutoring.model.credit.CompletedSessionRepository;
 import it.unibo.tutoring.model.credit.CompletedSessionRepository.CompletedSession;
+import it.unibo.tutoring.model.credit.TutorStatistics;
 import it.unibo.tutoring.view.components.AppHeader;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -58,9 +59,9 @@ import java.util.stream.Collectors;
 public class UniBoTutoringStatisticApp extends Application {
 
     private static final Color PRIMARY_RED = Color.web("#D91E43");
-    private static final Color PAGE_BG = Color.web("#F8F9FA"); 
+    private static final Color PAGE_BG = Color.web("#F8F9FA");
     private static final Color TEXT_DARK = Color.web("#111111");
-    private static final Color TEXT_MEDIUM = Color.web("#707070"); 
+    private static final Color TEXT_MEDIUM = Color.web("#707070");
     @Override
     public void start(final Stage stage) {
         stage.setTitle("UniBo Tutoring - Statistiche");
@@ -142,7 +143,7 @@ public class UniBoTutoringStatisticApp extends Application {
         navHeader.getChildren().addAll(navTitle, spacer, collapse);
 
         final VBox menu = new VBox(8);
-        
+
         final List<Node> nodesToHide = new ArrayList<>();
         nodesToHide.add(navTitle);
 
@@ -153,9 +154,9 @@ public class UniBoTutoringStatisticApp extends Application {
             stage.setTitle("UniBo Tutoring - Dashboard");
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
-        
+
         final Button statisticsBtn = navItem("graph_white.png", "Statistiche", "Ore e recensioni", true, nodesToHide);
-        
+
         menu.getChildren().addAll(dashboardBtn, statisticsBtn);
 
         sidebar.getChildren().addAll(navHeader, menu);
@@ -169,7 +170,7 @@ public class UniBoTutoringStatisticApp extends Application {
             final boolean open = isSidebarOpen[0];
 
             final double targetWidth = open ? 250 : 60;
-            
+
             collapseIcon.setImage(open ? arrowLeftImg : arrowRightImg);
 
             if (!open) {
@@ -186,7 +187,7 @@ public class UniBoTutoringStatisticApp extends Application {
                     new KeyValue(sidebar.maxWidthProperty(), targetWidth)
                 )
             );
-            
+
             timeline.setOnFinished(e -> {
                 if (open) {
                     nodesToHide.forEach(n -> {
@@ -195,7 +196,7 @@ public class UniBoTutoringStatisticApp extends Application {
                     });
                 }
             });
-            
+
             timeline.play();
         });
 
@@ -278,9 +279,9 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final VBox scrollContent = new VBox(24);
         scrollContent.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
-        
+
         // Margini proporzionati: evita che i box tocchino i bordi del riquadro esterno
-        scrollContent.setPadding(new Insets(24, 32, 24, 32)); 
+        scrollContent.setPadding(new Insets(24, 32, 24, 32));
 
         // Garantisce che tutti i macroblocchi si allunghino orizzontalmente insieme al riquadro
         titleBox.setMaxWidth(Double.MAX_VALUE);
@@ -289,7 +290,7 @@ public class UniBoTutoringStatisticApp extends Application {
         sessionsSection.setMaxWidth(Double.MAX_VALUE);
 
         scrollContent.getChildren().addAll(titleBox, kpiCards, reviewsSection, sessionsSection, chartSection);
-        
+
         scrollPane.setContent(scrollContent);
         content.getChildren().add(scrollPane);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -300,17 +301,17 @@ public class UniBoTutoringStatisticApp extends Application {
         final HBox kpiBox = new HBox(20);
         kpiBox.setAlignment(Pos.CENTER_LEFT);
 
-        List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
-        int totalHours = sessions.stream().mapToInt(CompletedSession::hours).sum();
-        int totalCredits = sessions.stream().mapToInt(CompletedSession::creditsGiven).sum();
+        final List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
+        final CreditRecord creditRecord = AppConfig.getInstance()
+                .getCreditService()
+                .getCreditRecord(matricola);
+        final TutorStatistics statistics = TutorStatistics.from(creditRecord, sessions);
         List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
         double avgRating = reviews.stream().mapToInt(Review::stars).average().orElse(0.0);
-        
-        int totalSessions = sessions.size();
 
-        final VBox card1 = createKpiCard("clock_red.png", "Ore totali", totalHours + "h", "di tutoraggio svolto");
-        final VBox card2 = createKpiCard("coccarda.png", "Crediti", totalCredits + "", "crediti accumulati");
-        final VBox card3 = createKpiCard("graph_red.png", "Sessioni", totalSessions + "", "completate con successo");
+        final VBox card1 = createKpiCard("clock_red.png", "Ore totali", statistics.totalHours() + "h", "di tutoraggio svolto");
+        final VBox card2 = createKpiCard("coccarda.png", "Crediti", Integer.toString(statistics.totalCredits()), "crediti accumulati");
+        final VBox card3 = createKpiCard("graph_red.png", "Sessioni", Integer.toString(statistics.totalSessions()), "completate con successo");
         final VBox card4 = createKpiCard("star_red.png", "Valutazioni", String.format("%.1f/5", avgRating), "recensioni");
 
         kpiBox.getChildren().addAll(card1, card2, card3, card4);
@@ -368,7 +369,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final VBox reviewsList = new VBox(12);
         reviewsList.setMaxWidth(Double.MAX_VALUE);
-        
+
         // Carica TUTTE le recensioni associate alla matricola dell'utente corrente
         List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
 
@@ -385,7 +386,7 @@ public class UniBoTutoringStatisticApp extends Application {
                 LocalDate db = parseDateSafe(b.date());
                 return db.compareTo(da);
             });
-            
+
             // Cicla ed inserisce l'intera lista delle recensioni all'interno del box scorrevole
             for (final Review review : sorted) {
                 final String starsString = "★".repeat(Math.max(0, Math.min(5, review.stars()))) + "☆".repeat(Math.max(0, 5 - review.stars()));
@@ -400,24 +401,24 @@ public class UniBoTutoringStatisticApp extends Application {
         reviewsScroll.setFitToWidth(true);
         reviewsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         reviewsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        
+
         // Forza l'altezza e il ridimensionamento per essere speculare al box delle sessioni recenti
-        reviewsScroll.setPrefHeight(215); 
+        reviewsScroll.setPrefHeight(215);
         reviewsScroll.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(reviewsScroll, Priority.ALWAYS);
-        
+
         // Rende lo sfondo dello ScrollPane trasparente per uniformarsi alla card
         reviewsScroll.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;");
 
         container.getChildren().addAll(sectionHeader, reviewsScroll);
-        
+
         // Imposta l'altezza preferita del container principale per pareggiare le sessioni recenti
         container.setPrefHeight(301);
         container.setMinHeight(301);
-        
+
         return container;
     }
-    
+
         private VBox createCustomReviewCard(String name, String subjectStr, String stars, String dateStr, String comment) {
         final VBox card = new VBox(6);
         card.setPadding(new Insets(16));

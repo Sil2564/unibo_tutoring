@@ -1,5 +1,6 @@
 package it.unibo.tutoring.view.box;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -15,6 +16,7 @@ import it.unibo.tutoring.model.credit.ReviewRepository;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.session.SessionLinkUtil;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -50,6 +52,8 @@ public final class AnnouncementDetailViewApp {
 
     private static final DateTimeFormatter DATE_FORMAT =
         DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ITALIAN);
+    private static final DateTimeFormatter COMPLETION_DATE_FORMAT =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy 'alle' HH:mm", Locale.ITALIAN);
 
     private AnnouncementDetailViewApp() {
     }
@@ -152,6 +156,8 @@ public final class AnnouncementDetailViewApp {
             contactButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
             contactButton.setBorder(Border.EMPTY);
             contactButton.setOnAction(event -> {
+                box.aggiungiContatto(me);
+                it.unibo.tutoring.model.box.BoxRepository.saveAll();
                 final Stage win = (Stage) contactButton.getScene().getWindow();
                 win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
                 win.setTitle("UniBo Tutoring - Dettaglio Sessione");
@@ -236,17 +242,17 @@ public final class AnnouncementDetailViewApp {
 
             section.getChildren().addAll(info, buttonRow(ritira));
         } else {
-            final Label info = infoLabel("Vuoi proporti per questa sessione di tutoraggio?");
+            final Label info = infoLabel("Vuoi candidarti per questa sessione di tutoraggio?");
 
-            final Button accetta = new Button("Accetta");
-            stylePrimaryButton(accetta, GREEN);
-            accetta.setOnAction(event -> {
+            final Button candidati = new Button("Candidati");
+            stylePrimaryButton(candidati, GREEN);
+            candidati.setOnAction(event -> {
                 box.aggiungiCandidato(me);
                 SessionLinkUtil.buildController(box, box.getAutoreMatricola(), me).proponi();
                 refresh(stage, box);
             });
 
-            section.getChildren().addAll(info, buttonRow(accetta));
+            section.getChildren().addAll(info, buttonRow(candidati));
         }
 
         return section;
@@ -258,7 +264,7 @@ public final class AnnouncementDetailViewApp {
 
         final List<String> candidati = box.getCandidati();
         if (candidati.isEmpty()) {
-            list.getChildren().add(infoLabel("Nessun candidato ancora. Gli utenti che accetteranno l'annuncio compariranno qui."));
+            list.getChildren().add(infoLabel("Nessun candidato ancora. Gli utenti che si candideranno all'annuncio compariranno qui."));
             return list;
         }
 
@@ -342,17 +348,37 @@ public final class AnnouncementDetailViewApp {
         if (!controller.isCompletataDaEntrambi()) {
             final Label info = infoLabel("Sessione confermata con " + nomeControparte + ".");
 
-            final Button completata = new Button(
-                controller.haGiaSegnalatoCompletamento()
-                    ? "In attesa che " + nomeControparte + " completi anche lui/lei..."
-                    : "Segna come completata"
-            );
-            completata.setDisable(controller.haGiaSegnalatoCompletamento());
-            stylePrimaryButton(completata, controller.haGiaSegnalatoCompletamento() ? TEXT_MEDIUM : PRIMARY_RED);
+            final Button completata = new Button();
+            aggiornaPulsanteCompletamento(completata, controller, nomeControparte);
             completata.setOnAction(event -> {
                 controller.segnalaCompletamento();
                 refresh(stage, box);
             });
+
+            if (!controller.haGiaSegnalatoCompletamento()
+                    && !controller.puoSegnalareCompletamento()) {
+                final long millisecondiAllaFine = java.time.Duration.between(
+                        LocalDateTime.now(),
+                        controller.getFinePrevista()
+                ).toMillis();
+                if (millisecondiAllaFine > 0) {
+                    final PauseTransition abilitaAllaFine = new PauseTransition(
+                            javafx.util.Duration.millis(millisecondiAllaFine));
+                    abilitaAllaFine.setOnFinished(event ->
+                            aggiornaPulsanteCompletamento(
+                                    completata,
+                                    controller,
+                                    nomeControparte));
+                    abilitaAllaFine.play();
+                } else {
+                    // La fine puo' scattare tra il primo aggiornamento del
+                    // pulsante e questo calcolo: rivaluta subito lo stato.
+                    aggiornaPulsanteCompletamento(
+                            completata,
+                            controller,
+                            nomeControparte);
+                }
+            }
 
             section.getChildren().addAll(info, buttonRow(completata));
             return section;
@@ -366,6 +392,32 @@ public final class AnnouncementDetailViewApp {
         }
 
         return section;
+    }
+
+    private static void aggiornaPulsanteCompletamento(
+            final Button completata,
+            final TutoringSessionController controller,
+            final String nomeControparte
+    ) {
+        if (controller.haGiaSegnalatoCompletamento()) {
+            completata.setText("In attesa che " + nomeControparte + " completi anche lui/lei...");
+            completata.setDisable(true);
+            stylePrimaryButton(completata, TEXT_MEDIUM);
+            return;
+        }
+
+        if (!controller.puoSegnalareCompletamento()) {
+            completata.setText(
+                    "Disponibile dal "
+                            + controller.getFinePrevista().format(COMPLETION_DATE_FORMAT));
+            completata.setDisable(true);
+            stylePrimaryButton(completata, TEXT_MEDIUM);
+            return;
+        }
+
+        completata.setText("Segna come completata");
+        completata.setDisable(false);
+        stylePrimaryButton(completata, PRIMARY_RED);
     }
 
     /** Form di recensione mostrato solo a chi ha ricevuto la lezione (lo studente), a completamento avvenuto. */
@@ -435,6 +487,11 @@ public final class AnnouncementDetailViewApp {
     }
 
     private static void refresh(final Stage stage, final BoxTutoraggio box) {
+        // Ogni azione che modifica lo stato dell'annuncio (accetta, ritira,
+        // conferma, rifiuta) passa da qui: e' il punto unico in cui persistiamo
+        // su data/boxes.csv cosi' che la modifica sopravviva al riavvio.
+        it.unibo.tutoring.model.box.BoxRepository.saveAll();
+
         final Stage win = stage != null ? stage : null;
         if (win != null) {
             win.setScene(AnnouncementDetailViewApp.createScene(win, box));
