@@ -536,109 +536,103 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ITALIAN);
 
-    private VBox announcementCard(final BoxTutoraggio box) {
-        final boolean offer = box.getTipo() == BoxType.OFFER;
-        final String currentUserMatricola = CurrentSession.getUser() != null
-                ? CurrentSession.getUser().getMatricola()
-                : null;
-        final boolean isAuthor = currentUserMatricola != null
-                && currentUserMatricola.equals(box.getAutoreMatricola());
+	private VBox announcementCard(final BoxTutoraggio box) {
+		final boolean offer = box.getTipo() == BoxType.OFFER;
 
-        final VBox card = new VBox(8);
-        card.getStyleClass().add("announcement-card");
-        card.setPrefWidth(250);
-        card.setPadding(new Insets(10, 12, 10, 12));
-        card.setCursor(Cursor.HAND);
-        card.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(6), Insets.EMPTY)));
-        card.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(6), BorderWidths.DEFAULT)));
-        card.setOnMouseClicked(event -> {
-            final Stage win = (Stage) card.getScene().getWindow();
-            win.setScene(AnnouncementDetailViewApp.createScene(win, box));
-            win.setTitle("UniBo Tutoring - Dettaglio Annuncio");
-            it.unibo.tutoring.view.components.WindowUtil.maximize(win);
-        });
+		final VBox card = new VBox(8);
+		card.getStyleClass().add("announcement-card");
+		card.setPrefWidth(250);
+		card.setPadding(new Insets(10, 12, 10, 12));
+		card.setCursor(Cursor.HAND);
+		card.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(6), Insets.EMPTY)));
+		card.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(6), BorderWidths.DEFAULT)));
+		card.setOnMouseClicked(event -> {
+			final Stage win = (Stage) card.getScene().getWindow();
+			win.setScene(AnnouncementDetailViewApp.createScene(win, box));
+			win.setTitle("UniBo Tutoring - Dettaglio Annuncio");
+			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+		});
 
-        final Label tag = new Label(offer ? "Offerta tutoraggio" : "Cerco tutor");
-        tag.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
-        tag.setTextFill(Color.WHITE);
-        tag.setPadding(new Insets(2, 7, 2, 7));
-        tag.setBackground(new Background(new BackgroundFill(offer ? PRIMARY_RED : Color.web("#A1A1A1"), new CornerRadii(999), Insets.EMPTY)));
+		final Label tag = new Label(offer ? "Offerta tutoraggio" : "Cerco tutor");
+		tag.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
+		tag.setTextFill(Color.WHITE);
+		tag.setPadding(new Insets(2, 7, 2, 7));
+		tag.setBackground(new Background(new BackgroundFill(offer ? PRIMARY_RED : Color.web("#A1A1A1"), new CornerRadii(999), Insets.EMPTY)));
 
-        final HBox tagRow = new HBox(6, tag);
-        tagRow.setAlignment(Pos.CENTER_LEFT);
-        final String statusText = statusChipText(box);
-        if (statusText != null) {
-            final Label statusChip = new Label(statusText);
-            statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
-            statusChip.setTextFill(Color.WHITE);
-            statusChip.setPadding(new Insets(2, 7, 2, 7));
-            statusChip.setBackground(new Background(new BackgroundFill(
-                    box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9"),
-                    new CornerRadii(999), Insets.EMPTY)));
-            tagRow.getChildren().add(statusChip);
-        }
+		final HBox tagRow = new HBox(6, tag);
+		tagRow.setAlignment(Pos.CENTER_LEFT);
+		final String statusText = statusChipText(box);
+		if (statusText != null) {
+			final Label statusChip = new Label(statusText);
+			statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
+			statusChip.setTextFill(Color.WHITE);
+			statusChip.setPadding(new Insets(2, 7, 2, 7));
+			statusChip.setBackground(new Background(new BackgroundFill(
+				box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9"),
+				new CornerRadii(999), Insets.EMPTY)));
+			tagRow.getChildren().add(statusChip);
+		}
 
-        final String autoreNome = estraiNomeAutore(box.getTitolo());
-        final Label titleLabel = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
-        titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 12));
-        titleLabel.setTextFill(TEXT_DARK);
-        titleLabel.setWrapText(true);
+		final String autoreNome = estraiNomeAutore(box.getTitolo());
+		final Label titleLabel = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
+		titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 12));
+		titleLabel.setTextFill(TEXT_DARK);
+		titleLabel.setWrapText(true);
 
-        final Label courseLabel = new Label(box.getCorso() + " · " + box.getMateria());
-        courseLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-        courseLabel.setTextFill(TEXT_MEDIUM);
+		final Label courseLabel = new Label(box.getCorso() + " · " + box.getMateria());
+		courseLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+		courseLabel.setTextFill(TEXT_MEDIUM);
 
-        final Label descriptionLabel = new Label("Argomenti: " + box.getArgomento());
-        descriptionLabel.setWrapText(true);
-        descriptionLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-        descriptionLabel.setTextFill(Color.web("#2D2D2D"));
+		final Label descriptionLabel = new Label("Argomenti: " + box.getArgomento());
+		descriptionLabel.setWrapText(true);
+		descriptionLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+		descriptionLabel.setTextFill(Color.web("#2D2D2D"));
 
-        final Line divider = new Line(0, 0, 230, 0);
-        divider.setStroke(Color.web("#E3E3E3"));
+		final Line divider = new Line(0, 0, 230, 0);
+		divider.setStroke(Color.web("#E3E3E3"));
 
-        final ImageView userIcon = icon("user_gray.png", 11, 11);
-        final Label userLabel = new Label(autoreNome);
-        userLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-        userLabel.setTextFill(TEXT_MEDIUM);
+		final ImageView userIcon = icon("user_gray.png", 11, 11);
+		final Label userLabel = new Label(autoreNome);
+		userLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+		userLabel.setTextFill(TEXT_MEDIUM);
 
-        final ImageView dateIcon = icon("calendar_gray.png", 11, 11);
-        final String dateText = box.getData().format(DATE_FORMAT) + " - " + box.getOra() + " - " + box.getDurataOre() + "h";
-        final Label dateLabel = new Label(dateText);
-        dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-        dateLabel.setTextFill(TEXT_MEDIUM);
+		final ImageView dateIcon = icon("calendar_gray.png", 11, 11);
+		final String dateText = box.getData().format(DATE_FORMAT) + " - " + box.getOra() + " - " + box.getDurataOre() + "h";
+		final Label dateLabel = new Label(dateText);
+		dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+		dateLabel.setTextFill(TEXT_MEDIUM);
 
-        final VBox meta = new VBox(2,
-                new HBox(4, userIcon, userLabel),
-                new HBox(4, dateIcon, dateLabel)
-        );
+		final VBox meta = new VBox(2,
+			new HBox(4, userIcon, userLabel),
+			new HBox(4, dateIcon, dateLabel)
+		);
 
-        final Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        final HBox bottom = new HBox(8, meta, spacer);
-        bottom.setAlignment(Pos.BOTTOM_LEFT);
+		final Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
+		final Button contact = new Button("Contatta");
+		contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
+		contact.setTextFill(Color.WHITE);
+		contact.setPadding(new Insets(4, 10, 4, 10));
+		contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
+		contact.setBorder(Border.EMPTY);
+		contact.setCursor(Cursor.HAND);
+		contact.setOnAction(event -> {
+			final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
+			box.aggiungiContatto(me);
+			BoxRepository.saveAll();
+			final Stage win = (Stage) contact.getScene().getWindow();
+			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
+			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+		});
+		contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
 
-        if (!isAuthor && currentUserMatricola != null) {
-            final Button contact = new Button("Contatta");
-            contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
-            contact.setTextFill(Color.WHITE);
-            contact.setPadding(new Insets(4, 10, 4, 10));
-            contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
-            contact.setBorder(Border.EMPTY);
-            contact.setCursor(Cursor.HAND);
-            contact.setOnAction(event -> {
-                box.aggiungiContatto(currentUserMatricola);
-                final Stage win = (Stage) contact.getScene().getWindow();
-                win.setScene(TutoringSessionViewApp.createSceneForBox(win, box, box.getAutoreMatricola()));
-                win.setTitle("UniBo Tutoring - Dettaglio Sessione");
-                it.unibo.tutoring.view.components.WindowUtil.maximize(win);
-            });
-            contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
-            bottom.getChildren().add(contact);
-        }
+		final HBox bottom = new HBox(8, meta, spacer, contact);
+		bottom.setAlignment(Pos.BOTTOM_LEFT);
 
-        card.getChildren().addAll(tagRow, titleLabel, courseLabel, descriptionLabel, divider, bottom);
-        return card;
-    }
+		card.getChildren().addAll(tagRow, titleLabel, courseLabel, descriptionLabel, divider, bottom);
+		return card;
+	}
 
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
 	private static String statusChipText(final BoxTutoraggio box) {
@@ -663,7 +657,7 @@ public class UniBoTutoringDashboardApp extends Application {
         section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna presso la sede di Cesena.\n\nVia dell'Università 50\n47521 Cesena, Italia"),
+            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna.\n\nVia Zamboni, 33\n40126 Bologna, Italia"),
             footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
             footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
         );

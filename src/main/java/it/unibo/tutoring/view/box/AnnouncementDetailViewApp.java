@@ -153,8 +153,9 @@ public final class AnnouncementDetailViewApp {
             contactButton.setBorder(Border.EMPTY);
             contactButton.setOnAction(event -> {
                 box.aggiungiContatto(me);
+                it.unibo.tutoring.model.box.BoxRepository.saveAll();
                 final Stage win = (Stage) contactButton.getScene().getWindow();
-                win.setScene(TutoringSessionViewApp.createSceneForBox(win, box, box.getAutoreMatricola()));
+                win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
                 win.setTitle("UniBo Tutoring - Dettaglio Sessione");
                 it.unibo.tutoring.view.components.WindowUtil.maximize(win);
             });
@@ -163,10 +164,6 @@ public final class AnnouncementDetailViewApp {
             contactRow.setAlignment(Pos.CENTER_LEFT);
             VBox.setMargin(contactRow, new Insets(16, 0, 0, 0));
             card.getChildren().add(contactRow);
-        }
-
-        if (isAutore) {
-            card.getChildren().add(buildConversationsSection(stage, box));
         }
 
         // Sezione dinamica: candidature / conferma / completamento / recensione.
@@ -187,81 +184,6 @@ public final class AnnouncementDetailViewApp {
         final Scene scene = new Scene(root, 1200, 900);
         scene.getStylesheets().add(AnnouncementDetailViewApp.class.getResource("/styles.css").toExternalForm());
         return scene;
-    }
-
-    private static VBox buildConversationsSection(final Stage stage, final BoxTutoraggio box) {
-        final VBox section = new VBox(10);
-        VBox.setMargin(section, new Insets(20, 0, 0, 0));
-
-        final Label title = new Label("Conversazioni ricevute");
-        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
-        title.setTextFill(TEXT_DARK);
-        section.getChildren().add(title);
-
-        if (box.getContatti().isEmpty()) {
-            section.getChildren().add(infoLabel("Nessun utente ti ha ancora contattato."));
-            return section;
-        }
-
-        for (final String contactMatricola : box.getContatti()) {
-            section.getChildren().add(buildConversationRow(stage, box, contactMatricola));
-        }
-        return section;
-    }
-
-    private static HBox buildConversationRow(
-            final Stage stage,
-            final BoxTutoraggio box,
-            final String contactMatricola
-    ) {
-        final String contactName = SessionLinkUtil.nomeCompleto(contactMatricola);
-        final TutoringSessionController controller = SessionLinkUtil.buildController(
-                box,
-                contactMatricola,
-                box.getAutoreMatricola()
-        );
-        final var messages = controller.getModel().getStoricoChat();
-        final String preview;
-        if (messages.isEmpty()) {
-            preview = "Conversazione aperta, nessun messaggio inviato.";
-        } else {
-            final var lastMessage = messages.get(messages.size() - 1);
-            final String sender = lastMessage.getIdMittente().equals(box.getAutoreMatricola())
-                    ? "Tu"
-                    : contactName;
-            preview = sender + ": " + lastMessage.getTesto();
-        }
-
-        final Label nameLabel = new Label(contactName);
-        nameLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
-        nameLabel.setTextFill(TEXT_DARK);
-
-        final Label previewLabel = new Label(preview);
-        previewLabel.setFont(Font.font("System", FontWeight.NORMAL, 11));
-        previewLabel.setTextFill(TEXT_MEDIUM);
-        previewLabel.setWrapText(true);
-
-        final VBox text = new VBox(3, nameLabel, previewLabel);
-        HBox.setHgrow(text, Priority.ALWAYS);
-
-        final Button openChat = new Button("Apri chat");
-        stylePrimaryButton(openChat, PRIMARY_RED);
-        openChat.setPadding(new Insets(6, 14, 6, 14));
-        openChat.setOnAction(event -> {
-            final Stage win = stage != null
-                    ? stage
-                    : (Stage) openChat.getScene().getWindow();
-            win.setScene(TutoringSessionViewApp.createSceneForBox(win, box, contactMatricola));
-            win.setTitle("UniBo Tutoring - Chat con " + contactName);
-            it.unibo.tutoring.view.components.WindowUtil.maximize(win);
-        });
-
-        final HBox row = new HBox(12, text, openChat);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(10, 14, 10, 14));
-        row.setBackground(new Background(new BackgroundFill(Color.web("#F8F9FA"), new CornerRadii(8), Insets.EMPTY)));
-        row.setBorder(new Border(new BorderStroke(Color.web("#E3E3E3"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
-        return row;
     }
 
     /**
@@ -515,6 +437,11 @@ public final class AnnouncementDetailViewApp {
     }
 
     private static void refresh(final Stage stage, final BoxTutoraggio box) {
+        // Ogni azione che modifica lo stato dell'annuncio (accetta, ritira,
+        // conferma, rifiuta) passa da qui: e' il punto unico in cui persistiamo
+        // su data/boxes.csv cosi' che la modifica sopravviva al riavvio.
+        it.unibo.tutoring.model.box.BoxRepository.saveAll();
+
         final Stage win = stage != null ? stage : null;
         if (win != null) {
             win.setScene(AnnouncementDetailViewApp.createScene(win, box));
