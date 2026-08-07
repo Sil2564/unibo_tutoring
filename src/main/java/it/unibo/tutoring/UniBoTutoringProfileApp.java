@@ -742,12 +742,14 @@ private static VBox createStatCard(
             for (int i = 0; i < impegni.size(); i++) {
                 TutoringSession session = impegni.get(i);
 
-                // Inserisce nome del tutor
-                String persona = session.getTutorMatricola().equals(miaMatricola) ? "Sessione da Tutor" : "Tutor: " + session.getTutorMatricola();
+                final String tutorMatricola = session.getTutorMatricola();
+                final UserAccount tutor = AuthService.getInstance().getUser(tutorMatricola);
+                final String persona = formatTutorLabel(miaMatricola, tutorMatricola, tutor);
 
                 VBox agendaRow = createAgendaItem(
                         session.getMateria(),
-                        "Data da concordare",
+                        session.getDataOra().format(SESSION_DATE_FORMAT)
+                                + " • " + formatDuration(session.getDurata()),
                         persona
                 );
 

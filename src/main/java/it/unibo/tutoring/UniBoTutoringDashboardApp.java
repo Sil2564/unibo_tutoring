@@ -620,7 +620,7 @@ public class UniBoTutoringDashboardApp extends Application {
 				box.aggiungiContatto(me);
 				BoxRepository.saveAll();
 				final Stage win = (Stage) contact.getScene().getWindow();
-				win.setScene(TutoringSessionViewApp.createScene(win, box));
+				win.setScene(TutoringSessionViewApp.createScene(win, box, box.getAutoreMatricola()));
 				win.setTitle("UniBo Tutoring - Dettaglio Sessione");
 				it.unibo.tutoring.view.components.WindowUtil.maximize(win);
 			});
