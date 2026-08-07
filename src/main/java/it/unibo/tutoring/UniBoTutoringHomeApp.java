@@ -254,9 +254,75 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
 
         exclusiveSection.getChildren().addAll(exclTitle, exclSubtitle, exclCards);
 
-        section.getChildren().addAll(title, subtitle, cards, exclusiveSection);
+        section.getChildren().addAll(title, subtitle, cards, exclusiveSection, createAppFlow());
         return section;
 }
+
+    private VBox createAppFlow() {
+        final VBox section = new VBox(18);
+        section.setAlignment(Pos.CENTER);
+        section.setPadding(new Insets(60, 120, 62, 120));
+        section.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        final Label title = new Label("Come funziona una sessione");
+        title.setFont(Font.font("System", FontWeight.BOLD, 32));
+        title.setTextFill(Color.web("#111111"));
+
+        final Label subtitle = new Label("Dal primo annuncio alla recensione finale.");
+        subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
+        subtitle.setTextFill(Color.web("#64748B"));
+
+        final HBox steps = new HBox(52,
+            appFlowStep(1, "Pubblica l'annuncio",
+                "Offri o richiedi tutoraggio specificando materia e disponibilità."),
+            appFlowStep(2, "Entrambi accettano",
+                "Tutor e studente devono confermare. Finchè non accettano entrambi, la sessione resta in stato proposta."),
+            appFlowStep(3, "Sessione confermata",
+                "La sessione si svolge alla data concordata e viene poi segnata come conclusa."),
+            appFlowStep(4, "Lascia una recensione",
+                "A sessione chiusa, lo studente può recensire il tutor.")
+        );
+        steps.setAlignment(Pos.TOP_CENTER);
+        steps.setPadding(new Insets(24, 0, 0, 0));
+
+        section.getChildren().addAll(title, subtitle, steps);
+        return section;
+    }
+
+    private VBox appFlowStep(final int number, final String title, final String description) {
+        final Label numberLabel = new Label(String.valueOf(number));
+        numberLabel.setFont(Font.font("System", FontWeight.BOLD, 15));
+        numberLabel.setTextFill(Color.WHITE);
+        numberLabel.setAlignment(Pos.CENTER);
+
+        final StackPane numberCircle = new StackPane(numberLabel);
+        numberCircle.setPrefSize(38, 38);
+        numberCircle.setMinSize(38, 38);
+        numberCircle.setMaxSize(38, 38);
+        numberCircle.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
+
+        final Label heading = new Label(title);
+        heading.setFont(Font.font("System", FontWeight.BOLD, 15));
+        heading.setTextFill(Color.web("#111111"));
+        heading.setWrapText(true);
+        heading.setTextAlignment(TextAlignment.CENTER);
+        heading.setMaxWidth(Double.MAX_VALUE);
+        heading.setMinHeight(Region.USE_PREF_SIZE);
+
+        final Label body = new Label(description);
+        body.setFont(Font.font("System", FontWeight.NORMAL, 13));
+        body.setTextFill(Color.web("#64748B"));
+        body.setWrapText(true);
+        body.setTextAlignment(TextAlignment.CENTER);
+        body.setMaxWidth(Double.MAX_VALUE);
+        body.setMinHeight(Region.USE_PREF_SIZE);
+
+        final VBox step = new VBox(14, numberCircle, heading, body);
+        step.setAlignment(Pos.TOP_CENTER);
+        step.setPrefWidth(160);
+        step.setMaxWidth(160);
+        return step;
+    }
 
 
     private HBox createWhySection() {
