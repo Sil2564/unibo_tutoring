@@ -20,11 +20,11 @@ public class BoxTutoraggioImpl
 
     private final String argomento;
 
-    private final LocalDate data;
+    private LocalDate data;
 
-    private final LocalTime ora;
+    private LocalTime ora;
 
-    private final int durataOre;
+    private int durataOre;
 
     private final String autoreMatricola;
 
@@ -172,6 +172,36 @@ public class BoxTutoraggioImpl
     @Override
     public boolean isCandidato(final String matricola) {
         return matricola != null && this.candidati.contains(matricola);
+    }
+
+    @Override
+    public boolean puoModificareProgrammazione() {
+        return this.candidati.isEmpty() && this.confermato == null;
+    }
+
+    @Override
+    public void aggiornaProgrammazione(
+            final String richiedenteMatricola,
+            final LocalDate nuovaData,
+            final LocalTime nuovaOra,
+            final int nuovaDurataOre) {
+        if (!this.autoreMatricola.equals(richiedenteMatricola)) {
+            throw new SecurityException("Solo l'autore puo' modificare la programmazione.");
+        }
+        if (!puoModificareProgrammazione()) {
+            throw new IllegalStateException(
+                    "Data, ora e durata non possono essere modificate con candidature attive o una sessione confermata.");
+        }
+        if (nuovaData == null || nuovaOra == null) {
+            throw new IllegalArgumentException("Data e ora sono obbligatorie.");
+        }
+        if (nuovaDurataOre < 1 || nuovaDurataOre > 8) {
+            throw new IllegalArgumentException("La durata deve essere compresa tra 1 e 8 ore.");
+        }
+
+        this.data = nuovaData;
+        this.ora = nuovaOra;
+        this.durataOre = nuovaDurataOre;
     }
 
     @Override

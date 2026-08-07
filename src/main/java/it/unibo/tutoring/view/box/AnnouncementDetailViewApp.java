@@ -1,6 +1,8 @@
 package it.unibo.tutoring.view.box;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -22,10 +24,13 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -162,6 +167,10 @@ public final class AnnouncementDetailViewApp {
             detailRow(offer ? "Tutor" : "Studente", autoreNome)
         );
 
+        if (isAutore) {
+            card.getChildren().add(buildScheduleManagementSection(stage, box, me));
+        }
+
         // Pulsante Contatta: sempre disponibile per chi non e' l'autore, apre la
         // chat con l'autore indipendentemente da candidatura/conferma.
         if (!isAutore && me != null) {
@@ -212,11 +221,144 @@ public final class AnnouncementDetailViewApp {
         return scene;
     }
 
+    /**
+     * Permette all'autore di modificare esclusivamente data, ora e durata.
+     * La disponibilita' mostrata dalla UI replica la regola applicata anche
+     * dal modello, quindi una candidatura arrivata nel frattempo non puo'
+     * essere aggirata premendo il pulsante di salvataggio.
+     */
+    private static VBox buildScheduleManagementSection(
+            final Stage stage,
+            final BoxTutoraggio box,
+            final String me) {
+        final VBox section = new VBox(10);
+        VBox.setMargin(section, new Insets(20, 0, 0, 0));
+
+        final Label title = new Label("Programmazione dell'annuncio");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
+        title.setTextFill(TEXT_DARK);
+        section.getChildren().add(title);
+
+        if (!box.puoModificareProgrammazione()) {
+            final String reason = box.getConfermato() != null
+                    ? "La programmazione non puo' piu' essere modificata perché la sessione e' stata confermata."
+                    : "La programmazione non puo' essere modificata finche' sono presenti candidature attive.";
+            section.getChildren().add(infoLabel(reason));
+            return section;
+        }
+
+        section.getChildren().add(infoLabel(
+                "Puoi modificare data, ora e durata finche' non ricevi la prima candidatura."));
+
+        final Button editButton = new Button("Modifica data e orario");
+        styleSecondaryButton(editButton);
+
+        final VBox editor = new VBox(8);
+        editor.setVisible(false);
+        editor.setManaged(false);
+        editor.setPadding(new Insets(14));
+        editor.setBackground(new Background(new BackgroundFill(
+                Color.web("#F8F9FA"), new CornerRadii(8), Insets.EMPTY)));
+        editor.setBorder(new Border(new BorderStroke(
+                Color.web("#E3E3E3"), BorderStrokeStyle.SOLID,
+                new CornerRadii(8), BorderWidths.DEFAULT)));
+
+        final DatePicker datePicker = new DatePicker(box.getData());
+        styleScheduleField(datePicker);
+
+        final TextField timeField = new TextField(
+                box.getOra() != null ? box.getOra().toString() : "");
+        timeField.setPromptText("HH:mm");
+        styleScheduleField(timeField);
+
+        final int initialDuration = Math.max(1, Math.min(8, box.getDurataOre()));
+        final Spinner<Integer> durationSpinner = new Spinner<>(1, 8, initialDuration);
+        styleScheduleField(durationSpinner);
+
+        final Label feedback = new Label();
+        feedback.setTextFill(PRIMARY_RED);
+        feedback.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
+        feedback.setWrapText(true);
+        feedback.setVisible(false);
+        feedback.setManaged(false);
+
+        final Button saveButton = new Button("Salva programmazione");
+        stylePrimaryButton(saveButton, GREEN);
+        saveButton.setOnAction(event -> {
+            feedback.setVisible(false);
+            feedback.setManaged(false);
+            try {
+                if (datePicker.getValue() == null || timeField.getText().isBlank()) {
+                    throw new IllegalArgumentException("Data e ora sono obbligatorie.");
+                }
+                box.aggiornaProgrammazione(
+                        me,
+                        datePicker.getValue(),
+                        LocalTime.parse(timeField.getText().trim()),
+                        durationSpinner.getValue());
+                refresh(stage, box);
+            } catch (final DateTimeParseException exception) {
+                showScheduleFeedback(feedback, "Formato orario non valido. Usa HH:mm (es. 15:00).");
+            } catch (final IllegalArgumentException | IllegalStateException | SecurityException exception) {
+                showScheduleFeedback(feedback, exception.getMessage());
+            }
+        });
+
+        final Button cancelButton = new Button("Annulla");
+        styleSecondaryButton(cancelButton);
+        cancelButton.setOnAction(event -> {
+            editor.setVisible(false);
+            editor.setManaged(false);
+            editButton.setDisable(false);
+        });
+
+        final HBox actionRow = new HBox(10, saveButton, cancelButton);
+        actionRow.setAlignment(Pos.CENTER_LEFT);
+
+        editor.getChildren().addAll(
+                fieldLabel("Data"),
+                datePicker,
+                fieldLabel("Orario"),
+                timeField,
+                fieldLabel("Durata (ore)"),
+                durationSpinner,
+                feedback,
+                actionRow);
+
+        editButton.setOnAction(event -> {
+            editor.setVisible(true);
+            editor.setManaged(true);
+            editButton.setDisable(true);
+        });
+
+        section.getChildren().addAll(buttonRow(editButton), editor);
+        return section;
+    }
+
+    private static void showScheduleFeedback(final Label feedback, final String message) {
+        feedback.setText(message);
+        feedback.setVisible(true);
+        feedback.setManaged(true);
+    }
+
+    private static Label fieldLabel(final String text) {
+        final Label label = new Label(text);
+        label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
+        label.setTextFill(TEXT_MEDIUM);
+        return label;
+    }
+
+    private static void styleScheduleField(final javafx.scene.control.Control field) {
+        field.setPrefHeight(38);
+        field.setMaxWidth(Double.MAX_VALUE);
+        field.getStyleClass().add("form-field");
+    }
+
     private static VBox buildConversationsSection(final Stage stage, final BoxTutoraggio box) {
         final VBox section = new VBox(10);
         VBox.setMargin(section, new Insets(20, 0, 0, 0));
 
-        final Label title = new Label("Conversazioni ricevute");
+        final Label title = new Label("Messaggi ricevuti");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
         title.setTextFill(TEXT_DARK);
         section.getChildren().add(title);

@@ -28,7 +28,7 @@ public interface BoxTutoraggio {
     BoxType getTipo();
 
     /**
-     * Matricole di chi ha cliccato "Accetta" su questo annuncio e non e' ancora
+     * Matricole di chi ha cliccato "Candidati" su questo annuncio e non e' ancora
      * stato confermato ne' rifiutato/ritirato.
      */
     List<String> getCandidati();
@@ -40,6 +40,34 @@ public interface BoxTutoraggio {
     String getConfermato();
 
     boolean isCandidato(String matricola);
+
+    /**
+     * Indica se data, ora e durata possono ancora essere modificate. La
+     * programmazione resta modificabile finche' non esistono candidature e
+     * non e' stato confermato alcun candidato.
+     *
+     * @return true se l'autore puo' modificare la programmazione
+     */
+    boolean puoModificareProgrammazione();
+
+    /**
+     * Aggiorna data, ora e durata dell'annuncio. Il metodo applica la regola
+     * anche a livello di dominio, impedendo modifiche mentre esiste almeno
+     * una candidatura o dopo la conferma di un candidato.
+     *
+     * @param richiedenteMatricola matricola dell'utente che richiede la modifica
+     * @param data nuova data della sessione
+     * @param ora nuovo orario di inizio
+     * @param durataOre nuova durata, compresa tra 1 e 8 ore
+     * @throws IllegalStateException se la programmazione e' gia' bloccata
+     * @throws SecurityException se la modifica non e' richiesta dall'autore
+     * @throws IllegalArgumentException se i nuovi valori non sono validi
+     */
+    void aggiornaProgrammazione(
+            String richiedenteMatricola,
+            LocalDate data,
+            LocalTime ora,
+            int durataOre);
 
     /**
      * Matricole degli utenti che hanno aperto una conversazione con l'autore.
