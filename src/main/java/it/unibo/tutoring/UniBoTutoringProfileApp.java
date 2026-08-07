@@ -1,10 +1,7 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
@@ -14,7 +11,6 @@ import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.TutoringSession;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -46,16 +42,34 @@ public final class UniBoTutoringProfileApp  {
     private static final Color PAGE_BG = Color.web("#EFEFEF");
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
-    private static final DateTimeFormatter SESSION_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale.ITALIAN);
 
     private UniBoTutoringProfileApp() {
     }
 
     public static Scene createScene() {
+        final UserAccount currentUser = CurrentSession.getUser();
+        return buildScene(currentUser != null ? currentUser.getMatricola() : null, currentUser);
+    }
+
+    /**
+     * Mostra il profilo di un altro utente (es. cliccando sul nome
+     * dell'autore di un annuncio). Nasconde la matricola e "I Tuoi Prossimi
+     * Impegni", visibili solo sul proprio profilo.
+     */
+    public static Scene createScene(final String matricolaDaVedere) {
+        final UserAccount currentUser = CurrentSession.getUser();
+        return buildScene(matricolaDaVedere, currentUser);
+    }
+
+    private static Scene buildScene(final String matricolaDaVedere, final UserAccount currentUser) {
 
         final ProfileController controller = new ProfileController(new UserRepository());
-        final UserAccount user = controller.getCurrentUser();
+        final boolean isOwnProfile = matricolaDaVedere == null
+            || (currentUser != null && matricolaDaVedere.equals(currentUser.getMatricola()));
+
+        final UserAccount viewedUser = isOwnProfile
+            ? controller.getCurrentUser()
+            : it.unibo.tutoring.AuthService.getInstance().getUser(matricolaDaVedere);
 
         final VBox root = new VBox();
         root.setBackground(new Background(
@@ -63,7 +77,9 @@ public final class UniBoTutoringProfileApp  {
         ));
 
         final VBox scrollContent = new VBox();
-        final VBox mainContent = createContent(user, controller);
+        final VBox mainContent = viewedUser != null
+            ? createContent(viewedUser, controller, isOwnProfile)
+            : createNotFoundContent();
         scrollContent.getChildren().addAll(
             mainContent,
             createFooterSection()
@@ -75,7 +91,7 @@ public final class UniBoTutoringProfileApp  {
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
         root.getChildren().addAll(
-            createHeader(user),
+            createHeader(currentUser),
             scrollPane
         );
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -83,6 +99,18 @@ public final class UniBoTutoringProfileApp  {
         final Scene scene = new Scene(root);
         scene.getStylesheets().add(UniBoTutoringProfileApp.class.getResource("/styles.css").toExternalForm());
         return scene;
+    }
+
+    private static VBox createNotFoundContent() {
+        final VBox content = new VBox(12);
+        content.setPadding(new Insets(30));
+        content.setAlignment(Pos.TOP_LEFT);
+
+        final Label label = new Label("Profilo non trovato.");
+        label.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
+        label.setTextFill(TEXT_DARK);
+        content.getChildren().add(label);
+        return content;
     }
 
     private static HBox createHeader(final UserAccount user) {
@@ -119,11 +147,6 @@ public final class UniBoTutoringProfileApp  {
 
         final HBox brandBlock = new HBox(8, logo, brand);
         brandBlock.setAlignment(Pos.CENTER_LEFT);
-        brandBlock.setCursor(Cursor.HAND);
-        brandBlock.setOnMouseClicked(event -> {
-            final Stage stage = (Stage) brandBlock.getScene().getWindow();
-            it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage);
-        });
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -139,20 +162,18 @@ public final class UniBoTutoringProfileApp  {
         separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
         separator.setPrefHeight(16);
 
-        final Button dashboardButton = new Button("Vai alla Dashboard");
-        dashboardButton.setFont(Font.font("System", FontWeight.BOLD, 13));
-        dashboardButton.setTextFill(Color.WHITE);
-        dashboardButton.setPadding(new Insets(8, 16, 8, 16));
+        final Button dashboardButton = new Button("← Dashboard");
+        dashboardButton.getStyleClass().add("text-link");
+        dashboardButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        dashboardButton.setTextFill(TEXT_DARK);
+        dashboardButton.setPadding(new Insets(8, 14, 8, 14));
+        dashboardButton.setCursor(javafx.scene.Cursor.HAND);
         dashboardButton.setBackground(new Background(
-            new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)
+            new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)
         ));
-        dashboardButton.setBorder(Border.EMPTY);
-        dashboardButton.setOnMouseEntered(e -> dashboardButton.setBackground(new Background(
-            new BackgroundFill(PRIMARY_RED.darker(), new CornerRadii(6), Insets.EMPTY)
-        )));
-        dashboardButton.setOnMouseExited(e -> dashboardButton.setBackground(new Background(
-            new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)
-        )));
+        dashboardButton.setBorder(new Border(
+            new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)
+        ));
 
         dashboardButton.setOnAction(event -> {
             final Stage stage =
@@ -160,6 +181,7 @@ public final class UniBoTutoringProfileApp  {
 
             stage.setScene(UniBoTutoringDashboardApp.createScene());
             stage.setTitle("UniBo Tutoring - Dashboard");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
         final HBox rightSide = new HBox(
@@ -180,7 +202,7 @@ public final class UniBoTutoringProfileApp  {
         return header;
     }
 
-    private static VBox createContent(final UserAccount user, final ProfileController controller) {
+    private static VBox createContent(final UserAccount user, final ProfileController controller, final boolean isOwnProfile) {
 
         final VBox content = new VBox(20);
         final CreditRecord creditRecord = controller.getCreditRecord(user.getMatricola());
@@ -203,6 +225,16 @@ switch (creditRecord.getBadge()) {
 
         content.setPadding(new Insets(30));
         content.setAlignment(Pos.TOP_LEFT);
+
+        if (!isOwnProfile) {
+            final Label viewingBanner = new Label("Stai visualizzando il profilo di " + user.getName() + " " + user.getSurname());
+            viewingBanner.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+            viewingBanner.setTextFill(Color.WHITE);
+            viewingBanner.setPadding(new Insets(10, 16, 10, 16));
+            viewingBanner.setMaxWidth(Double.MAX_VALUE);
+            viewingBanner.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+            content.getChildren().add(viewingBanner);
+        }
 
         final HBox heroSection = new HBox(20);
 
@@ -355,10 +387,12 @@ heroSection.getChildren().addAll(
 
         card.getChildren().addAll(
             nameLabel,
-            surnameLabel,
-            matricolaLabel,
-            emailLabel
+            surnameLabel
         );
+        if (isOwnProfile) {
+            card.getChildren().add(matricolaLabel);
+        }
+        card.getChildren().add(emailLabel);
 
         final VBox creditCard = new VBox(14);
 
@@ -549,22 +583,20 @@ rightColumn.getChildren().addAll(
     creditCard
 );
 
-        final VBox calendarColumn = new VBox(20);
-        calendarColumn.getChildren().addAll(
-                createCalendarCard()
-        );
-
         final javafx.scene.layout.FlowPane columns = new javafx.scene.layout.FlowPane();
         columns.setHgap(24);
         columns.setVgap(24);
         columns.setAlignment(Pos.TOP_LEFT);
 
-
         columns.getChildren().addAll(
                 leftColumn,
-                rightColumn,
-                calendarColumn
+                rightColumn
         );
+        if (isOwnProfile) {
+            final VBox calendarColumn = new VBox(20);
+            calendarColumn.getChildren().add(createCalendarCard());
+            columns.getChildren().add(calendarColumn);
+        }
 
         content.getChildren().addAll(
                 heroSection,
@@ -699,15 +731,11 @@ private static VBox createStatCard(
                 TutoringSession session = impegni.get(i);
 
                 // Inserisce nome del tutor
-                final String tutorMatricola = session.getTutorMatricola();
-                final UserAccount tutor = AuthService.getInstance().getUser(tutorMatricola);
-                final String persona = formatTutorLabel(miaMatricola, tutorMatricola, tutor);
+                String persona = session.getTutorMatricola().equals(miaMatricola) ? "Sessione da Tutor" : "Tutor: " + session.getTutorMatricola();
 
                 VBox agendaRow = createAgendaItem(
                         session.getMateria(),
-                        session.getDataOra().format(SESSION_DATE_FORMAT)
-                                + " • "
-                                + formatDuration(session.getDurata()),
+                        "Data da concordare",
                         persona
                 );
 
@@ -720,30 +748,6 @@ private static VBox createStatCard(
         }
 
         return card;
-    }
-
-    static String formatTutorLabel(
-            final String currentUserMatricola,
-            final String tutorMatricola,
-            final UserAccount tutor) {
-        if (tutorMatricola.equals(currentUserMatricola)) {
-            return "Sessione da Tutor";
-        }
-
-        if (tutor == null) {
-            return "Tutor: " + tutorMatricola;
-        }
-
-        final String tutorName = (tutor.getName() + " " + tutor.getSurname()).trim();
-        return tutorName.isEmpty() ? "Tutor: " + tutorMatricola : "Tutor: " + tutorName;
-    }
-
-    private static String formatDuration(final Duration duration) {
-        final long minutes = duration.toMinutes();
-        if (minutes % 60 == 0) {
-            return minutes / 60 + " h";
-        }
-        return minutes + " min";
     }
 
     private static VBox createAgendaItem(final String materia, final String data, final String persona) {

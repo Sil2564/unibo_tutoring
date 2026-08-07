@@ -119,10 +119,28 @@ public final class AnnouncementDetailViewApp {
         tag.setPadding(new Insets(4, 10, 4, 10));
         tag.setBackground(new Background(new BackgroundFill(offer ? PRIMARY_RED : Color.web("#A1A1A1"), new CornerRadii(999), Insets.EMPTY)));
 
-        final Label sessionTitle = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
-        sessionTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
-        sessionTitle.setTextFill(TEXT_DARK);
-        sessionTitle.setWrapText(true);
+        final javafx.scene.text.Text titlePrefix = new javafx.scene.text.Text("Sessione con ");
+        titlePrefix.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
+        titlePrefix.setFill(TEXT_DARK);
+
+        final javafx.scene.text.Text titleName = new javafx.scene.text.Text(autoreNome);
+        titleName.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
+        titleName.setFill(PRIMARY_RED);
+        titleName.setUnderline(true);
+        titleName.setCursor(Cursor.HAND);
+        titleName.setOnMouseClicked(event -> {
+            final Stage win = (Stage) card.getScene().getWindow();
+            win.setScene(it.unibo.tutoring.UniBoTutoringProfileApp.createScene(box.getAutoreMatricola()));
+            win.setTitle("UniBo Tutoring - Profilo");
+            it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+        });
+
+        final javafx.scene.text.Text titleSuffix = new javafx.scene.text.Text(offer ? " (Tutor)" : " (Studente)");
+        titleSuffix.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
+        titleSuffix.setFill(TEXT_DARK);
+
+        final javafx.scene.text.TextFlow sessionTitle =
+            new javafx.scene.text.TextFlow(titlePrefix, titleName, titleSuffix);
         VBox.setMargin(sessionTitle, new Insets(10, 0, 6, 0));
 
         card.getChildren().addAll(
