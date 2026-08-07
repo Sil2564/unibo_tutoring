@@ -3,6 +3,7 @@ package it.unibo.tutoring.view.session;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
+import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.view.components.AppHeader;
 
@@ -36,9 +37,8 @@ public class TutoringSessionViewApp extends Application {
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
     private static final Color CARD_BG = Color.WHITE;
     private final TutoringSessionController controller;
-    private final it.unibo.tutoring.model.box.BoxTutoraggio box;
-    private final boolean isCandidatoRuolo;
-    private final boolean isConfermatoRuolo;
+    private final BoxTutoraggio box;
+    private final String counterpartyMatricola;
     private StackPane reviewOverlay;
     private Label notificationLabel;
 
@@ -50,64 +50,25 @@ public class TutoringSessionViewApp extends Application {
                 "0000001",
                 "0000002");
         this.box = null;
-        this.isCandidatoRuolo = false;
-        this.isConfermatoRuolo = false;
-    }
-
-    private TutoringSessionViewApp(
-            final String materiaAnnuncio,
-            final String nomeInserzionista,
-            final boolean tutorOffer,
-            final String matricolaInserzionista) {
-        this.controller = new TutoringSessionController(
-                materiaAnnuncio,
-                nomeInserzionista,
-                tutorOffer,
-                matricolaInserzionista,
-                UserSession.getMatricola());
-        this.box = null;
-        this.isCandidatoRuolo = false;
-        this.isConfermatoRuolo = false;
+        this.counterpartyMatricola = null;
     }
 
     /**
-     * Costruttore che deriva tutto (materia, controparte, ruolo tutor/studente)
-     * direttamente dall'annuncio, cosi' lo stato mostrato a sinistra della chat
-     * (candidature aperte / in attesa di conferma / confermata / completata)
-     * riflette sempre la vera candidatura sull'annuncio, non solo un valore di
-     * default del modello di sessione.
+     * Costruttore unico per una conversazione legata a un annuncio. La
+     * controparte e' esplicita per permettere all'autore di distinguere le chat
+     * ricevute da utenti diversi prima della conferma.
      */
-    private TutoringSessionViewApp(final it.unibo.tutoring.model.box.BoxTutoraggio box) {
+    private TutoringSessionViewApp(final BoxTutoraggio box, final String counterpartyMatricola) {
         this.box = box;
-        final String me = UserSession.getMatricola();
-        final String controparte = SessionLinkUtil.controparteDi(box, me);
-        this.controller = SessionLinkUtil.buildController(box, controparte, me);
-
-        // Chi, tra i due partecipanti a questa chat, riveste il ruolo di
-        // "candidato" per l'annuncio: se chi guarda e' l'autore, e' la
-        // controparte (se gia' confermata); altrimenti e' sempre chi guarda.
-        final boolean meIsAutore = me != null && me.equals(box.getAutoreMatricola());
-        final String candidatoRuoloMatricola = meIsAutore ? box.getConfermato() : me;
-
-        this.isCandidatoRuolo = candidatoRuoloMatricola != null && box.isCandidato(candidatoRuoloMatricola);
-        this.isConfermatoRuolo = candidatoRuoloMatricola != null && candidatoRuoloMatricola.equals(box.getConfermato());
+        this.counterpartyMatricola = counterpartyMatricola;
+        this.controller = SessionLinkUtil.buildController(box, counterpartyMatricola, UserSession.getMatricola());
     }
 
     public static Scene createScene(
             final Stage stage,
-            final it.unibo.tutoring.model.box.BoxTutoraggio box) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(box);
-        return app.createScene(stage);
-    }
-
-    public static Scene createScene(
-            final Stage stage,
-            final String materiaAnnuncio,
-            final String nomeInserzionista,
-            final boolean tutorOffer,
-            final String tutorMatricola) {
-        final TutoringSessionViewApp app = new TutoringSessionViewApp(materiaAnnuncio, nomeInserzionista, tutorOffer, tutorMatricola);
-        return app.createScene(stage);
+            final BoxTutoraggio box,
+            final String counterpartyMatricola) {
+        return new TutoringSessionViewApp(box, counterpartyMatricola).createScene(stage);
     }
 
     @Override
@@ -180,30 +141,9 @@ public class TutoringSessionViewApp extends Application {
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 22));
         title.setTextFill(TEXT_DARK);
 
-        // Etichetta dello stato, in sola lettura: le azioni (accetta, conferma,
+        // Etichetta dello stato, in sola lettura: le azioni (candidati, conferma,
         // completata) si trovano ora nella pagina "Dettaglio Annuncio".
-        final String statoText;
-        if (this.box != null) {
-            if (this.isConfermatoRuolo && controller.isCompletataDaEntrambi()) {
-                statoText = "Sessione completata";
-            } else if (this.isConfermatoRuolo) {
-                statoText = "Sessione confermata";
-            } else if (this.isCandidatoRuolo) {
-                statoText = "In attesa di conferma";
-            } else {
-                statoText = "Candidature aperte";
-            }
-        } else if (controller.isCompletataDaEntrambi()) {
-            statoText = "Sessione completata";
-        } else if (controller.isConfermata()) {
-            statoText = "Sessione confermata";
-        } else if (controller.isAnnullata()) {
-            statoText = "Annullata";
-        } else if (controller.isProposta()) {
-            statoText = "In attesa di conferma";
-        } else {
-            statoText = "Candidature aperte";
-        }
+        final String statoText = statoSessioneVisualizzato();
 
         final Label lblStatoValue = new Label(statoText);
         lblStatoValue.setFont(Font.font("System", FontWeight.NORMAL, 15));
@@ -213,7 +153,7 @@ public class TutoringSessionViewApp extends Application {
                 lblStatoValue
         );
 
-        final Label hint = new Label("Le azioni per accettare, confermare o completare la sessione si trovano nella pagina dell'annuncio.");
+        final Label hint = new Label("Le azioni per candidarsi, confermare o completare la sessione si trovano nella pagina dell'annuncio.");
         hint.setFont(Font.font("System", FontWeight.NORMAL, 11));
         hint.setTextFill(TEXT_MEDIUM);
         hint.setWrapText(true);
@@ -271,6 +211,7 @@ public class TutoringSessionViewApp extends Application {
 
         final Label chatTitle = new Label("Chat della Sessione");
         chatTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
+        chatTitle.getStyleClass().add("section-title");
         chatHeader.getChildren().add(chatTitle);
 
         final VBox messageArea = new VBox(10);
@@ -460,6 +401,43 @@ public class TutoringSessionViewApp extends Application {
         }
     }
 
+    private String statoSessioneVisualizzato() {
+        return statoSessioneVisualizzato(
+                this.controller,
+                this.box,
+                this.counterpartyMatricola);
+    }
+
+    static String statoSessioneVisualizzato(
+            final TutoringSessionController controller,
+            final BoxTutoraggio box,
+            final String counterpartyMatricola) {
+        if (controller.isCompletataDaEntrambi()) {
+            return "Sessione completata";
+        }
+        if (controller.isConfermata()) {
+            return "Sessione confermata";
+        }
+        if (box == null) {
+            return controller.isProposta()
+                    ? "In attesa di conferma"
+                    : "Candidature aperte";
+        }
+
+        final String viewer = controller.getUserMatricola();
+        final String candidato = viewer.equals(box.getAutoreMatricola())
+                ? counterpartyMatricola
+                : viewer;
+
+        if (candidato != null && candidato.equals(box.getConfermato())) {
+            return "Sessione confermata";
+        }
+        if (candidato != null && box.isCandidato(candidato)) {
+            return "In attesa di conferma";
+        }
+        return "Candidature aperte";
+    }
+
     private Label createLabel(String text, boolean bold) {
         Label l = new Label(text);
         l.setFont(Font.font("System", bold ? FontWeight.BOLD : FontWeight.NORMAL, 13));
@@ -478,7 +456,7 @@ public class TutoringSessionViewApp extends Application {
         final VBox bubble = new VBox(3);
 
         if (!isMe) {
-            final Label senderLabel = new Label(senderId);
+            final Label senderLabel = new Label(SessionLinkUtil.nomeCompleto(senderId));
             senderLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
             senderLabel.setTextFill(TEXT_MEDIUM);
             bubble.getChildren().add(senderLabel);

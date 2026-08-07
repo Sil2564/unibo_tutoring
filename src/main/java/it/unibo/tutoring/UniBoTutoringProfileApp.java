@@ -1,7 +1,10 @@
 package it.unibo.tutoring;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
@@ -9,8 +12,10 @@ import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.user.UserRepository;
 import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.TutoringSession;
+import it.unibo.tutoring.view.components.NavigationHelper;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -42,6 +47,8 @@ public final class UniBoTutoringProfileApp  {
     private static final Color PAGE_BG = Color.web("#EFEFEF");
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
+    private static final DateTimeFormatter SESSION_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale.ITALIAN);
 
     private UniBoTutoringProfileApp() {
     }
@@ -147,6 +154,11 @@ public final class UniBoTutoringProfileApp  {
 
         final HBox brandBlock = new HBox(8, logo, brand);
         brandBlock.setAlignment(Pos.CENTER_LEFT);
+        brandBlock.setCursor(Cursor.HAND);
+        brandBlock.setOnMouseClicked(event -> {
+            final Stage stage = (Stage) brandBlock.getScene().getWindow();
+            NavigationHelper.goToHomeOrDashboard(stage);
+        });
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -748,6 +760,32 @@ private static VBox createStatCard(
         }
 
         return card;
+    }
+
+    static String formatTutorLabel(
+            final String miaMatricola,
+            final String tutorMatricola,
+            final UserAccount tutor) {
+        if (tutorMatricola.equals(miaMatricola)) {
+            return "Sessione da Tutor";
+        }
+        if (tutor != null) {
+            return "Tutor: " + tutor.getName() + " " + tutor.getSurname();
+        }
+        return "Tutor: " + tutorMatricola;
+    }
+
+    private static String formatDuration(final Duration duration) {
+        final long totalMinutes = duration.toMinutes();
+        final long hours = totalMinutes / 60;
+        final long minutes = totalMinutes % 60;
+        if (hours == 0) {
+            return minutes + " min";
+        }
+        if (minutes == 0) {
+            return hours + (hours == 1 ? " ora" : " ore");
+        }
+        return hours + " h " + minutes + " min";
     }
 
     private static VBox createAgendaItem(final String materia, final String data, final String persona) {
