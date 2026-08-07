@@ -598,26 +598,35 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		final Button contact = new Button("Contatta");
-		contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
-		contact.setTextFill(Color.WHITE);
-		contact.setPadding(new Insets(4, 10, 4, 10));
-		contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
-		contact.setBorder(Border.EMPTY);
-		contact.setCursor(Cursor.HAND);
-		contact.setOnAction(event -> {
-			final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
-			box.aggiungiContatto(me);
-			BoxRepository.saveAll();
-			final Stage win = (Stage) contact.getScene().getWindow();
-			win.setScene(TutoringSessionViewApp.createScene(win, box.getMateria(), autoreNome, offer, box.getAutoreMatricola()));
-			win.setTitle("UniBo Tutoring - Dettaglio Sessione");
-			it.unibo.tutoring.view.components.WindowUtil.maximize(win);
-		});
-		contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
 
-		final HBox bottom = new HBox(8, meta, spacer, contact);
+		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
+		final boolean isAutore = me != null && me.equals(box.getAutoreMatricola());
+
+		final HBox bottom = new HBox(8, meta, spacer);
 		bottom.setAlignment(Pos.BOTTOM_LEFT);
+
+		// Il pulsante "Contatta" non compare sui propri annunci (non ha senso
+		// aprire una chat con se stessi): resta visibile solo sugli annunci
+		// altrui, sia per chi si e' gia' candidato sia per chi non l'ha ancora fatto.
+		if (!isAutore) {
+			final Button contact = new Button("Contatta");
+			contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
+			contact.setTextFill(Color.WHITE);
+			contact.setPadding(new Insets(4, 10, 4, 10));
+			contact.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(7), Insets.EMPTY)));
+			contact.setBorder(Border.EMPTY);
+			contact.setCursor(Cursor.HAND);
+			contact.setOnAction(event -> {
+				box.aggiungiContatto(me);
+				BoxRepository.saveAll();
+				final Stage win = (Stage) contact.getScene().getWindow();
+				win.setScene(TutoringSessionViewApp.createScene(win, box));
+				win.setTitle("UniBo Tutoring - Dettaglio Sessione");
+				it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+			});
+			contact.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
+			bottom.getChildren().add(contact);
+		}
 
 		card.getChildren().addAll(tagRow, titleLabel, courseLabel, descriptionLabel, divider, bottom);
 		return card;
