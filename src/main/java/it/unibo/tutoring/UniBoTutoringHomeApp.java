@@ -1,5 +1,6 @@
 package it.unibo.tutoring;
 import java.nio.file.Path;
+import it.unibo.tutoring.view.components.AppFooter;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -50,7 +51,7 @@ public class UniBoTutoringHomeApp extends Application {
             app.createHeroSection(),
             app.createHowItWorksSection(),
             app.createWhySection(),
-            app.createFooterSection()
+            new AppFooter()
         );
         page.getStyleClass().add("page-shell");
         page.setBackground(new Background(new BackgroundFill(LIGHT_BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -362,7 +363,7 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         ctaIconCircle.setMaxSize(58, 58);
         ctaIconCircle.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
 
-        
+
         final Label ctaTitle = new Label("Pronto a iniziare?");
         ctaTitle.setTextFill(Color.web("#111111"));
         ctaTitle.setFont(Font.font("System", FontWeight.BOLD, 32));
@@ -406,42 +407,6 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
     private void openRegistrationPage(final Button sourceButton) {
         final Stage stage = (Stage) sourceButton.getScene().getWindow();
         it.unibo.tutoring.view.components.NavigationHelper.goToRegistration(stage);
-    }
-
-     private VBox createFooterSection() {
-        final VBox section = new VBox(20);
-        section.setPadding(new Insets(26, 40, 18, 40));
-        section.setBackground(new Background(new BackgroundFill(PRIMARY_RED, CornerRadii.EMPTY, Insets.EMPTY)));
-
-        final HBox cols = new HBox(50,
-            footerColumn("Università di Bologna", "UniBo Tutoring è la piattaforma ufficiale per il supporto tra studenti dell'Università di Bologna presso la sede di Cesena.\n\nVia dell'Università 50\n47521 Cesena, Italia"),
-            footerColumn("Documenti", "Privacy Policy\nTermini e Condizioni\nCodice di Condotta"),
-            footerColumn("Contatti e Assistenza", "Email di supporto:\ntutoring@unibo.it\n\nHai bisogno di aiuto?\nApri box assistenza")
-        );
-
-        final Label copyright = new Label("© 2026 Università di Bologna - UniBo Tutoring. Tutti i diritti riservati.");
-        copyright.setTextFill(Color.rgb(255, 255, 255, 0.94));
-        copyright.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
-
-        section.getChildren().addAll(cols, copyright);
-        return section;
-    }
-    private VBox footerColumn(final String title, final String content) {
-            final VBox box = new VBox(8);
-            box.setPrefWidth(320);
-
-            final Label heading = new Label(title);
-            heading.setFont(Font.font("System", FontWeight.BOLD, 22));
-            heading.setTextFill(Color.WHITE);
-
-            final Label body = new Label(content);
-            body.setWrapText(true);
-            body.setMinHeight(Region.USE_PREF_SIZE);
-            body.setTextFill(Color.rgb(255, 255, 255, 0.93));
-            body.setFont(Font.font("System", FontWeight.NORMAL, 13));
-
-            box.getChildren().addAll(heading, body);
-            return box;
     }
 
     private VBox infoCard(final String iconPath, final String title, final String description) {
@@ -556,7 +521,7 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         return image;
     }
 
-    
+
     private Button primaryWhiteButton(final String text) {
         final Button button = new Button(text);
         button.setFont(Font.font("System", FontWeight.BOLD, 13));
