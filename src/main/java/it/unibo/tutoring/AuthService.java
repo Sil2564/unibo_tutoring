@@ -126,10 +126,13 @@ public final class AuthService {
                     continue;
                 }
                 final String[] fields = line.split(FIELD_SEPARATOR, -1);
-                if (fields.length != 5) {
+                // La colonna "presentazione" e' stata aggiunta in un secondo
+                // momento: righe salvate prima di allora hanno solo 5 campi.
+                if (fields.length != 5 && fields.length != 6) {
                     continue;
                 }
-                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4]);
+                final String presentazione = fields.length == 6 ? unescapeFromCsv(fields[5]) : "";
+                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], presentazione);
                 this.usersByMatricola.put(user.getMatricola(), user);
                 this.usersByEmail.put(user.getEmail(), user);
             }
@@ -147,11 +150,51 @@ public final class AuthService {
                 user.getSurname(),
                 user.getMatricola(),
                 user.getEmail(),
-                user.getPasswordHash()
+                user.getPasswordHash(),
+                sanitizeForCsv(user.getPresentazione())
             ))
             .sorted()
             .toList();
         Files.write(STORAGE_PATH, rows, StandardCharsets.UTF_8);
+    }
+
+    private static String sanitizeForCsv(final String value) {
+        if (value == null) {
+            return "";
+        }
+        // Non eliminiamo gli a-capo: li "escapiamo" cosi' una presentazione
+        // su piu' righe si legge per intero anche dopo essere stata salvata
+        // su un'unica riga di data/users.csv.
+        return value.replace(FIELD_SEPARATOR, ",")
+            .replace("\r\n", "\n")
+            .replace("\n", "\\n")
+            .trim();
+    }
+
+    private static String unescapeFromCsv(final String value) {
+        return value == null ? "" : value.replace("\\n", "\n");
+    }
+
+    /**
+     * Aggiorna la presentazione di un utente e la persiste subito su
+     * data/users.csv, cosi' resta modificabile in qualunque momento dal
+     * proprio profilo e sopravvive al riavvio dell'applicazione.
+     */
+    public synchronized boolean updatePresentazione(final String matricola, final String presentazione) {
+        if (matricola == null) {
+            return false;
+        }
+        final UserAccount user = this.usersByMatricola.get(matricola.trim());
+        if (user == null) {
+            return false;
+        }
+        user.setPresentazione(presentazione);
+        try {
+            this.persistUsers();
+            return true;
+        } catch (final IOException ex) {
+            return false;
+        }
     }
 
     private static String hashPassword(final String password) {

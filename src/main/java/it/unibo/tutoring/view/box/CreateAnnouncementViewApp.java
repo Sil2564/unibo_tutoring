@@ -14,6 +14,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Background;
@@ -224,6 +225,15 @@ public final class CreateAnnouncementViewApp {
         final Spinner<Integer> durataSpinner = new Spinner<>(1, 8, 2);
         styleField(durataSpinner);
 
+        final TextArea noteField = new TextArea();
+        noteField.setPromptText("Facoltativo: aggiungi una nota per chi vedra' l'annuncio "
+            + "(es. \"Preferisco sessioni la sera\", \"Portare il libro di testo\"...)");
+        noteField.setWrapText(true);
+        noteField.setPrefRowCount(3);
+        styleField(noteField);
+        noteField.setPrefHeight(90);
+        noteField.setMinHeight(90);
+
         final ToggleGroup tipoGroup = new ToggleGroup();
 
         final RadioButton offertaRadio = new RadioButton("Offerta Tutoraggio (offro aiuto)");
@@ -330,7 +340,8 @@ public final class CreateAnnouncementViewApp {
                         ora,
                         durataSpinner.getValue(),
                         userMatricola,
-                        tipo
+                        tipo,
+                        noteField.getText() == null ? "" : noteField.getText().trim()
                     );
 
                 BoxRepository.addBox(box);
@@ -385,6 +396,9 @@ public final class CreateAnnouncementViewApp {
 
             fieldLabel("Tipo annuncio"),
             tipoRow,
+
+            fieldLabel("Note (facoltativo)"),
+            noteField,
 
             feedbackLabel,
             publishRow

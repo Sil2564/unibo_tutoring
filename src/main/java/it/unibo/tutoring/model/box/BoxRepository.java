@@ -25,7 +25,7 @@ public final class BoxRepository {
     private static final String SEP = ";";
     private static final String LIST_SEP = ",";
     private static final String HEADER =
-        "id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti";
+        "id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti;note";
 
     private static final List<BoxTutoraggio> BOXES = new ArrayList<>();
 
@@ -87,7 +87,8 @@ public final class BoxRepository {
             box.getTipo().name(),
             String.join(LIST_SEP, box.getCandidati()),
             box.getConfermato() != null ? box.getConfermato() : "",
-            String.join(LIST_SEP, box.getContatti())
+            String.join(LIST_SEP, box.getContatti()),
+            sanitize(box.getNote())
         );
     }
 
@@ -124,10 +125,11 @@ public final class BoxRepository {
                     // Colonna aggiunta in un secondo momento: file salvati prima
                     // di allora potrebbero non averla, la trattiamo come vuota.
                     final List<String> contatti = parts.length > 12 ? parseLista(parts[12]) : List.of();
+                    final String note = parts.length > 13 ? unescapeFromCsv(parts[13]) : "";
 
                     BOXES.add(new BoxTutoraggioImpl(
                         id, titolo, corso, materia, argomento, data, ora, durataOre,
-                        autoreMatricola, tipo, candidati, confermato, contatti
+                        autoreMatricola, tipo, candidati, confermato, contatti, note
                     ));
                 } catch (final IllegalArgumentException | java.time.format.DateTimeParseException ex) {
                     // riga corrotta: la saltiamo senza bloccare il caricamento delle altre
@@ -149,6 +151,19 @@ public final class BoxRepository {
     }
 
     private static String sanitize(final String value) {
-        return value == null ? "" : value.replace(SEP, ",").replace("\n", " ").replace("\r", " ").trim();
+        if (value == null) {
+            return "";
+        }
+        // Non eliminiamo gli a-capo: li "escapiamo" cosi' una nota su piu'
+        // righe si legge per intero anche dopo essere stata salvata su
+        // un'unica riga di data/boxes.csv.
+        return value.replace(SEP, ",")
+            .replace("\r\n", "\n")
+            .replace("\n", "\\n")
+            .trim();
+    }
+
+    private static String unescapeFromCsv(final String value) {
+        return value == null ? "" : value.replace("\\n", "\n");
     }
 }

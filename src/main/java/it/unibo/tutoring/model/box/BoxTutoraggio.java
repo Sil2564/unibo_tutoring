@@ -99,4 +99,11 @@ public interface BoxTutoraggio {
      * candidature pendenti restano a carico del chiamante da annullare.
      */
     void confermaCandidato(String matricola);
+
+    /**
+     * Nota libera facoltativa scritta dall'autore al momento della
+     * pubblicazione dell'annuncio (es. preferenze, materiale da portare).
+     * Vuota se non specificata. Non modificabile dopo la pubblicazione.
+     */
+    String getNote();
 }

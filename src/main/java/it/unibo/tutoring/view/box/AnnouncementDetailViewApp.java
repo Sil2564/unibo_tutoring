@@ -167,6 +167,10 @@ public final class AnnouncementDetailViewApp {
             detailRow(offer ? "Tutor" : "Studente", autoreNome)
         );
 
+        if (box.getNote() != null && !box.getNote().isBlank()) {
+            card.getChildren().add(buildNoteBlock(box.getNote()));
+        }
+
         if (isAutore) {
             card.getChildren().add(buildScheduleManagementSection(stage, box, me));
         }
@@ -786,6 +790,29 @@ public final class AnnouncementDetailViewApp {
         button.setCursor(Cursor.HAND);
         button.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
         button.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+    }
+
+    /**
+     * Nota facoltativa scritta dall'autore alla pubblicazione. Usa un nodo
+     * Text con larghezza di wrapping esplicita: va sempre a capo e non viene
+     * mai troncata con i puntini, per quanto sia lunga.
+     */
+    private static VBox buildNoteBlock(final String note) {
+        final Label label = new Label("Nota dell'autore");
+        label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+        label.setTextFill(Color.web("#4A4A4A"));
+
+        final javafx.scene.text.Text text = new javafx.scene.text.Text(note);
+        text.setFont(Font.font("System", FontWeight.NORMAL, 15));
+        text.setFill(TEXT_DARK);
+        text.setWrappingWidth(680);
+
+        final VBox block = new VBox(6, label, text);
+        block.setPadding(new Insets(12, 14, 12, 14));
+        block.setBackground(new Background(new BackgroundFill(Color.web("#FFF8E1"), new CornerRadii(8), Insets.EMPTY)));
+        block.setBorder(new Border(new BorderStroke(Color.web("#F0DFA0"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+        VBox.setMargin(block, new Insets(6, 0, 0, 0));
+        return block;
     }
 
     private static VBox detailRow(final String label, final String value) {

@@ -20,6 +20,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -406,6 +407,8 @@ heroSection.getChildren().addAll(
         }
         card.getChildren().add(emailLabel);
 
+        final VBox bioCard = createBioCard(user, isOwnProfile);
+
         final VBox creditCard = new VBox(14);
 
 creditCard.setPadding(new Insets(24));
@@ -587,7 +590,8 @@ statsRow.getChildren().addAll(
 );
 leftColumn.getChildren().addAll(
     statsRow,
-    card
+    card,
+    bioCard
 );
 
 final VBox rightColumn = new VBox(20);
@@ -616,6 +620,106 @@ rightColumn.getChildren().addAll(
         );
 
         return content;
+    }
+
+    /**
+     * Card "Presentazione": testo libero mostrato sul profilo di chiunque,
+     * ma modificabile solo dal proprietario del profilo (isOwnProfile).
+     */
+    private static VBox createBioCard(final UserAccount user, final boolean isOwnProfile) {
+
+        final VBox bioCard = new VBox(10);
+        bioCard.setPadding(new Insets(24));
+        bioCard.setMaxWidth(500);
+        bioCard.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(12), Insets.EMPTY)));
+        bioCard.setBorder(new Border(
+            new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)
+        ));
+
+        final Label bioTitle = new Label("Presentazione");
+        bioTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
+        bioTitle.setTextFill(TEXT_DARK);
+
+        final VBox bioBody = new VBox(10);
+
+        final Runnable[] showDisplay = new Runnable[1];
+        final Runnable[] showEdit = new Runnable[1];
+
+        showDisplay[0] = () -> {
+            bioBody.getChildren().clear();
+
+            final String testo = user.getPresentazione();
+            final boolean vuota = testo == null || testo.isBlank();
+
+            final javafx.scene.text.Text bioText = new javafx.scene.text.Text(vuota
+                ? (isOwnProfile ? "Non hai ancora scritto una presentazione." : "Nessuna presentazione disponibile.")
+                : testo);
+            bioText.setFont(Font.font("System", FontWeight.NORMAL, 14));
+            bioText.setFill(vuota ? TEXT_MEDIUM : TEXT_DARK);
+            // Larghezza di wrapping esplicita (card larga 500px - 24px di
+            // padding per lato): garantisce che il testo vada sempre a capo
+            // e non venga MAI troncato con i puntini, per quanto sia lungo.
+            bioText.setWrappingWidth(452);
+
+            bioBody.getChildren().add(bioText);
+
+            if (isOwnProfile) {
+                final Button editButton = new Button(vuota ? "✎ Aggiungi presentazione" : "✎ Modifica");
+                editButton.getStyleClass().add("text-link");
+                editButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
+                editButton.setTextFill(PRIMARY_RED);
+                editButton.setBackground(Background.EMPTY);
+                editButton.setBorder(Border.EMPTY);
+                editButton.setPadding(new Insets(2, 0, 0, 0));
+                editButton.setCursor(Cursor.HAND);
+                editButton.setOnAction(e -> showEdit[0].run());
+                bioBody.getChildren().add(editButton);
+            }
+        };
+
+        showEdit[0] = () -> {
+            bioBody.getChildren().clear();
+
+            final TextArea textArea = new TextArea(user.getPresentazione());
+            textArea.setWrapText(true);
+            textArea.setPrefRowCount(4);
+            textArea.setPromptText(
+                "Scrivi qualcosa su di te, es: \"Sono uno studente di 24 anni di Cesena, "
+                + "mi sto laureando in Ingegneria e Scienze Informatiche...\""
+            );
+
+            final Button saveButton = new Button("Salva");
+            saveButton.setFont(Font.font("System", FontWeight.BOLD, 13));
+            saveButton.setTextFill(Color.WHITE);
+            saveButton.setPadding(new Insets(7, 16, 7, 16));
+            saveButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)));
+            saveButton.setBorder(Border.EMPTY);
+            saveButton.setCursor(Cursor.HAND);
+            saveButton.setOnAction(e -> {
+                final String nuovoTesto = textArea.getText() == null ? "" : textArea.getText().trim();
+                it.unibo.tutoring.AuthService.getInstance().updatePresentazione(user.getMatricola(), nuovoTesto);
+                showDisplay[0].run();
+            });
+
+            final Button cancelButton = new Button("Annulla");
+            cancelButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 13));
+            cancelButton.setTextFill(TEXT_DARK);
+            cancelButton.setPadding(new Insets(7, 16, 7, 16));
+            cancelButton.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(6), Insets.EMPTY)));
+            cancelButton.setBorder(new Border(
+                new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(6), BorderWidths.DEFAULT)
+            ));
+            cancelButton.setCursor(Cursor.HAND);
+            cancelButton.setOnAction(e -> showDisplay[0].run());
+
+            final HBox actions = new HBox(8, saveButton, cancelButton);
+            bioBody.getChildren().addAll(textArea, actions);
+        };
+
+        showDisplay[0].run();
+
+        bioCard.getChildren().addAll(bioTitle, bioBody);
+        return bioCard;
     }
 
     private static Label createInfoLabel(final String text) {

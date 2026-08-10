@@ -30,6 +30,8 @@ public class BoxTutoraggioImpl
 
     private final BoxType tipo;
 
+    private final String note;
+
     private final List<String> candidati = new ArrayList<>();
 
     private final List<String> contatti = new ArrayList<>();
@@ -46,6 +48,21 @@ public class BoxTutoraggioImpl
         final int durataOre,
         final String autoreMatricola,
         final BoxType tipo
+    ) {
+        this(titolo, corso, materia, argomento, data, ora, durataOre, autoreMatricola, tipo, "");
+    }
+
+    public BoxTutoraggioImpl(
+        final String titolo,
+        final String corso,
+        final String materia,
+        final String argomento,
+        final LocalDate data,
+        final LocalTime ora,
+        final int durataOre,
+        final String autoreMatricola,
+        final BoxType tipo,
+        final String note
     ) {
 
         this.id = UUID.randomUUID();
@@ -67,6 +84,8 @@ public class BoxTutoraggioImpl
         this.autoreMatricola = autoreMatricola;
 
         this.tipo = tipo;
+
+        this.note = note == null ? "" : note;
     }
 
     /**
@@ -88,7 +107,8 @@ public class BoxTutoraggioImpl
         final BoxType tipo,
         final List<String> candidatiIniziali,
         final String confermatoIniziale,
-        final List<String> contattiIniziali
+        final List<String> contattiIniziali,
+        final String note
     ) {
         this.id = id;
         this.titolo = titolo;
@@ -100,6 +120,7 @@ public class BoxTutoraggioImpl
         this.durataOre = durataOre;
         this.autoreMatricola = autoreMatricola;
         this.tipo = tipo;
+        this.note = note == null ? "" : note;
         if (candidatiIniziali != null) {
             this.candidati.addAll(candidatiIniziali);
         }
@@ -250,5 +271,10 @@ public class BoxTutoraggioImpl
         }
         this.confermato = matricola;
         this.candidati.remove(matricola);
+    }
+
+    @Override
+    public String getNote() {
+        return this.note;
     }
 }
