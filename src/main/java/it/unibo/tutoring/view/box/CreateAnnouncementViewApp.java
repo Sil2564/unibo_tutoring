@@ -32,6 +32,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import it.unibo.tutoring.model.box.BoxRepository;
@@ -217,6 +219,16 @@ public final class CreateAnnouncementViewApp {
 
         final DatePicker dataPicker = new DatePicker();
         styleField(dataPicker);
+        dataPicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
+            @Override
+            public void updateItem(final LocalDate date, final boolean empty) {
+                super.updateItem(date, empty);
+                if (date != null && date.isBefore(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #F0F0F0; -fx-opacity: 0.5;");
+                }
+            }
+        });
 
         final TextField oraField = new TextField();
         oraField.setPromptText("HH:mm");
@@ -310,6 +322,22 @@ public final class CreateAnnouncementViewApp {
                 || oraField.getText().isBlank()) {
 
                 feedbackLabel.setText("Compila tutti i campi prima di pubblicare.");
+                feedbackLabel.setVisible(true);
+                feedbackLabel.setManaged(true);
+                return;
+            }
+
+            final LocalTime oraValidazione;
+            try {
+                oraValidazione = LocalTime.parse(oraField.getText().trim());
+            } catch (final java.time.format.DateTimeParseException exception) {
+                feedbackLabel.setText("Formato orario non valido. Usa HH:mm (es. 15:00).");
+                feedbackLabel.setVisible(true);
+                feedbackLabel.setManaged(true);
+                return;
+            }
+            if (LocalDateTime.of(dataPicker.getValue(), oraValidazione).isBefore(LocalDateTime.now())) {
+                feedbackLabel.setText("Non puoi pubblicare un annuncio per una data e ora gia' passate: scegli un momento da adesso in poi.");
                 feedbackLabel.setVisible(true);
                 feedbackLabel.setManaged(true);
                 return;

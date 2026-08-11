@@ -269,6 +269,16 @@ public final class AnnouncementDetailViewApp {
 
         final DatePicker datePicker = new DatePicker(box.getData());
         styleScheduleField(datePicker);
+        datePicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
+            @Override
+            public void updateItem(final java.time.LocalDate date, final boolean empty) {
+                super.updateItem(date, empty);
+                if (date != null && date.isBefore(java.time.LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #F0F0F0; -fx-opacity: 0.5;");
+                }
+            }
+        });
 
         final TextField timeField = new TextField(
                 box.getOra() != null ? box.getOra().toString() : "");

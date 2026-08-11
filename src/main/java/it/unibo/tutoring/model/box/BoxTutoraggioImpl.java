@@ -219,6 +219,9 @@ public class BoxTutoraggioImpl
         if (nuovaDurataOre < 1 || nuovaDurataOre > 8) {
             throw new IllegalArgumentException("La durata deve essere compresa tra 1 e 8 ore.");
         }
+        if (java.time.LocalDateTime.of(nuovaData, nuovaOra).isBefore(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Data e ora devono essere successive a quelle attuali.");
+        }
 
         this.data = nuovaData;
         this.ora = nuovaOra;
