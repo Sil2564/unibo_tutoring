@@ -1,15 +1,14 @@
 package it.unibo.tutoring.view.components;
 
-import java.nio.file.Path;
-
+import it.unibo.tutoring.CurrentSession;
 import it.unibo.tutoring.UniBoTutoringProfileApp;
+import it.unibo.tutoring.UserSession;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -32,10 +31,21 @@ public class AppHeader extends HBox {
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
 
     public AppHeader() {
-        this("Mario Rossi", null);
+        this(UserSession.getDisplayName(), null, false);
     }
 
     public AppHeader(final String userDisplayName, final Runnable onLogout) {
+        this(userDisplayName, onLogout, false);
+    }
+
+    public static AppHeader forProfile(final String userDisplayName) {
+        return new AppHeader(userDisplayName, null, true);
+    }
+
+    private AppHeader(
+            final String userDisplayName,
+            final Runnable onLogout,
+            final boolean profileView) {
         super(12);
 
         this.getStyleClass().add("app-header");
@@ -45,7 +55,7 @@ public class AppHeader extends HBox {
         this.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         this.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0, 0, 1, 0))));
 
-        final ImageView logo = icon("logo.png", 30, 30);
+        final ImageView logo = new AppIcon("logo.png", 30, 30);
 
         final Label title = new Label("UniBo Tutoring");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 31));
@@ -68,63 +78,58 @@ public class AppHeader extends HBox {
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        final ImageView userIcon = icon("user.png", 16, 16);
-
-       final Button userName = new Button(userDisplayName);
-
-userName.setFont(
-    Font.font("System", FontWeight.SEMI_BOLD, 14)
-);
-
-userName.setTextFill(TEXT_DARK);
-
-userName.setBackground(Background.EMPTY);
-
-userName.setBorder(Border.EMPTY);
-
-userName.setCursor(Cursor.HAND);
-
-userName.setOnAction(event -> {
-
-    final Stage stage =
-        (Stage) userName.getScene().getWindow();
-
-    stage.setScene(
-        UniBoTutoringProfileApp.createScene()
-    );
-
-    stage.setTitle("UniBo Tutoring - Profilo");
-    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
-});
-
         final Separator separator = new Separator();
         separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
         separator.setPrefHeight(16);
 
-        final ImageView logoutIcon = icon("logout.png", 14, 14);
-        final Button logoutButton = new Button("Logout", logoutIcon);
-        logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        logoutButton.setTextFill(TEXT_DARK);
-        logoutButton.setBackground(Background.EMPTY);
-        logoutButton.setBorder(Border.EMPTY);
-        if (onLogout != null) {
-            logoutButton.setOnAction(event -> onLogout.run());
+        final HBox rightSide;
+        if (profileView) {
+            final Label userName = new Label(userDisplayName);
+            userName.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+            userName.setTextFill(TEXT_DARK);
+            rightSide = new HBox(10, userName, separator, new DashboardButton());
+        } else {
+            final ImageView userIcon = new AppIcon("user.png", 16, 16);
+            final Button userName = profileButton(userDisplayName);
+            final Button logoutButton = logoutButton(onLogout);
+            rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
         }
-
-        final HBox rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
         rightSide.setAlignment(Pos.CENTER_RIGHT);
 
         this.getChildren().addAll(brandBlock, spacer, rightSide);
     }
 
-    private ImageView icon(final String iconName, final double w, final double h) {
-        final Image image = new Image(Path.of("src", "icons", iconName).toUri().toString());
-        final ImageView view = new ImageView(image);
-        view.setFitWidth(w);
-        view.setFitHeight(h);
-        view.setPreserveRatio(true);
-        view.setSmooth(true);
-        return view;
+    private Button profileButton(final String userDisplayName) {
+        final Button button = new Button(userDisplayName);
+        button.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        button.setTextFill(TEXT_DARK);
+        button.setBackground(Background.EMPTY);
+        button.setBorder(Border.EMPTY);
+        button.setCursor(Cursor.HAND);
+        button.setOnAction(event -> {
+            final Stage stage = (Stage) button.getScene().getWindow();
+            stage.setScene(UniBoTutoringProfileApp.createScene());
+            stage.setTitle("UniBo Tutoring - Profilo");
+            WindowUtil.maximize(stage);
+        });
+        return button;
+    }
+
+    private Button logoutButton(final Runnable onLogout) {
+        final Button button = new Button("Logout", new AppIcon("logout.png", 14, 14));
+        button.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        button.setTextFill(TEXT_DARK);
+        button.setBackground(Background.EMPTY);
+        button.setBorder(Border.EMPTY);
+        button.setOnAction(event -> {
+            if (onLogout != null) {
+                onLogout.run();
+                return;
+            }
+            CurrentSession.clear();
+            NavigationHelper.goToLogin((Stage) button.getScene().getWindow());
+        });
+        return button;
     }
 }
 

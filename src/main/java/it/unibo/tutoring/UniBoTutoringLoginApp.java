@@ -1,9 +1,11 @@
 package it.unibo.tutoring;
 
 import it.unibo.tutoring.AuthService;
-import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.CurrentSession;
-import java.nio.file.Path;
+import it.unibo.tutoring.view.components.AppIcon;
+import it.unibo.tutoring.view.components.AppCard;
+import it.unibo.tutoring.view.components.AppButton;
+import it.unibo.tutoring.view.components.FormControlStyle;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -12,14 +14,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -33,7 +30,6 @@ public final class UniBoTutoringLoginApp {
 
     private static final Color PRIMARY_RED = Color.web("#D91E43");
     private static final Color PAGE_BG = Color.web("#ECECEC");
-    private static final Color CARD_BG = Color.web("#ffffff");
     private static final Color TEXT_DARK = Color.web("#111111");
 
     private UniBoTutoringLoginApp() {
@@ -50,12 +46,7 @@ public final class UniBoTutoringLoginApp {
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setMaxWidth(520);
 
-        final Image leftArrow = new Image(Path.of("src", "icons", "arrow_left.png").toUri().toString());
-        final ImageView leftArrowView = new ImageView(leftArrow);
-        leftArrowView.setFitWidth(16);
-        leftArrowView.setFitHeight(16);
-        leftArrowView.setPreserveRatio(true);
-        leftArrowView.setSmooth(true);
+        final AppIcon leftArrowView = new AppIcon("arrow_left.png", 16, 16);
 
         final Button backHomeButton = new Button("Home", leftArrowView);
         backHomeButton.getStyleClass().add("back-button");
@@ -64,12 +55,7 @@ public final class UniBoTutoringLoginApp {
         });
         topBar.getChildren().add(backHomeButton);
 
-        final Image logo = new Image(Path.of("src", "icons", "logo.png").toUri().toString());
-        final ImageView logoView = new ImageView(logo);
-        logoView.setFitWidth(70);
-        logoView.setFitHeight(70);
-        logoView.setPreserveRatio(true);
-        logoView.setSmooth(true);
+        final AppIcon logoView = new AppIcon("logo.png", 70, 70);
 
         final Label title = new Label("UniBo Tutoring");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 36));
@@ -83,13 +69,11 @@ public final class UniBoTutoringLoginApp {
         brandBlock.setCursor(Cursor.HAND);
         brandBlock.setOnMouseClicked(event -> it.unibo.tutoring.view.components.NavigationHelper.goToHomeOrDashboard(stage));
 
-        final VBox formCard = new VBox(10);
+        final AppCard formCard = new AppCard(
+                10, new Insets(20, 24, 18, 24), 12, Color.web("#C5C5C5"))
+                .withMaxWidth(520);
         formCard.getStyleClass().add("auth-card");
         formCard.setAlignment(Pos.CENTER_LEFT);
-        formCard.setPadding(new Insets(20, 24, 18, 24));
-        formCard.setMaxWidth(520);
-        formCard.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(12), Insets.EMPTY)));
-        formCard.setBorder(new Border(new BorderStroke(Color.web("#C5C5C5"), BorderStrokeStyle.SOLID, new CornerRadii(12), new BorderWidths(1))));
 
         final Label formTitle = new Label("Accedi al tuo account");
         formTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 30));
@@ -108,9 +92,8 @@ public final class UniBoTutoringLoginApp {
 
         final TextField matricolaField = new TextField();
         matricolaField.setPromptText("es. 1234567890");
-        matricolaField.getStyleClass().add("form-field");
+        FormControlStyle.apply(matricolaField, 44);
         matricolaField.setFont(Font.font("System", FontWeight.NORMAL, 20));
-        matricolaField.setPrefHeight(44);
 
         final Label passwordLabel = new Label("Password");
         passwordLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
@@ -118,17 +101,13 @@ public final class UniBoTutoringLoginApp {
 
         final PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("min 6 caratteri, 1 numero");
-        passwordField.getStyleClass().add("form-field");
+        FormControlStyle.apply(passwordField, 44);
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
-        passwordField.setPrefHeight(44);
 
-        final Button loginButton = new Button("Accedi");
-        loginButton.getStyleClass().add("primary-btn");
+        final AppButton loginButton = AppButton.primary("Accedi");
         loginButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
-        loginButton.setTextFill(Color.WHITE);
         loginButton.setPrefHeight(48);
         loginButton.setMaxWidth(Double.MAX_VALUE);
-        loginButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
         loginButton.setStyle("-fx-scale-x: 1; -fx-scale-y: 1; -fx-translate-x: 0; -fx-translate-y: 0;");
 
         final Label feedbackLabel = new Label();

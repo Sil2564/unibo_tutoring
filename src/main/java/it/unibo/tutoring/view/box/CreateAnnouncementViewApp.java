@@ -1,8 +1,12 @@
 package it.unibo.tutoring.view.box;
 
 import it.unibo.tutoring.CurrentSession;
-import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserAccount;
+import it.unibo.tutoring.view.components.DashboardButton;
+import it.unibo.tutoring.view.components.NavigationHelper;
+import it.unibo.tutoring.view.components.AppCard;
+import it.unibo.tutoring.view.components.AppButton;
+import it.unibo.tutoring.view.components.FormControlStyle;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -19,10 +23,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -119,34 +119,7 @@ public final class CreateAnnouncementViewApp {
             Priority.ALWAYS
         );
 
-        final Button dashboardButton =
-            new Button("← Dashboard");
-
-        dashboardButton.getStyleClass().add("text-link");
-        dashboardButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        dashboardButton.setTextFill(TEXT_DARK);
-        dashboardButton.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
-        dashboardButton.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
-        dashboardButton.setPadding(new Insets(8, 14, 8, 14));
-        dashboardButton.setCursor(Cursor.HAND);
-
-        dashboardButton.setOnAction(event -> {
-
-            final Stage stage =
-                (Stage) dashboardButton
-                    .getScene()
-                    .getWindow();
-
-            stage.setScene(
-                UniBoTutoringDashboardApp
-                    .createScene()
-            );
-
-            stage.setTitle(
-                "UniBo Tutoring - Dashboard"
-            );
-            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
-        });
+        final Button dashboardButton = new DashboardButton();
 
         header.getChildren().addAll(
             title,
@@ -154,7 +127,7 @@ public final class CreateAnnouncementViewApp {
             dashboardButton
         );
 
-        final VBox card = new VBox(6);
+        final AppCard card = new AppCard(6, new Insets(30), 16).withWidth(760);
         card.getStyleClass().add("auth-card");
 
         card.setPadding(new Insets(30));
@@ -207,18 +180,18 @@ public final class CreateAnnouncementViewApp {
         final ComboBox<String> corsoBox = new ComboBox<>();
         corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
         corsoBox.setPromptText("Seleziona il corso");
-        styleField(corsoBox);
+        FormControlStyle.applyOutlined(corsoBox);
 
         final TextField materiaField = new TextField();
         materiaField.setPromptText("Es. Programmazione ad Oggetti");
-        styleField(materiaField);
+        FormControlStyle.applyOutlined(materiaField);
 
         final TextField argomentoField = new TextField();
         argomentoField.setPromptText("Es. Pattern MVC");
-        styleField(argomentoField);
+        FormControlStyle.applyOutlined(argomentoField);
 
         final DatePicker dataPicker = new DatePicker();
-        styleField(dataPicker);
+        FormControlStyle.applyOutlined(dataPicker);
         dataPicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
             @Override
             public void updateItem(final LocalDate date, final boolean empty) {
@@ -232,17 +205,17 @@ public final class CreateAnnouncementViewApp {
 
         final TextField oraField = new TextField();
         oraField.setPromptText("HH:mm");
-        styleField(oraField);
+        FormControlStyle.applyOutlined(oraField);
 
         final Spinner<Integer> durataSpinner = new Spinner<>(1, 8, 2);
-        styleField(durataSpinner);
+        FormControlStyle.applyOutlined(durataSpinner);
 
         final TextArea noteField = new TextArea();
         noteField.setPromptText("Facoltativo: aggiungi una nota per chi vedra' l'annuncio "
             + "(es. \"Preferisco sessioni la sera\", \"Portare il libro di testo\"...)");
         noteField.setWrapText(true);
         noteField.setPrefRowCount(3);
-        styleField(noteField);
+        FormControlStyle.applyOutlined(noteField);
         noteField.setPrefHeight(90);
         noteField.setMinHeight(90);
 
@@ -293,25 +266,7 @@ public final class CreateAnnouncementViewApp {
         feedbackLabel.setVisible(false);
         feedbackLabel.setManaged(false);
 
-        final Button publishButton = new Button("Pubblica Annuncio");
-
-        publishButton.getStyleClass().add("primary-btn");
-        publishButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
-        publishButton.setTextFill(Color.WHITE);
-        publishButton.setPadding(new Insets(11, 22, 11, 22));
-        publishButton.setCursor(Cursor.HAND);
-
-        publishButton.setBackground(
-            new Background(
-                new BackgroundFill(
-                    PRIMARY_RED,
-                    new CornerRadii(8),
-                    Insets.EMPTY
-                )
-            )
-        );
-
-        publishButton.setBorder(Border.EMPTY);
+        final AppButton publishButton = AppButton.primary("Pubblica Annuncio");
 
         publishButton.setOnAction(event -> {
 
@@ -379,15 +334,7 @@ public final class CreateAnnouncementViewApp {
                         .getScene()
                         .getWindow();
 
-                stage.setScene(
-                    UniBoTutoringDashboardApp
-                        .createScene()
-                );
-
-                stage.setTitle(
-                    "UniBo Tutoring - Dashboard"
-                );
-                it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+                NavigationHelper.goToDashboard(stage);
 
             } catch (final Exception exception) {
 
@@ -460,17 +407,4 @@ public final class CreateAnnouncementViewApp {
         return label;
     }
 
-    private static void styleField(final javafx.scene.control.Control field) {
-        field.setPrefHeight(38);
-        field.setMaxWidth(Double.MAX_VALUE);
-        field.getStyleClass().add("form-field");
-        field.setStyle(
-            "-fx-background-color: white;"
-            + "-fx-border-color: #CFCFCF;"
-            + "-fx-border-radius: 7;"
-            + "-fx-background-radius: 7;"
-            + "-fx-font-family: 'System';"
-            + "-fx-font-size: 13px;"
-        );
-    }
 }

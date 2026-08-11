@@ -1,6 +1,8 @@
 package it.unibo.tutoring;
-import java.nio.file.Path;
 import it.unibo.tutoring.view.components.AppFooter;
+import it.unibo.tutoring.view.components.AppIcon;
+import it.unibo.tutoring.view.components.AppCard;
+import it.unibo.tutoring.view.components.AppButton;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -9,7 +11,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -34,8 +35,6 @@ public class UniBoTutoringHomeApp extends Application {
 
     private static final Color PRIMARY_RED = Color.web("#D91E43");
     private static final Color LIGHT_BACKGROUND = Color.web("#F5F5F5");
-    private static final Color CARD_BACKGROUND = Color.WHITE;
-
     @Override
     public void start(final Stage stage) {
         final Scene scene = createScene();
@@ -77,7 +76,7 @@ public class UniBoTutoringHomeApp extends Application {
         topBar.getStyleClass().add("app-header");
         topBar.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        final ImageView uniBoLogo = imageView("src/icons/logo.png", 34, 34);
+        final ImageView uniBoLogo = new AppIcon("logo.png", 34, 34);
 
         final VBox brand = new VBox(2);
         final Label brandTitle = new Label("UniBo Tutoring");
@@ -155,7 +154,7 @@ public class UniBoTutoringHomeApp extends Application {
 
         final VBox imageCard = new VBox();
         imageCard.setAlignment(Pos.CENTER);
-        final ImageView imageView = imageView("src/icons/comp.png", 392, 228);
+        final ImageView imageView = new AppIcon("comp.png", 392, 228);
 
         final Rectangle roundedClip = new Rectangle(392, 228);
         roundedClip.setArcWidth(24);
@@ -330,10 +329,8 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         final HBox section = new HBox(24);
         section.setPadding(new Insets(10, 40, 36, 40));
 
-        final VBox left = new VBox(14);
-        left.setPadding(new Insets(18));
-        left.setBackground(new Background(new BackgroundFill(CARD_BACKGROUND, new CornerRadii(12), Insets.EMPTY)));
-        left.setBorder(new Border(new BorderStroke(Color.web("#E0E0E0"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)));
+        final AppCard left = new AppCard(
+                14, new Insets(18), 12, Color.web("#E0E0E0"));
         HBox.setHgrow(left, Priority.ALWAYS);
 
         final Label leftTitle = new Label("Perché scegliere UniBo Tutoring?");
@@ -348,14 +345,12 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
             bullet("Statistiche dettagliate", "Monitora le tue ore di tutoraggio, crediti e recensioni ricevute")
         );
 
-        final VBox cta = new VBox(12);
+        final AppCard cta = new AppCard(
+                12, new Insets(22), 12, Color.web("#E0E0E0"));
         cta.setAlignment(Pos.CENTER);
-        cta.setPadding(new Insets(22));
         cta.setPrefWidth(360);
-        cta.setBackground(new Background(new BackgroundFill(CARD_BACKGROUND, new CornerRadii(12), Insets.EMPTY)));
-        cta.setBorder(new Border(new BorderStroke(Color.web("#E0E0E0"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)));
 
-        final ImageView ctaIcon = imageView("src/icons/whitebook.png", 28, 28);
+        final ImageView ctaIcon = new AppIcon("whitebook.png", 28, 28);
 
         final StackPane ctaIconCircle = new StackPane(ctaIcon);
         ctaIconCircle.setPrefSize(58, 58);
@@ -375,7 +370,9 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         ctaSubtitle.setWrapText(true);
         ctaSubtitle.setMinHeight(Region.USE_PREF_SIZE);
 
-        final Button register = redButton("Crea il tuo account");
+        final AppButton register = AppButton.primary("Crea il tuo account");
+        register.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 18));
+        register.setPadding(new Insets(10, 18, 10, 18));
         register.setMaxWidth(Double.MAX_VALUE);
         register.setOnAction(event -> openRegistrationPage(register));
 
@@ -415,7 +412,7 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         card.setPrefWidth(200);
         card.setPadding(new Insets(16, 12, 16, 12));
 
-        final ImageView icon = imageView(iconPath, 28, 28);
+        final ImageView icon = new AppIcon(iconPath, 28, 28);
 
         final StackPane iconBox = new StackPane(icon);
         iconBox.setPrefSize(56, 56);
@@ -512,16 +509,6 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         return box;
     }
 
-    private static ImageView imageView(final String path, final double width, final double height) {
-        final ImageView image = new ImageView(new Image(Path.of(path).toUri().toString()));
-        image.setFitWidth(width);
-        image.setFitHeight(height);
-        image.setPreserveRatio(true);
-        image.setSmooth(true);
-        return image;
-    }
-
-
     private Button primaryWhiteButton(final String text) {
         final Button button = new Button(text);
         button.setFont(Font.font("System", FontWeight.BOLD, 13));
@@ -538,16 +525,6 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         button.setPadding(new Insets(8, 16, 8, 16));
         button.setStyle("-fx-background-color: #FF536A;");
         button.setBorder(Border.EMPTY);
-        return button;
-    }
-
-    private Button redButton(final String text) {
-        final Button button = new Button(text);
-        button.getStyleClass().add("primary-btn");
-        button.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 18));
-        button.setTextFill(Color.WHITE);
-        button.setPadding(new Insets(10, 18, 10, 18));
-        button.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(10), Insets.EMPTY)));
         return button;
     }
 

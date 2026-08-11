@@ -1,11 +1,12 @@
 package it.unibo.tutoring.view.session;
 
-import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
 import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.components.AppCard;
+import it.unibo.tutoring.view.components.DashboardButton;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -35,7 +36,6 @@ public class TutoringSessionViewApp extends Application {
     private static final Color PAGE_BG = Color.web("#EFEFEF");
     private static final Color TEXT_DARK = Color.web("#1B1B1B");
     private static final Color TEXT_MEDIUM = Color.web("#6A6A6A");
-    private static final Color CARD_BG = Color.WHITE;
     private final TutoringSessionController controller;
     private final BoxTutoraggio box;
     private final String counterpartyMatricola;
@@ -84,20 +84,10 @@ public class TutoringSessionViewApp extends Application {
         root.getStyleClass().add("app-shell");
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        final Stage window = stage;
-        final AppHeader header = new AppHeader(
-                UserSession.getDisplayName(),
-                window != null ? UserSession.createLogoutAction(window) : null);
+        final AppHeader header = new AppHeader();
 
-        final Button btnBack = new Button("< Torna indietro");
-        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #6A6A6A; -fx-font-weight: bold;");
+        final Button btnBack = new DashboardButton();
         VBox.setMargin(btnBack, new Insets(10, 0, 0, 15));
-        if (stage != null) {
-            btnBack.setOnAction(e -> {
-                stage.setScene(UniBoTutoringDashboardApp.createScene());
-                stage.setTitle("UniBo Tutoring - Dashboard");
-            });
-        }
 
         root.getChildren().addAll(header, btnBack, createMainArea());
         this.reviewOverlay = createReviewOverlay();
@@ -130,12 +120,9 @@ public class TutoringSessionViewApp extends Application {
     }
 
     private VBox createSessionDetailsCard() {
-        final VBox card = new VBox(15);
+        final AppCard card = new AppCard(15, new Insets(20), 8);
         card.getStyleClass().add("soft-card");
         card.setPrefWidth(350);
-        card.setPadding(new Insets(20));
-        card.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(8), Insets.EMPTY)));
-        card.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
 
         final Label title = new Label("Dettagli Sessione");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 22));
@@ -199,10 +186,8 @@ public class TutoringSessionViewApp extends Application {
     }
 
     private VBox createChatCard() {
-        final VBox card = new VBox(0);
+        final AppCard card = new AppCard(0, Insets.EMPTY, 8);
         card.getStyleClass().add("soft-card");
-        card.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(8), Insets.EMPTY)));
-        card.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
 
         final HBox chatHeader = new HBox();
         chatHeader.setPadding(new Insets(15));

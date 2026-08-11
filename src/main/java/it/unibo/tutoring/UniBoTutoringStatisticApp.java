@@ -12,6 +12,7 @@ import it.unibo.tutoring.model.credit.CompletedSessionRepository.CompletedSessio
 import it.unibo.tutoring.model.credit.TutorStatistics;
 import it.unibo.tutoring.view.components.AppFooter;
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.components.AppIcon;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -26,7 +27,6 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -50,7 +50,6 @@ import javafx.util.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,21 +72,13 @@ public class UniBoTutoringStatisticApp extends Application {
 
     public static Scene createScene() {
         final UniBoTutoringStatisticApp app = new UniBoTutoringStatisticApp();
-        final UserAccount user = CurrentSession.getUser();
-        final String userDisplayName = user != null ? user.getName() + " " + user.getSurname() : "Utente";
-
         final VBox root = new VBox();
         root.getStyleClass().add("app-shell");
         root.setBackground(new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY)));
 
         root.getChildren().addAll(
-            new AppHeader(userDisplayName, () -> {
-                CurrentSession.clear();
-                final Stage stage = (Stage) root.getScene().getWindow();
-                stage.setScene(UniBoTutoringLoginApp.createScene(stage));
-                stage.setTitle("UniBo Tutoring - Login");
-            }),
-            app.createMainArea(),
+                new AppHeader(),
+                app.createMainArea(),
                 new AppFooter()
         );
         VBox.setVgrow(root.getChildren().get(1), Priority.ALWAYS);
@@ -132,7 +123,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        final ImageView collapseIcon = icon("arrow-left.png", 10, 10);
+        final ImageView collapseIcon = new AppIcon("arrow-left.png", 10, 10);
         final Button collapse = new Button();
         collapse.setGraphic(collapseIcon);
         collapse.setPadding(new Insets(0));
@@ -163,8 +154,8 @@ public class UniBoTutoringStatisticApp extends Application {
         sidebar.getChildren().addAll(navHeader, menu);
 
         final boolean[] isSidebarOpen = {true};
-        final Image arrowLeftImg = new Image(Path.of("src", "icons", "arrow-left.png").toUri().toString());
-        final Image arrowRightImg = new Image(Path.of("src", "icons", "arrow-right.png").toUri().toString());
+        final Image arrowLeftImg = AppIcon.load("arrow-left.png");
+        final Image arrowRightImg = AppIcon.load("arrow-right.png");
 
         collapse.setOnAction(event -> {
             isSidebarOpen[0] = !isSidebarOpen[0];
@@ -205,7 +196,7 @@ public class UniBoTutoringStatisticApp extends Application {
     }
 
     private Button navItem(final String iconName, final String title, final String subtitle, final boolean active, final List<Node> nodesToHide) {
-        final ImageView icon = icon(iconName, 14, 14);
+        final ImageView icon = new AppIcon(iconName, 14, 14);
         final Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
 
@@ -340,7 +331,7 @@ public class UniBoTutoringStatisticApp extends Application {
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        final ImageView iconView = icon(iconName, 16, 16);
+        final ImageView iconView = new AppIcon(iconName, 16, 16);
         headerBox.getChildren().addAll(titleLabel, spacer, iconView);
 
         final Label valueLabel = new Label(value);
@@ -362,7 +353,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final HBox sectionHeader = new HBox(8);
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
-        final ImageView msgIcon = icon("mex_red.png", 18, 18);
+        final ImageView msgIcon = new AppIcon("mex_red.png", 18, 18);
         final Label sectionTitle = new Label("Recensioni ricevute");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
@@ -500,7 +491,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final HBox sectionHeader = new HBox(8);
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
-        final ImageView clockIcon = icon("clock_red.png", 18, 18);
+        final ImageView clockIcon = new AppIcon("clock_red.png", 18, 18);
         final Label sectionTitle = new Label("Sessioni recenti");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
@@ -541,7 +532,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         final HBox sectionHeader = new HBox(8);
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
-        final ImageView chartIcon = icon("graph_red.png", 18, 18);
+        final ImageView chartIcon = new AppIcon("graph_red.png", 18, 18);
         final Label sectionTitle = new Label("Sessioni mensili");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
@@ -637,16 +628,6 @@ public class UniBoTutoringStatisticApp extends Application {
         return card;
     }
 
-
-    private ImageView icon(final String iconName, final double w, final double h) {
-        final Image image = new Image(Path.of("src", "icons", iconName).toUri().toString());
-        final ImageView view = new ImageView(image);
-        view.setFitWidth(w);
-        view.setFitHeight(h);
-        view.setPreserveRatio(true);
-        view.setSmooth(true);
-        return view;
-    }
 
     public static void run(final String[] args) {
         launch(args);
