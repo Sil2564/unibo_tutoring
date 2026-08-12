@@ -70,7 +70,10 @@ public class UniBoTutoringStatisticApp extends Application {
         stage.show();
         it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
     }
-
+/**
+ * @createScene recupera l’utente autenticato con CurrentSession.getUser(). 
+ * Da esso prende matricola, che è la chiave usata per mostrare solo i dati del tutor corrente
+ */
     public static Scene createScene() {
         final UniBoTutoringStatisticApp app = new UniBoTutoringStatisticApp();
         final UserAccount user = CurrentSession.getUser();
@@ -533,7 +536,7 @@ public class UniBoTutoringStatisticApp extends Application {
         container.getChildren().addAll(sectionHeader, sessionsList);
         return container;
     }
-
+//Si crea il contenitore della sezione del grafico con margini e stile
     private VBox createMonthlySessionsChart(final String matricola) {
         final VBox container = new VBox(16);
         container.setPadding(new Insets(24));
@@ -546,37 +549,46 @@ public class UniBoTutoringStatisticApp extends Application {
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(TEXT_DARK);
         sectionHeader.getChildren().addAll(chartIcon, sectionTitle);
-
+//crea asse x con valori dei mesi in lettere
         final CategoryAxis xAxis = new CategoryAxis();
         xAxis.setLabel("Mese");
-
+//crea asse y con valori numerici per indicare le sessioni 
         final NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("Sessioni");
         yAxis.setMinorTickVisible(false);
         yAxis.setForceZeroInRange(true);
-
+//crea grafico con stringhe su asse x e num su asse y 
         final LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
         chart.setAnimated(false);
         chart.setLegendVisible(false);
-        chart.setCreateSymbols(true);
+        chart.setCreateSymbols(true);  //pallino per ogni mese
         chart.setHorizontalGridLinesVisible(false);
         chart.setVerticalGridLinesVisible(false);
         chart.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
-
+//crea contenitore di dati per il grafico
         final XYChart.Series<String, Number> series = new XYChart.Series<>();
+//si definisce una mappa che abbia i valori string e integer 
+// LinkedHashMap crea oggetto in memoria mantenendone l'ordine cronologico
         final Map<String, Integer> countsByMonth = new LinkedHashMap<>();
+        //formatta date in formato italinao (es. ago 2026)
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ITALIAN);
 
+//legge sessioni dal file data/completed_sessions.csv e le filtra per tutorMatricola
         List<CompletedSession> sessions = CompletedSessionRepository.loadCompletedSessionsForTutor(matricola);
         sessions.stream()
+        //prende le sessioni, ne estrae le date e le trasforma in LocalDate
             .map(session -> parseDateSafe(session.date()))
+        //scarta le date non valide 
             .filter(date -> !date.equals(LocalDate.MIN))
-            .sorted()
+            .sorted()  //ordina cronologicamente
+            //prende ogni data
             .forEach(date -> {
+            //applica il DateTimeFormatter definito in precedenza
                 final String monthLabel = date.format(formatter);
-                countsByMonth.put(monthLabel, countsByMonth.getOrDefault(monthLabel, 0) + 1);
+                //cerca nella mappa se esiste già una chiave corrispondente a monthLabel
+                countsByMonth.put(monthLabel, countsByMonth.getOrDefault(monthLabel, 0) + 1); //prende il valore ottenuto ed aggiunge 1
             });
-
+//se non ci sioni sessioni valide: grafico vuoto
         if (countsByMonth.isEmpty()) {
             countsByMonth.put("Nessun dato", 0);
         }
