@@ -59,6 +59,7 @@ public final class UniBoTutoringLoginApp {
 
         final Label title = new Label("UniBo Tutoring");
         title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 36));
+        title.setTextFill(TEXT_DARK);
 
         final Label subtitle = new Label("Università di Bologna");
         subtitle.setTextFill(Color.web("#6B6B6B"));
@@ -82,16 +83,21 @@ public final class UniBoTutoringLoginApp {
         formTitle.setTextAlignment(TextAlignment.CENTER);
         formTitle.setAlignment(Pos.CENTER);
 
-        final Label formSubtitle = new Label("Inserisci la tua matricola e password per accedere");
+        final Label formSubtitle = new Label(
+            "Inserisci la tua matricola o email "
+            + "\n e password per accedere");
         formSubtitle.setFont(Font.font("System", FontWeight.NORMAL, 20));
+        formSubtitle.setTextAlignment(TextAlignment.CENTER);
+        formSubtitle.setAlignment(Pos.CENTER);
+        formSubtitle.setMaxWidth(Double.MAX_VALUE);
         formSubtitle.setTextFill(Color.web("#6A6A6A"));
 
-        final Label matricolaLabel = new Label("Matricola");
+        final Label matricolaLabel = new Label("Matricola o email");
         matricolaLabel.setFont(Font.font("System", FontWeight.NORMAL, 24));
         matricolaLabel.setTextFill(TEXT_DARK);
 
         final TextField matricolaField = new TextField();
-        matricolaField.setPromptText("es. 1234567890");
+        matricolaField.setPromptText("es. 1234567890 oppure nome@studio.unibo.it");
         FormControlStyle.apply(matricolaField, 44);
         matricolaField.setFont(Font.font("System", FontWeight.NORMAL, 20));
 
@@ -116,11 +122,11 @@ public final class UniBoTutoringLoginApp {
         feedbackLabel.setVisible(false);
 
         loginButton.setOnAction(event -> {
-    final String matricola = matricolaField.getText().trim();
+    final String identifier = matricolaField.getText().trim();
     final String password = passwordField.getText();
 
-    if (!matricola.matches("\\d{10}")) {
-        feedbackLabel.setText("Inserisci una matricola valida di 10 cifre.");
+    if (identifier.isBlank()) {
+        feedbackLabel.setText("Inserisci matricola o email.");
         feedbackLabel.setVisible(true);
         return;
     }
@@ -129,15 +135,8 @@ public final class UniBoTutoringLoginApp {
         feedbackLabel.setVisible(true);
         return;
     }
-    if (!AuthService.isPasswordValid(password)) {
-        feedbackLabel.setText("La password deve avere almeno 6 caratteri, una lettera e un numero.");
-        feedbackLabel.setVisible(true);
-        return;
-    }
-
-    if (AuthService.getInstance().authenticate(matricola, password)) {
-
-        UserAccount user = AuthService.getInstance().getUser(matricola);
+    final UserAccount user = AuthService.getInstance().login(identifier, password);
+    if (user != null) {
         CurrentSession.setUser(user);
 
         it.unibo.tutoring.view.components.NavigationHelper.goToDashboard(stage);

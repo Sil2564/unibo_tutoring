@@ -213,11 +213,18 @@ public final class AuthService {
     public UserAccount getUser(final String matricola){ 
     return this.usersByMatricola.get(matricola.trim());
     }
-    public UserAccount login(String matricola, String password) {
-    UserAccount user = this.usersByMatricola.get(matricola.trim());
-    if (user != null && user.getPasswordHash().equals(hashPassword(password))) {
-        return user;
+    public UserAccount login(final String identifier, final String password) {
+    if (identifier == null || password == null) {
+        return null;
     }
-    return null;
+
+    final String cleanIdentifier = identifier.trim();
+    final UserAccount user = cleanIdentifier.contains("@")
+        ? this.usersByEmail.get(cleanIdentifier.toLowerCase())
+        : this.usersByMatricola.get(cleanIdentifier);
+
+    return user != null && user.getPasswordHash().equals(hashPassword(password))
+        ? user
+        : null;
 }
 }
