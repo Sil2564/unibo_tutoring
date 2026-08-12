@@ -129,34 +129,7 @@ public final class CreateAnnouncementViewApp {
 
         final AppCard card = new AppCard(6, new Insets(30), 16).withWidth(760);
         card.getStyleClass().add("auth-card");
-
-        card.setPadding(new Insets(30));
-        card.setMaxWidth(760);
-        card.setPrefWidth(760);
-        card.setMinWidth(0);
-
         card.setAlignment(Pos.TOP_LEFT);
-
-        card.setBackground(
-            new Background(
-                new BackgroundFill(
-                    Color.WHITE,
-                    new CornerRadii(16),
-                    Insets.EMPTY
-                )
-            )
-        );
-
-        card.setBorder(
-            new Border(
-                new BorderStroke(
-                    Color.web("#D6D6D6"),
-                    BorderStrokeStyle.SOLID,
-                    new CornerRadii(16),
-                    BorderWidths.DEFAULT
-                )
-            )
-        );
 
         final Label sessionLabel =
             new Label(

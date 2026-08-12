@@ -440,7 +440,7 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         final String title,
         final String description) {
 
-    final ImageView icon = imageView(iconPath, 22, 22);
+        final ImageView icon = new AppIcon(iconPath, 22, 22);
 
     final StackPane iconContainer = new StackPane(icon);
     iconContainer.setPrefSize(52, 52);
