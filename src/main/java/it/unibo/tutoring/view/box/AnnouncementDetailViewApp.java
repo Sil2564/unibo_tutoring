@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 
 import it.unibo.tutoring.CurrentSession;
-import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.UserAccount;
 import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
@@ -16,6 +15,11 @@ import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.box.BoxType;
 import it.unibo.tutoring.model.credit.ReviewRepository;
 import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.components.AppCard;
+import it.unibo.tutoring.view.components.AppButton;
+import it.unibo.tutoring.view.components.FormControlStyle;
+import it.unibo.tutoring.view.components.DashboardButton;
+import it.unibo.tutoring.view.components.NavigationHelper;
 import it.unibo.tutoring.view.session.SessionLinkUtil;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.PauseTransition;
@@ -72,16 +76,21 @@ public final class AnnouncementDetailViewApp {
         final boolean isCandidato = me != null && box.isCandidato(me);
         final String autoreNome = SessionLinkUtil.nomeCompleto(box.getAutoreMatricola());
 
+        // Chi visualizza la pagina di un annuncio eliminato (autore o candidato
+        // confermato) prende cosi' visione della notifica: il simbolo sparisce
+        // dalla lista "Le mie sessioni" gia' dalla prossima apertura.
+        if (box.isCancellato() && me != null && (isAutore || isConfermato) && !box.isCancellazioneVista(me)) {
+            box.segnaCancellazioneVista(me);
+            it.unibo.tutoring.model.box.BoxRepository.saveAll();
+        }
+
         final VBox root = new VBox();
         root.getStyleClass().add("app-shell");
         root.setBackground(
             new Background(new BackgroundFill(PAGE_BG, CornerRadii.EMPTY, Insets.EMPTY))
         );
 
-        final AppHeader header = new AppHeader(
-            UserSession.getDisplayName(),
-            stage != null ? UserSession.createLogoutAction(stage) : null
-        );
+        final AppHeader header = new AppHeader();
 
         final VBox pageContent = new VBox(24);
         pageContent.setPadding(new Insets(30));
@@ -101,26 +110,13 @@ public final class AnnouncementDetailViewApp {
         final Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        final Button backButton = new Button("← Dashboard");
-        backButton.getStyleClass().add("text-link");
-        backButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        backButton.setTextFill(TEXT_DARK);
-        backButton.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
-        backButton.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
-        backButton.setPadding(new Insets(8, 14, 8, 14));
-        backButton.setCursor(Cursor.HAND);
-        backButton.setOnAction(event -> goToDashboard(stage, backButton));
+        final Button backButton = new DashboardButton();
 
         topRow.getChildren().addAll(title, spacer, backButton);
 
-        final VBox card = new VBox(10);
+        final AppCard card = new AppCard(10, new Insets(30), 16).withWidth(760);
         card.getStyleClass().add("auth-card");
-        card.setPadding(new Insets(30));
-        card.setMaxWidth(760);
-        card.setPrefWidth(760);
         card.setAlignment(Pos.TOP_LEFT);
-        card.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(16), Insets.EMPTY)));
-        card.setBorder(new Border(new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(16), BorderWidths.DEFAULT)));
 
         final Label tag = new Label(offer ? "Offerta tutoraggio" : "Cerco tutor");
         tag.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 11));
@@ -155,8 +151,16 @@ public final class AnnouncementDetailViewApp {
         card.getChildren().addAll(
             tag,
             sessionTitle,
-            new Separator(),
+            new Separator()
+        );
 
+        if (box.isCancellato()) {
+            card.getChildren().add(buildCancellatoBanner(box));
+        } else if (me != null && !isAutore && box.isInAttesaDiRiconferma(me)) {
+            card.getChildren().add(buildRiconfermaProgrammazioneSection(stage, box, me));
+        }
+
+        card.getChildren().addAll(
             detailRow("Corso", box.getCorso()),
             detailRow("Materia", box.getMateria()),
             detailRow("Argomento", box.getArgomento()),
@@ -177,15 +181,8 @@ public final class AnnouncementDetailViewApp {
 
         // Pulsante Contatta: sempre disponibile per chi non e' l'autore, apre la
         // chat con l'autore indipendentemente da candidatura/conferma.
-        if (!isAutore && me != null) {
-            final Button contactButton = new Button("Contatta");
-            contactButton.getStyleClass().add("primary-btn");
-            contactButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
-            contactButton.setTextFill(Color.WHITE);
-            contactButton.setPadding(new Insets(11, 22, 11, 22));
-            contactButton.setCursor(Cursor.HAND);
-            contactButton.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
-            contactButton.setBorder(Border.EMPTY);
+        if (!isAutore && me != null && !box.isCancellato()) {
+            final AppButton contactButton = AppButton.primary("Contatta");
             contactButton.setOnAction(event -> {
                 box.aggiungiContatto(me);
                 it.unibo.tutoring.model.box.BoxRepository.saveAll();
@@ -244,18 +241,20 @@ public final class AnnouncementDetailViewApp {
         section.getChildren().add(title);
 
         if (!box.puoModificareProgrammazione()) {
-            final String reason = box.getConfermato() != null
-                    ? "La programmazione non puo' piu' essere modificata perché la sessione e' stata confermata."
-                    : "La programmazione non puo' essere modificata finche' sono presenti candidature attive.";
-            section.getChildren().add(infoLabel(reason));
+            section.getChildren().add(infoLabel(
+                    "Questo annuncio e' stato eliminato e non puo' piu' essere modificato."));
             return section;
         }
 
+        final boolean coinvolgeAltriUtenti = !box.getCandidati().isEmpty() || box.getConfermato() != null;
         section.getChildren().add(infoLabel(
-                "Puoi modificare data, ora e durata finche' non ricevi la prima candidatura."));
+                coinvolgeAltriUtenti
+                        ? "Puoi modificare data, ora e durata anche adesso: chi si e' gia' candidato o e' "
+                                + "gia' stato confermato ricevera' una notifica e dovra' riconfermare la propria "
+                                + "disponibilita' alla nuova programmazione."
+                        : "Puoi modificare data, ora e durata in qualsiasi momento."));
 
-        final Button editButton = new Button("Modifica data e orario");
-        styleSecondaryButton(editButton);
+        final AppButton editButton = AppButton.secondary("Modifica data e orario");
 
         final VBox editor = new VBox(8);
         editor.setVisible(false);
@@ -268,7 +267,7 @@ public final class AnnouncementDetailViewApp {
                 new CornerRadii(8), BorderWidths.DEFAULT)));
 
         final DatePicker datePicker = new DatePicker(box.getData());
-        styleScheduleField(datePicker);
+        FormControlStyle.apply(datePicker);
         datePicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
             @Override
             public void updateItem(final java.time.LocalDate date, final boolean empty) {
@@ -283,11 +282,11 @@ public final class AnnouncementDetailViewApp {
         final TextField timeField = new TextField(
                 box.getOra() != null ? box.getOra().toString() : "");
         timeField.setPromptText("HH:mm");
-        styleScheduleField(timeField);
+        FormControlStyle.apply(timeField);
 
         final int initialDuration = Math.max(1, Math.min(8, box.getDurataOre()));
         final Spinner<Integer> durationSpinner = new Spinner<>(1, 8, initialDuration);
-        styleScheduleField(durationSpinner);
+        FormControlStyle.apply(durationSpinner);
 
         final Label feedback = new Label();
         feedback.setTextFill(PRIMARY_RED);
@@ -296,8 +295,7 @@ public final class AnnouncementDetailViewApp {
         feedback.setVisible(false);
         feedback.setManaged(false);
 
-        final Button saveButton = new Button("Salva programmazione");
-        stylePrimaryButton(saveButton, GREEN);
+        final AppButton saveButton = AppButton.primary("Salva programmazione", GREEN);
         saveButton.setOnAction(event -> {
             feedback.setVisible(false);
             feedback.setManaged(false);
@@ -318,8 +316,7 @@ public final class AnnouncementDetailViewApp {
             }
         });
 
-        final Button cancelButton = new Button("Annulla");
-        styleSecondaryButton(cancelButton);
+        final AppButton cancelButton = AppButton.secondary("Annulla");
         cancelButton.setOnAction(event -> {
             editor.setVisible(false);
             editor.setManaged(false);
@@ -346,7 +343,111 @@ public final class AnnouncementDetailViewApp {
         });
 
         section.getChildren().addAll(buttonRow(editButton), editor);
+        section.getChildren().add(buildDeleteAnnouncementRow(stage, box, me));
         return section;
+    }
+
+    /**
+     * Pulsante "Elimina annuncio", posizionato subito sotto "Modifica data e
+     * orario". Se non c'e' ancora nessun candidato confermato l'eliminazione
+     * e' immediata e definitiva; se invece c'e' gia' una sessione confermata
+     * l'annuncio resta visibile (marcato come eliminato, con notifica) per
+     * 24 ore sia all'autore sia al candidato confermato.
+     */
+    private static HBox buildDeleteAnnouncementRow(final Stage stage, final BoxTutoraggio box, final String me) {
+        final boolean hasConfirmed = box.getConfermato() != null;
+
+        final AppButton deleteButton = AppButton.primary("Elimina annuncio", PRIMARY_RED);
+        deleteButton.setOnAction(event -> {
+            final javafx.scene.control.Alert confirmAlert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                    hasConfirmed
+                            ? "C'e' gia' una sessione confermata su questo annuncio. Eliminandolo, "
+                                    + "restera' visibile per 24 ore a te e alla persona confermata (con una "
+                                    + "notifica), poi sparira' definitivamente. Continuare?"
+                            : "L'annuncio verra' eliminato definitivamente. Continuare?",
+                    javafx.scene.control.ButtonType.YES, javafx.scene.control.ButtonType.NO);
+            confirmAlert.setHeaderText("Eliminare l'annuncio?");
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response != javafx.scene.control.ButtonType.YES) {
+                    return;
+                }
+                if (hasConfirmed) {
+                    SessionLinkUtil.buildController(box, box.getConfermato(), box.getAutoreMatricola())
+                            .annullaSessione();
+                } else {
+                    for (final String candidato : List.copyOf(box.getCandidati())) {
+                        SessionLinkUtil.buildController(box, candidato, box.getAutoreMatricola())
+                                .annullaSessione();
+                    }
+                }
+                final boolean rimozioneImmediata = box.eliminaAnnuncio(me);
+                if (rimozioneImmediata) {
+                    it.unibo.tutoring.model.box.BoxRepository.removeBox(box);
+                } else {
+                    it.unibo.tutoring.model.box.BoxRepository.saveAll();
+                }
+                final Stage win = stage != null ? stage : (Stage) deleteButton.getScene().getWindow();
+                NavigationHelper.goToDashboard(win);
+            });
+        });
+
+        return buttonRow(deleteButton);
+    }
+
+    /** Banner mostrato quando l'annuncio e' stato eliminato (soft-delete, entro le 24 ore). */
+    private static VBox buildCancellatoBanner(final BoxTutoraggio box) {
+        final long oreRimanenti = box.getCancellatoAt() != null
+                ? Math.max(0, 24 - java.time.Duration.between(box.getCancellatoAt(), LocalDateTime.now()).toHours())
+                : 0;
+
+        final Label label = new Label(
+                "Questo annuncio e' stato eliminato dall'autore. Restera' visibile ancora per circa "
+                        + oreRimanenti + (oreRimanenti == 1 ? " ora" : " ore") + ", poi sparira' definitivamente.");
+        label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
+        label.setTextFill(Color.WHITE);
+        label.setWrapText(true);
+
+        final VBox banner = new VBox(label);
+        banner.setPadding(new Insets(10, 14, 10, 14));
+        banner.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+        VBox.setMargin(banner, new Insets(0, 0, 6, 0));
+        return banner;
+    }
+
+    /**
+     * Banner con pulsante di riconferma mostrato a chi era gia' candidato o
+     * gia' confermato quando l'autore ha cambiato data/ora dell'annuncio.
+     */
+    private static VBox buildRiconfermaProgrammazioneSection(
+            final Stage stage,
+            final BoxTutoraggio box,
+            final String me) {
+        final Label title = new Label("L'autore ha cambiato data o orario di questa sessione");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
+        title.setTextFill(TEXT_DARK);
+        title.setWrapText(true);
+
+        final Label info = infoLabel(
+                "Nuova programmazione: "
+                        + (box.getData() != null ? box.getData().format(DATE_FORMAT) : "N/D")
+                        + " alle " + (box.getOra() != null ? box.getOra().toString() : "N/D")
+                        + ". Conferma la tua disponibilita' per mantenere la candidatura/prenotazione, "
+                        + "oppure ritirala qui sotto se non ti va piu' bene.");
+
+        final AppButton confermaButton = AppButton.primary("Conferma nuova data e orario", GREEN);
+        confermaButton.setOnAction(event -> {
+            box.riconfermaProgrammazione(me);
+            refresh(stage, box);
+        });
+
+        final VBox banner = new VBox(8, title, info, buttonRow(confermaButton));
+        banner.setPadding(new Insets(14));
+        banner.setBackground(new Background(new BackgroundFill(Color.web("#FFF3CD"), new CornerRadii(8), Insets.EMPTY)));
+        banner.setBorder(new Border(new BorderStroke(
+                Color.web("#F0C419"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+        VBox.setMargin(banner, new Insets(0, 0, 6, 0));
+        return banner;
     }
 
     private static void showScheduleFeedback(final Label feedback, final String message) {
@@ -360,12 +461,6 @@ public final class AnnouncementDetailViewApp {
         label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
         label.setTextFill(TEXT_MEDIUM);
         return label;
-    }
-
-    private static void styleScheduleField(final javafx.scene.control.Control field) {
-        field.setPrefHeight(38);
-        field.setMaxWidth(Double.MAX_VALUE);
-        field.getStyleClass().add("form-field");
     }
 
     private static VBox buildConversationsSection(final Stage stage, final BoxTutoraggio box) {
@@ -421,8 +516,7 @@ public final class AnnouncementDetailViewApp {
         final VBox text = new VBox(3, nameLabel, previewLabel);
         HBox.setHgrow(text, Priority.ALWAYS);
 
-        final Button openChat = new Button("Apri chat");
-        stylePrimaryButton(openChat, PRIMARY_RED);
+        final AppButton openChat = AppButton.primary("Apri chat");
         openChat.setPadding(new Insets(6, 14, 6, 14));
         openChat.setOnAction(event -> {
             final Stage win = stage != null
@@ -468,6 +562,12 @@ public final class AnnouncementDetailViewApp {
         sectionTitle.setTextFill(TEXT_DARK);
         section.getChildren().add(sectionTitle);
 
+        if (box.isCancellato()) {
+            section.getChildren().add(infoLabel(
+                    "L'autore ha eliminato questo annuncio: la sessione e' stata annullata."));
+            return section;
+        }
+
         if (me == null) {
             section.getChildren().add(infoLabel("Devi essere autenticato per interagire con questo annuncio."));
             return section;
@@ -489,8 +589,7 @@ public final class AnnouncementDetailViewApp {
         } else if (isCandidato) {
             final Label info = infoLabel("Ti sei candidato per questo annuncio. In attesa che " + autoreNome + " confermi un candidato.");
 
-            final Button ritira = new Button("Ritira candidatura");
-            styleSecondaryButton(ritira);
+            final AppButton ritira = AppButton.secondary("Ritira candidatura");
             ritira.setOnAction(event -> {
                 box.rimuoviCandidato(me);
                 SessionLinkUtil.buildController(box, box.getAutoreMatricola(), me).annullaSessione();
@@ -501,8 +600,7 @@ public final class AnnouncementDetailViewApp {
         } else {
             final Label info = infoLabel("Vuoi candidarti per questa sessione di tutoraggio?");
 
-            final Button candidati = new Button("Candidati");
-            stylePrimaryButton(candidati, GREEN);
+            final AppButton candidati = AppButton.primary("Candidati", GREEN);
             candidati.setOnAction(event -> {
                 box.aggiungiCandidato(me);
                 SessionLinkUtil.buildController(box, box.getAutoreMatricola(), me).proponi();
@@ -559,8 +657,7 @@ public final class AnnouncementDetailViewApp {
         final VBox infoBox = new VBox(2, nameLabel, matricolaLabel, ratingLabel);
         HBox.setHgrow(infoBox, Priority.ALWAYS);
 
-        final Button conferma = new Button("Conferma");
-        stylePrimaryButton(conferma, GREEN);
+        final AppButton conferma = AppButton.primary("Conferma", GREEN);
         conferma.setPadding(new Insets(6, 14, 6, 14));
         conferma.setOnAction(event -> {
             // Conferma questo candidato: le altre candidature pendenti vengono annullate
@@ -576,8 +673,7 @@ public final class AnnouncementDetailViewApp {
             refresh(stage, box);
         });
 
-        final Button rifiuta = new Button("Rifiuta");
-        styleSecondaryButton(rifiuta);
+        final AppButton rifiuta = AppButton.secondary("Rifiuta");
         rifiuta.setPadding(new Insets(6, 14, 6, 14));
         rifiuta.setOnAction(event -> {
             box.rimuoviCandidato(candidatoMatricola);
@@ -605,7 +701,7 @@ public final class AnnouncementDetailViewApp {
         if (!controller.isCompletataDaEntrambi()) {
             final Label info = infoLabel("Sessione confermata con " + nomeControparte + ".");
 
-            final Button completata = new Button();
+            final AppButton completata = new AppButton();
             aggiornaPulsanteCompletamento(completata, controller, nomeControparte);
             completata.setOnAction(event -> {
                 controller.segnalaCompletamento();
@@ -649,13 +745,13 @@ public final class AnnouncementDetailViewApp {
     }
 
     private static void aggiornaPulsanteCompletamento(
-            final Button completata,
+            final AppButton completata,
             final TutoringSessionController controller,
             final String nomeControparte) {
         if (controller.haGiaSegnalatoCompletamento()) {
             completata.setText("In attesa che " + nomeControparte + " completi anche lui/lei...");
             completata.setDisable(true);
-            stylePrimaryButton(completata, TEXT_MEDIUM);
+            completata.asPrimary(TEXT_MEDIUM);
             return;
         }
 
@@ -664,13 +760,13 @@ public final class AnnouncementDetailViewApp {
                     "Disponibile dal "
                             + controller.getFinePrevista().format(COMPLETION_DATE_FORMAT));
             completata.setDisable(true);
-            stylePrimaryButton(completata, TEXT_MEDIUM);
+            completata.asPrimary(TEXT_MEDIUM);
             return;
         }
 
         completata.setText("Segna come completata");
         completata.setDisable(false);
-        stylePrimaryButton(completata, PRIMARY_RED);
+        completata.asPrimary(PRIMARY_RED);
     }
 
     /** Form di recensione mostrato solo a chi ha ricevuto la lezione (lo studente), a completamento avvenuto. */
@@ -722,8 +818,7 @@ public final class AnnouncementDetailViewApp {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
 
-        final Button invia = new Button("Invia recensione");
-        stylePrimaryButton(invia, PRIMARY_RED);
+        final AppButton invia = AppButton.primary("Invia recensione");
         invia.setOnAction(event -> {
             if (selectedStars[0] == 0) {
                 errorLabel.setText("Seleziona almeno una stella prima di inviare.");
@@ -755,9 +850,7 @@ public final class AnnouncementDetailViewApp {
 
     private static void goToDashboard(final Stage stage, final Button anyButtonInScene) {
         final Stage win = stage != null ? stage : (Stage) anyButtonInScene.getScene().getWindow();
-        win.setScene(UniBoTutoringDashboardApp.createScene());
-        win.setTitle("UniBo Tutoring - Dashboard");
-        it.unibo.tutoring.view.components.WindowUtil.maximize(win);
+        NavigationHelper.goToDashboard(win);
     }
 
     private static String mediaStelleTesto(final String matricola) {
@@ -781,25 +874,6 @@ public final class AnnouncementDetailViewApp {
         final HBox row = new HBox(button);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
-    }
-
-    private static void stylePrimaryButton(final Button button, final Color bg) {
-        button.getStyleClass().add("primary-btn");
-        button.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
-        button.setTextFill(Color.WHITE);
-        button.setPadding(new Insets(9, 18, 9, 18));
-        button.setCursor(Cursor.HAND);
-        button.setBackground(new Background(new BackgroundFill(bg, new CornerRadii(8), Insets.EMPTY)));
-        button.setBorder(Border.EMPTY);
-    }
-
-    private static void styleSecondaryButton(final Button button) {
-        button.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
-        button.setTextFill(TEXT_DARK);
-        button.setPadding(new Insets(9, 18, 9, 18));
-        button.setCursor(Cursor.HAND);
-        button.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
-        button.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
     }
 
     /**

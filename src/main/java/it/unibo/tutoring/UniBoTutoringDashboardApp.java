@@ -1,6 +1,5 @@
 package it.unibo.tutoring;
 
-import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +13,8 @@ import it.unibo.tutoring.view.box.AnnouncementDetailViewApp;
 import it.unibo.tutoring.view.box.CreateAnnouncementViewApp;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.components.AppFooter;
+import it.unibo.tutoring.view.components.AppIcon;
+import it.unibo.tutoring.view.components.AppButton;
 import it.unibo.tutoring.view.session.SessionLinkUtil;
 import it.unibo.tutoring.view.session.TutoringSessionViewApp;
 import javafx.animation.KeyFrame;
@@ -88,17 +89,8 @@ public class UniBoTutoringDashboardApp extends Application {
 		final ScrollPane scrollPane = new ScrollPane(scrollContent);
 		it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
-		root.getChildren().addAll(
-			new AppHeader(userDisplayName, () -> {
-				CurrentSession.clear();
-				final Stage stage = (Stage) root.getScene().getWindow();
-				stage.setScene(UniBoTutoringLoginApp.createScene(stage));
-				stage.setTitle("UniBo Tutoring - Login");
-				it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
-			}),
-			scrollPane
-		);
-		VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        root.getChildren().addAll(new AppHeader(), scrollPane);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 		final Scene scene = new Scene(root);
 		scene.getStylesheets().add(UniBoTutoringDashboardApp.class.getResource("/styles.css").toExternalForm());
@@ -134,18 +126,18 @@ public class UniBoTutoringDashboardApp extends Application {
 		navTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 15));
 		navTitle.setTextFill(TEXT_DARK);
 
-		final Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		final ImageView collapseIcon = icon("arrow-left.png", 10, 10);
-		final Button collapse = new Button();
-		collapse.setGraphic(collapseIcon);
-		collapse.setPadding(new Insets(0));
-		collapse.setPrefSize(20, 20);
-		collapse.setMinSize(20, 20);
-		collapse.setMaxSize(20, 20);
-		collapse.setBackground(new Background(new BackgroundFill(Color.web("#F0F0F0"), new CornerRadii(50), Insets.EMPTY)));
-		collapse.setBorder(new Border(new BorderStroke(Color.web("#D7D7D7"), BorderStrokeStyle.SOLID, new CornerRadii(50), new BorderWidths(1))));
-		navHeader.getChildren().addAll(navTitle, spacer, collapse);
+        final Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        final ImageView collapseIcon = new AppIcon("arrow-left.png", 10, 10);
+        final Button collapse = new Button();
+        collapse.setGraphic(collapseIcon);
+        collapse.setPadding(new Insets(0));
+        collapse.setPrefSize(20, 20);
+        collapse.setMinSize(20, 20);
+        collapse.setMaxSize(20, 20);
+        collapse.setBackground(new Background(new BackgroundFill(Color.web("#F0F0F0"), new CornerRadii(50), Insets.EMPTY)));
+        collapse.setBorder(new Border(new BorderStroke(Color.web("#D7D7D7"), BorderStrokeStyle.SOLID, new CornerRadii(50), new BorderWidths(1))));
+        navHeader.getChildren().addAll(navTitle, spacer, collapse);
 
 		final VBox menu = new VBox(8);
 		
@@ -168,10 +160,10 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		sidebar.getChildren().addAll(navHeader, menu);
 
-		// Stato iniziale della sidebar (aperta di default)
-		final boolean[] isSidebarOpen = {true};
-		final Image arrowLeftImg = new Image(Path.of("src", "icons", "arrow-left.png").toUri().toString());
-		final Image arrowRightImg = new Image(Path.of("src", "icons", "arrow-right.png").toUri().toString());
+        // Stato iniziale della sidebar (aperta di default)
+        final boolean[] isSidebarOpen = {true};
+        final Image arrowLeftImg = AppIcon.load("arrow-left.png");
+        final Image arrowRightImg = AppIcon.load("arrow-right.png");
 
 		collapse.setOnAction(event -> {
 			// Inverte lo stato: se era aperta diventa chiusa e viceversa
@@ -223,10 +215,10 @@ public class UniBoTutoringDashboardApp extends Application {
 		return sidebar;
 	}
 
-	private Button navItem(final String iconName, final String title, final String subtitle, final boolean active, final List<Node> nodesToHide) {
-		final ImageView icon = icon(iconName, 14, 14);
-		final Label titleLabel = new Label(title);
-		titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
+    private Button navItem(final String iconName, final String title, final String subtitle, final boolean active, final List<Node> nodesToHide) {
+        final ImageView icon = new AppIcon(iconName, 14, 14);
+        final Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 13));
 
 		final Label subtitleLabel = new Label(subtitle);
 		subtitleLabel.setFont(Font.font("System", FontWeight.NORMAL, 11));
@@ -282,8 +274,8 @@ public class UniBoTutoringDashboardApp extends Application {
 		final Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		final Button createAnnouncement = new Button("+Crea Annuncio");
-		createAnnouncement.setOnAction(event -> {
+        final AppButton createAnnouncement = AppButton.primary("+ Crea Annuncio");
+        createAnnouncement.setOnAction(event -> {
 
     final Stage stage =
         (Stage) createAnnouncement
@@ -295,33 +287,12 @@ public class UniBoTutoringDashboardApp extends Application {
             .createScene()
     );
 
-    stage.setTitle(
-        "UniBo Tutoring - Nuovo Annuncio"
-    );
-    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
-});
-		createAnnouncement.getStyleClass().add("primary-btn");
-		createAnnouncement.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
-		createAnnouncement.setTextFill(Color.WHITE);
-		createAnnouncement.setPadding(new Insets(9, 16, 9, 16));
-		createAnnouncement.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
-		createAnnouncement.setBorder(Border.EMPTY);
-		createAnnouncement.setCursor(Cursor.HAND);
-		createAnnouncement.setStyle("-fx-padding: 9 16 9 16;");
-		createAnnouncement.setOnMouseEntered(event -> {
-			createAnnouncement.setScaleX(1.0);
-			createAnnouncement.setScaleY(1.0);
-			createAnnouncement.setTranslateX(0);
-			createAnnouncement.setTranslateY(0);
-		});
-		createAnnouncement.setOnMouseExited(event -> {
-			createAnnouncement.setScaleX(1.0);
-			createAnnouncement.setScaleY(1.0);
-			createAnnouncement.setTranslateX(0);
-			createAnnouncement.setTranslateY(0);
-		});
-
-		titleRow.getChildren().addAll(titleBlock, spacer, createAnnouncement);
+            stage.setTitle(
+                    "UniBo Tutoring - Nuovo Annuncio"
+            );
+            it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+        });
+        titleRow.getChildren().addAll(titleBlock, spacer, createAnnouncement);
 
 		final HBox filtersRow = new HBox(16);
 		filtersRow.setAlignment(Pos.CENTER_LEFT);
@@ -335,15 +306,15 @@ public class UniBoTutoringDashboardApp extends Application {
 		searchBox.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(7), Insets.EMPTY)));
 		searchBox.setBorder(new Border(new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(7), BorderWidths.DEFAULT)));
 
-		final ImageView searchIcon = icon("lent.png", 15, 15);
-		searchIcon.setOpacity(0.7);
-		final TextField searchField = new TextField();
-		searchField.setPromptText("Cerca per materia, corso o descrizione...");
-		searchField.setFont(Font.font("System", FontWeight.NORMAL, 14));
-		searchField.setBackground(Background.EMPTY);
-		searchField.setBorder(Border.EMPTY);
-		HBox.setHgrow(searchField, Priority.ALWAYS);
-		searchBox.getChildren().addAll(searchIcon, searchField);
+        final ImageView searchIcon = new AppIcon("lent.png", 15, 15);
+        searchIcon.setOpacity(0.7);
+        final TextField searchField = new TextField();
+        searchField.setPromptText("Cerca per materia, corso o descrizione...");
+        searchField.setFont(Font.font("System", FontWeight.NORMAL, 14));
+        searchField.setBackground(Background.EMPTY);
+        searchField.setBorder(Border.EMPTY);
+        HBox.setHgrow(searchField, Priority.ALWAYS);
+        searchBox.getChildren().addAll(searchIcon, searchField);
 
 		final List<BoxTutoraggio> allBoxes = BoxRepository.getAllBoxes();
 
@@ -528,6 +499,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private VBox announcementCard(final BoxTutoraggio box) {
 		final boolean offer = box.getTipo() == BoxType.OFFER;
+		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 
 		final VBox card = new VBox(8);
 		card.getStyleClass().add("announcement-card");
@@ -557,10 +529,22 @@ public class UniBoTutoringDashboardApp extends Application {
 			statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
 			statusChip.setTextFill(Color.WHITE);
 			statusChip.setPadding(new Insets(2, 7, 2, 7));
+			final Color statusColor = box.isCancellato()
+				? PRIMARY_RED
+				: box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9");
 			statusChip.setBackground(new Background(new BackgroundFill(
-				box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9"),
-				new CornerRadii(999), Insets.EMPTY)));
+				statusColor, new CornerRadii(999), Insets.EMPTY)));
 			tagRow.getChildren().add(statusChip);
+		}
+
+		if (hasNotification(box, me)) {
+			final ImageView notifIcon = new AppIcon("mex_red.png", 15, 15);
+			final javafx.scene.control.Tooltip notifTip = new javafx.scene.control.Tooltip(
+				box.isCancellato()
+					? "Annuncio eliminato dall'autore"
+					: "Data/orario cambiati: conferma la tua disponibilita'");
+			javafx.scene.control.Tooltip.install(notifIcon, notifTip);
+			tagRow.getChildren().add(notifIcon);
 		}
 
 		final String autoreNome = estraiNomeAutore(box.getTitolo());
@@ -581,16 +565,16 @@ public class UniBoTutoringDashboardApp extends Application {
 		final Line divider = new Line(0, 0, 230, 0);
 		divider.setStroke(Color.web("#E3E3E3"));
 
-		final ImageView userIcon = icon("user_gray.png", 11, 11);
-		final Label userLabel = new Label(autoreNome);
-		userLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-		userLabel.setTextFill(TEXT_MEDIUM);
+        final ImageView userIcon = new AppIcon("user_gray.png", 11, 11);
+        final Label userLabel = new Label(autoreNome);
+        userLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+        userLabel.setTextFill(TEXT_MEDIUM);
 
-		final ImageView dateIcon = icon("calendar_gray.png", 11, 11);
-		final String dateText = box.getData().format(DATE_FORMAT) + " - " + box.getOra() + " - " + box.getDurataOre() + "h";
-		final Label dateLabel = new Label(dateText);
-		dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
-		dateLabel.setTextFill(TEXT_MEDIUM);
+        final ImageView dateIcon = new AppIcon("calendar_gray.png", 11, 11);
+        final String dateText = box.getData().format(DATE_FORMAT) + " - " + box.getOra() + " - " + box.getDurataOre() + "h";
+        final Label dateLabel = new Label(dateText);
+        dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 10));
+        dateLabel.setTextFill(TEXT_MEDIUM);
 
 		final VBox meta = new VBox(2,
 			new HBox(4, userIcon, userLabel),
@@ -600,7 +584,6 @@ public class UniBoTutoringDashboardApp extends Application {
 		final Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 		final boolean isAutore = me != null && me.equals(box.getAutoreMatricola());
 
 		final HBox bottom = new HBox(8, meta, spacer);
@@ -609,7 +592,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		// Il pulsante "Contatta" non compare sui propri annunci (non ha senso
 		// aprire una chat con se stessi): resta visibile solo sugli annunci
 		// altrui, sia per chi si e' gia' candidato sia per chi non l'ha ancora fatto.
-		if (!isAutore) {
+		if (!isAutore && !box.isCancellato()) {
 			final Button contact = new Button("Contatta");
 			contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
 			contact.setTextFill(Color.WHITE);
@@ -633,8 +616,30 @@ public class UniBoTutoringDashboardApp extends Application {
 		return card;
 	}
 
+	/**
+	 * Indica se mostrare il simbolo di notifica sulla card, analogo a quello
+	 * di un nuovo messaggio: compare quando l'annuncio e' stato eliminato
+	 * dall'autore (per l'autore stesso e per il candidato confermato, finche'
+	 * non aprono l'annuncio) oppure quando l'autore ha cambiato data/ora e
+	 * l'utente corrente deve ancora riconfermare la propria disponibilita'.
+	 */
+	private static boolean hasNotification(final BoxTutoraggio box, final String me) {
+		if (me == null) {
+			return false;
+		}
+		final boolean isAutore = me.equals(box.getAutoreMatricola());
+		final boolean isConfermato = me.equals(box.getConfermato());
+		if (box.isCancellato() && (isAutore || isConfermato) && !box.isCancellazioneVista(me)) {
+			return true;
+		}
+		return box.isInAttesaDiRiconferma(me);
+	}
+
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
 	private static String statusChipText(final BoxTutoraggio box) {
+		if (box.isCancellato()) {
+			return "Eliminata";
+		}
 		if (box.getConfermato() != null) {
 			return "Confermata";
 		}
@@ -650,17 +655,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		return titolo != null && titolo.startsWith(prefix) ? titolo.substring(prefix.length()) : titolo;
 	}
 
-    private ImageView icon(final String iconName, final double w, final double h) {
-        final Image image = new Image(Path.of("src", "icons", iconName).toUri().toString());
-        final ImageView view = new ImageView(image);
-        view.setFitWidth(w);
-        view.setFitHeight(h);
-        view.setPreserveRatio(true);
-        view.setSmooth(true);
-        return view;
+    public static void run(final String[] args) {
+        launch(args);
     }
-
-	public static void run(final String[] args) {
-		launch(args);
-	}
 }

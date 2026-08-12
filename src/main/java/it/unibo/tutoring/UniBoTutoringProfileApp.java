@@ -8,12 +8,13 @@ import java.util.Locale;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
 import it.unibo.tutoring.model.credit.CreditRecord;
-import it.unibo.tutoring.model.credit.CreditService;
 import it.unibo.tutoring.model.user.UserRepository;
 import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.TutoringSession;
 import it.unibo.tutoring.view.components.NavigationHelper;
 import it.unibo.tutoring.view.components.AppFooter;
+import it.unibo.tutoring.view.components.AppHeader;
+import it.unibo.tutoring.view.components.AppCard;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;

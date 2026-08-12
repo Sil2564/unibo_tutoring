@@ -9,4 +9,10 @@ niki hammond;OOP;03-08-2026;4;BRAVA!;2222222222
 Marco Verdi;Basi di Dati;03-08-2026;5;Ottima lezione;0006478154
 Giulia Rossi;Programmazione web;03-08-2026;5;Ho compreso molto meglio gli argomenti;0006478154
 niki hammond;OOP;28-08-2026;5;Molto d'aiuto;2222222222
+<<<<<<< HEAD
 Anna Rossi;Programmazione web;11-08-2026;5;Tutor molto chiara e precisa;0006478154
+=======
+;Test Materia;12-08-2026;4;Esperienza positiva;0001
+;Test Materia;12-08-2026;4;Esperienza positiva;0001
+;Test Materia;12-08-2026;4;Esperienza positiva;0001
+>>>>>>> ed40437821b643d90b76e8a05a2e3f809b64c9c9
