@@ -76,6 +76,14 @@ public final class AnnouncementDetailViewApp {
         final boolean isCandidato = me != null && box.isCandidato(me);
         final String autoreNome = SessionLinkUtil.nomeCompleto(box.getAutoreMatricola());
 
+        // Chi visualizza la pagina di un annuncio eliminato (autore o candidato
+        // confermato) prende cosi' visione della notifica: il simbolo sparisce
+        // dalla lista "Le mie sessioni" gia' dalla prossima apertura.
+        if (box.isCancellato() && me != null && (isAutore || isConfermato) && !box.isCancellazioneVista(me)) {
+            box.segnaCancellazioneVista(me);
+            it.unibo.tutoring.model.box.BoxRepository.saveAll();
+        }
+
         final VBox root = new VBox();
         root.getStyleClass().add("app-shell");
         root.setBackground(
@@ -143,8 +151,16 @@ public final class AnnouncementDetailViewApp {
         card.getChildren().addAll(
             tag,
             sessionTitle,
-            new Separator(),
+            new Separator()
+        );
 
+        if (box.isCancellato()) {
+            card.getChildren().add(buildCancellatoBanner(box));
+        } else if (me != null && !isAutore && box.isInAttesaDiRiconferma(me)) {
+            card.getChildren().add(buildRiconfermaProgrammazioneSection(stage, box, me));
+        }
+
+        card.getChildren().addAll(
             detailRow("Corso", box.getCorso()),
             detailRow("Materia", box.getMateria()),
             detailRow("Argomento", box.getArgomento()),
@@ -165,7 +181,7 @@ public final class AnnouncementDetailViewApp {
 
         // Pulsante Contatta: sempre disponibile per chi non e' l'autore, apre la
         // chat con l'autore indipendentemente da candidatura/conferma.
-        if (!isAutore && me != null) {
+        if (!isAutore && me != null && !box.isCancellato()) {
             final AppButton contactButton = AppButton.primary("Contatta");
             contactButton.setOnAction(event -> {
                 box.aggiungiContatto(me);
@@ -225,15 +241,18 @@ public final class AnnouncementDetailViewApp {
         section.getChildren().add(title);
 
         if (!box.puoModificareProgrammazione()) {
-            final String reason = box.getConfermato() != null
-                    ? "La programmazione non puo' piu' essere modificata perché la sessione e' stata confermata."
-                    : "La programmazione non puo' essere modificata finche' sono presenti candidature attive.";
-            section.getChildren().add(infoLabel(reason));
+            section.getChildren().add(infoLabel(
+                    "Questo annuncio e' stato eliminato e non puo' piu' essere modificato."));
             return section;
         }
 
+        final boolean coinvolgeAltriUtenti = !box.getCandidati().isEmpty() || box.getConfermato() != null;
         section.getChildren().add(infoLabel(
-                "Puoi modificare data, ora e durata finche' non ricevi la prima candidatura."));
+                coinvolgeAltriUtenti
+                        ? "Puoi modificare data, ora e durata anche adesso: chi si e' gia' candidato o e' "
+                                + "gia' stato confermato ricevera' una notifica e dovra' riconfermare la propria "
+                                + "disponibilita' alla nuova programmazione."
+                        : "Puoi modificare data, ora e durata in qualsiasi momento."));
 
         final AppButton editButton = AppButton.secondary("Modifica data e orario");
 
@@ -324,7 +343,111 @@ public final class AnnouncementDetailViewApp {
         });
 
         section.getChildren().addAll(buttonRow(editButton), editor);
+        section.getChildren().add(buildDeleteAnnouncementRow(stage, box, me));
         return section;
+    }
+
+    /**
+     * Pulsante "Elimina annuncio", posizionato subito sotto "Modifica data e
+     * orario". Se non c'e' ancora nessun candidato confermato l'eliminazione
+     * e' immediata e definitiva; se invece c'e' gia' una sessione confermata
+     * l'annuncio resta visibile (marcato come eliminato, con notifica) per
+     * 24 ore sia all'autore sia al candidato confermato.
+     */
+    private static HBox buildDeleteAnnouncementRow(final Stage stage, final BoxTutoraggio box, final String me) {
+        final boolean hasConfirmed = box.getConfermato() != null;
+
+        final AppButton deleteButton = AppButton.primary("Elimina annuncio", PRIMARY_RED);
+        deleteButton.setOnAction(event -> {
+            final javafx.scene.control.Alert confirmAlert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                    hasConfirmed
+                            ? "C'e' gia' una sessione confermata su questo annuncio. Eliminandolo, "
+                                    + "restera' visibile per 24 ore a te e alla persona confermata (con una "
+                                    + "notifica), poi sparira' definitivamente. Continuare?"
+                            : "L'annuncio verra' eliminato definitivamente. Continuare?",
+                    javafx.scene.control.ButtonType.YES, javafx.scene.control.ButtonType.NO);
+            confirmAlert.setHeaderText("Eliminare l'annuncio?");
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response != javafx.scene.control.ButtonType.YES) {
+                    return;
+                }
+                if (hasConfirmed) {
+                    SessionLinkUtil.buildController(box, box.getConfermato(), box.getAutoreMatricola())
+                            .annullaSessione();
+                } else {
+                    for (final String candidato : List.copyOf(box.getCandidati())) {
+                        SessionLinkUtil.buildController(box, candidato, box.getAutoreMatricola())
+                                .annullaSessione();
+                    }
+                }
+                final boolean rimozioneImmediata = box.eliminaAnnuncio(me);
+                if (rimozioneImmediata) {
+                    it.unibo.tutoring.model.box.BoxRepository.removeBox(box);
+                } else {
+                    it.unibo.tutoring.model.box.BoxRepository.saveAll();
+                }
+                final Stage win = stage != null ? stage : (Stage) deleteButton.getScene().getWindow();
+                NavigationHelper.goToDashboard(win);
+            });
+        });
+
+        return buttonRow(deleteButton);
+    }
+
+    /** Banner mostrato quando l'annuncio e' stato eliminato (soft-delete, entro le 24 ore). */
+    private static VBox buildCancellatoBanner(final BoxTutoraggio box) {
+        final long oreRimanenti = box.getCancellatoAt() != null
+                ? Math.max(0, 24 - java.time.Duration.between(box.getCancellatoAt(), LocalDateTime.now()).toHours())
+                : 0;
+
+        final Label label = new Label(
+                "Questo annuncio e' stato eliminato dall'autore. Restera' visibile ancora per circa "
+                        + oreRimanenti + (oreRimanenti == 1 ? " ora" : " ore") + ", poi sparira' definitivamente.");
+        label.setFont(Font.font("System", FontWeight.SEMI_BOLD, 12));
+        label.setTextFill(Color.WHITE);
+        label.setWrapText(true);
+
+        final VBox banner = new VBox(label);
+        banner.setPadding(new Insets(10, 14, 10, 14));
+        banner.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+        VBox.setMargin(banner, new Insets(0, 0, 6, 0));
+        return banner;
+    }
+
+    /**
+     * Banner con pulsante di riconferma mostrato a chi era gia' candidato o
+     * gia' confermato quando l'autore ha cambiato data/ora dell'annuncio.
+     */
+    private static VBox buildRiconfermaProgrammazioneSection(
+            final Stage stage,
+            final BoxTutoraggio box,
+            final String me) {
+        final Label title = new Label("L'autore ha cambiato data o orario di questa sessione");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
+        title.setTextFill(TEXT_DARK);
+        title.setWrapText(true);
+
+        final Label info = infoLabel(
+                "Nuova programmazione: "
+                        + (box.getData() != null ? box.getData().format(DATE_FORMAT) : "N/D")
+                        + " alle " + (box.getOra() != null ? box.getOra().toString() : "N/D")
+                        + ". Conferma la tua disponibilita' per mantenere la candidatura/prenotazione, "
+                        + "oppure ritirala qui sotto se non ti va piu' bene.");
+
+        final AppButton confermaButton = AppButton.primary("Conferma nuova data e orario", GREEN);
+        confermaButton.setOnAction(event -> {
+            box.riconfermaProgrammazione(me);
+            refresh(stage, box);
+        });
+
+        final VBox banner = new VBox(8, title, info, buttonRow(confermaButton));
+        banner.setPadding(new Insets(14));
+        banner.setBackground(new Background(new BackgroundFill(Color.web("#FFF3CD"), new CornerRadii(8), Insets.EMPTY)));
+        banner.setBorder(new Border(new BorderStroke(
+                Color.web("#F0C419"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+        VBox.setMargin(banner, new Insets(0, 0, 6, 0));
+        return banner;
     }
 
     private static void showScheduleFeedback(final Label feedback, final String message) {
@@ -438,6 +561,12 @@ public final class AnnouncementDetailViewApp {
         sectionTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
         sectionTitle.setTextFill(TEXT_DARK);
         section.getChildren().add(sectionTitle);
+
+        if (box.isCancellato()) {
+            section.getChildren().add(infoLabel(
+                    "L'autore ha eliminato questo annuncio: la sessione e' stata annullata."));
+            return section;
+        }
 
         if (me == null) {
             section.getChildren().add(infoLabel("Devi essere autenticato per interagire con questo annuncio."));

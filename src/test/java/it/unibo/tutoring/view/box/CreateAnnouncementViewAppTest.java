@@ -15,6 +15,7 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
 
 class CreateAnnouncementViewAppTest {
@@ -46,6 +47,14 @@ class CreateAnnouncementViewAppTest {
         if (root instanceof Pane pane) {
             for (Node child : pane.getChildren()) {
                 result.addAll(findNodes(child, type));
+            }
+        } else if (root instanceof ScrollPane scrollPane) {
+            // Lo ScrollPane non e' un Pane: il suo contenuto va letto tramite
+            // getContent(), altrimenti la ricorsione si ferma qui e non trova
+            // mai i nodi (es. i RadioButton) racchiusi al suo interno.
+            final Node content = scrollPane.getContent();
+            if (content != null) {
+                result.addAll(findNodes(content, type));
             }
         }
         return result;

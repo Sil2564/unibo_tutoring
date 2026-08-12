@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,12 +26,17 @@ public final class BoxRepository {
     private static final String SEP = ";";
     private static final String LIST_SEP = ",";
     private static final String HEADER =
-        "id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti;note";
+        "id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti;note"
+        + ";cancellato;cancellatoAt;daRiconfermare;cancellazioneVistaDa";
+
+    /** Ore dopo le quali un annuncio "cancellato" (soft-delete) sparisce definitivamente. */
+    private static final long ORE_GRAZIA_CANCELLAZIONE = 24;
 
     private static final List<BoxTutoraggio> BOXES = new ArrayList<>();
 
     static {
         caricaDaFile();
+        purgaAnnunciScaduti();
     }
 
     private BoxRepository() {
@@ -43,10 +49,40 @@ public final class BoxRepository {
         saveAll();
     }
 
+    /**
+     * Rimuove definitivamente un annuncio dal repository (usato sia per
+     * l'eliminazione immediata di un annuncio senza conferme, sia per la
+     * rimozione automatica trascorse le 24 ore di preavviso).
+     */
+    public static synchronized void removeBox(final BoxTutoraggio box) {
+        if (box == null) {
+            return;
+        }
+        BOXES.removeIf(b -> b.getId().equals(box.getId()));
+        saveAll();
+    }
+
     public static synchronized List<BoxTutoraggio>
         getAllBoxes() {
 
+        purgaAnnunciScaduti();
         return new ArrayList<>(BOXES);
+    }
+
+    /**
+     * Rimuove definitivamente gli annunci che sono stati eliminati
+     * dall'autore (soft-delete) e per cui sono trascorse piu' di 24 ore
+     * dalla cancellazione.
+     */
+    private static void purgaAnnunciScaduti() {
+        final LocalDateTime ora = LocalDateTime.now();
+        final boolean rimossoAlmenoUno = BOXES.removeIf(box ->
+            box.isCancellato()
+                && box.getCancellatoAt() != null
+                && box.getCancellatoAt().plusHours(ORE_GRAZIA_CANCELLAZIONE).isBefore(ora));
+        if (rimossoAlmenoUno) {
+            saveAll();
+        }
     }
 
     /**
@@ -88,8 +124,28 @@ public final class BoxRepository {
             String.join(LIST_SEP, box.getCandidati()),
             box.getConfermato() != null ? box.getConfermato() : "",
             String.join(LIST_SEP, box.getContatti()),
-            sanitize(box.getNote())
+            sanitize(box.getNote()),
+            Boolean.toString(box.isCancellato()),
+            box.getCancellatoAt() != null ? box.getCancellatoAt().toString() : "",
+            String.join(LIST_SEP, box.getInAttesaDiRiconferma()),
+            String.join(LIST_SEP, cancellazioneVistaDaVisibile(box))
         );
+    }
+
+    /**
+     * Espone le matricole che hanno gia' visto la notifica di eliminazione,
+     * cosi' da poterle serializzare senza esporre un metodo dedicato
+     * nell'interfaccia del dominio per un solo utilizzo interno.
+     */
+    private static List<String> cancellazioneVistaDaVisibile(final BoxTutoraggio box) {
+        final List<String> visti = new ArrayList<>();
+        if (box.getAutoreMatricola() != null && box.isCancellazioneVista(box.getAutoreMatricola())) {
+            visti.add(box.getAutoreMatricola());
+        }
+        if (box.getConfermato() != null && box.isCancellazioneVista(box.getConfermato())) {
+            visti.add(box.getConfermato());
+        }
+        return visti;
     }
 
     private static void caricaDaFile() {
@@ -122,14 +178,21 @@ public final class BoxRepository {
                     final BoxType tipo = BoxType.valueOf(parts[9].trim());
                     final List<String> candidati = parseLista(parts[10]);
                     final String confermato = parts[11].isBlank() ? null : parts[11].trim();
-                    // Colonna aggiunta in un secondo momento: file salvati prima
-                    // di allora potrebbero non averla, la trattiamo come vuota.
+                    // Colonne aggiunte in un secondo momento: file salvati prima
+                    // di allora potrebbero non averle, le trattiamo come vuote.
                     final List<String> contatti = parts.length > 12 ? parseLista(parts[12]) : List.of();
                     final String note = parts.length > 13 ? unescapeFromCsv(parts[13]) : "";
+                    final boolean cancellato = parts.length > 14 && Boolean.parseBoolean(parts[14].trim());
+                    final LocalDateTime cancellatoAt = parts.length > 15 && !parts[15].isBlank()
+                        ? LocalDateTime.parse(parts[15].trim())
+                        : null;
+                    final List<String> daRiconfermare = parts.length > 16 ? parseLista(parts[16]) : List.of();
+                    final List<String> cancellazioneVistaDa = parts.length > 17 ? parseLista(parts[17]) : List.of();
 
                     BOXES.add(new BoxTutoraggioImpl(
                         id, titolo, corso, materia, argomento, data, ora, durataOre,
-                        autoreMatricola, tipo, candidati, confermato, contatti, note
+                        autoreMatricola, tipo, candidati, confermato, contatti, note,
+                        cancellato, cancellatoAt, daRiconfermare, cancellazioneVistaDa
                     ));
                 } catch (final IllegalArgumentException | java.time.format.DateTimeParseException ex) {
                     // riga corrotta: la saltiamo senza bloccare il caricamento delle altre

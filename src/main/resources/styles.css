@@ -7,6 +7,8 @@
 .secondary-btn,
 .sidebar-btn,
 .chip-button,
+.text-link,
+.back-button,
 .button:hover,
 .toggle-button:hover,
 .menu-button:hover,
@@ -16,6 +18,8 @@
 .secondary-btn:hover,
 .sidebar-btn:hover,
 .chip-button:hover,
+.text-link:hover,
+.back-button:hover,
 .button:armed,
 .toggle-button:armed,
 .menu-button:armed,
@@ -25,6 +29,8 @@
 .secondary-btn:armed,
 .sidebar-btn:armed,
 .chip-button:armed,
+.text-link:armed,
+.back-button:armed,
 .button:pressed,
 .toggle-button:pressed,
 .menu-button:pressed,
@@ -34,6 +40,8 @@
 .secondary-btn:pressed,
 .sidebar-btn:pressed,
 .chip-button:pressed,
+.text-link:pressed,
+.back-button:pressed,
 .button:focused,
 .toggle-button:focused,
 .menu-button:focused,
@@ -42,7 +50,9 @@
 .primary-btn:focused,
 .secondary-btn:focused,
 .sidebar-btn:focused,
-.chip-button:focused {
+.chip-button:focused,
+.text-link:focused,
+.back-button:focused {
     -fx-cursor: hand;
     -fx-background-insets: 0;
     -fx-border-insets: 0;
@@ -50,6 +60,10 @@
     -fx-scale-y: 1;
     -fx-translate-x: 0;
     -fx-translate-y: 0;
+    /* Nessun cambio di ombra/elevazione tra stato normale, hover e premuto:
+       era proprio la variazione d'ombra di default di JavaFX a dare
+       l'impressione visiva che il bottone si "rimpicciolisse". */
+    -fx-effect: none;
 }
 
 .root {
@@ -103,7 +117,6 @@
     -fx-text-fill: #ffffff;
     -fx-font-weight: 700;
     -fx-padding: 10 18 10 18;
-    -fx-effect: dropshadow(gaussian, rgba(217,30,67,0.18), 8, 0.2, 0, 3);
 }
 
 .secondary-btn {
@@ -213,7 +226,6 @@
     -fx-font-size: 14px;
     -fx-padding: 8 12 8 12;
     -fx-graphic-text-gap: 8px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 6, 0.2, 0, 2);
 }
 
 /* Keep interactions static: only change background color on hover (no transforms/animations) */

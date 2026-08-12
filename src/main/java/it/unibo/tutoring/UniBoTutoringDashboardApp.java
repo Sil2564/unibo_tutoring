@@ -499,6 +499,7 @@ public class UniBoTutoringDashboardApp extends Application {
 
 	private VBox announcementCard(final BoxTutoraggio box) {
 		final boolean offer = box.getTipo() == BoxType.OFFER;
+		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 
 		final VBox card = new VBox(8);
 		card.getStyleClass().add("announcement-card");
@@ -528,10 +529,22 @@ public class UniBoTutoringDashboardApp extends Application {
 			statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
 			statusChip.setTextFill(Color.WHITE);
 			statusChip.setPadding(new Insets(2, 7, 2, 7));
+			final Color statusColor = box.isCancellato()
+				? PRIMARY_RED
+				: box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9");
 			statusChip.setBackground(new Background(new BackgroundFill(
-				box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9"),
-				new CornerRadii(999), Insets.EMPTY)));
+				statusColor, new CornerRadii(999), Insets.EMPTY)));
 			tagRow.getChildren().add(statusChip);
+		}
+
+		if (hasNotification(box, me)) {
+			final ImageView notifIcon = new AppIcon("mex_red.png", 15, 15);
+			final javafx.scene.control.Tooltip notifTip = new javafx.scene.control.Tooltip(
+				box.isCancellato()
+					? "Annuncio eliminato dall'autore"
+					: "Data/orario cambiati: conferma la tua disponibilita'");
+			javafx.scene.control.Tooltip.install(notifIcon, notifTip);
+			tagRow.getChildren().add(notifIcon);
 		}
 
 		final String autoreNome = estraiNomeAutore(box.getTitolo());
@@ -571,7 +584,6 @@ public class UniBoTutoringDashboardApp extends Application {
 		final Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 		final boolean isAutore = me != null && me.equals(box.getAutoreMatricola());
 
 		final HBox bottom = new HBox(8, meta, spacer);
@@ -580,7 +592,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		// Il pulsante "Contatta" non compare sui propri annunci (non ha senso
 		// aprire una chat con se stessi): resta visibile solo sugli annunci
 		// altrui, sia per chi si e' gia' candidato sia per chi non l'ha ancora fatto.
-		if (!isAutore) {
+		if (!isAutore && !box.isCancellato()) {
 			final Button contact = new Button("Contatta");
 			contact.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 10));
 			contact.setTextFill(Color.WHITE);
@@ -604,8 +616,30 @@ public class UniBoTutoringDashboardApp extends Application {
 		return card;
 	}
 
+	/**
+	 * Indica se mostrare il simbolo di notifica sulla card, analogo a quello
+	 * di un nuovo messaggio: compare quando l'annuncio e' stato eliminato
+	 * dall'autore (per l'autore stesso e per il candidato confermato, finche'
+	 * non aprono l'annuncio) oppure quando l'autore ha cambiato data/ora e
+	 * l'utente corrente deve ancora riconfermare la propria disponibilita'.
+	 */
+	private static boolean hasNotification(final BoxTutoraggio box, final String me) {
+		if (me == null) {
+			return false;
+		}
+		final boolean isAutore = me.equals(box.getAutoreMatricola());
+		final boolean isConfermato = me.equals(box.getConfermato());
+		if (box.isCancellato() && (isAutore || isConfermato) && !box.isCancellazioneVista(me)) {
+			return true;
+		}
+		return box.isInAttesaDiRiconferma(me);
+	}
+
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
 	private static String statusChipText(final BoxTutoraggio box) {
+		if (box.isCancellato()) {
+			return "Eliminata";
+		}
 		if (box.getConfermato() != null) {
 			return "Confermata";
 		}
