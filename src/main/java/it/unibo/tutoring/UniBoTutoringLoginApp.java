@@ -6,6 +6,8 @@ import it.unibo.tutoring.view.components.AppIcon;
 import it.unibo.tutoring.view.components.AppCard;
 import it.unibo.tutoring.view.components.AppButton;
 import it.unibo.tutoring.view.components.FormControlStyle;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -19,6 +21,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -110,6 +113,8 @@ public final class UniBoTutoringLoginApp {
         FormControlStyle.apply(passwordField, 44);
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
 
+        final HBox passwordFieldWrapper = createPasswordFieldWithToggle(passwordField);
+
         final AppButton loginButton = AppButton.primary("Accedi");
         loginButton.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 24));
         loginButton.setPrefHeight(48);
@@ -174,7 +179,7 @@ public final class UniBoTutoringLoginApp {
             matricolaLabel,
             matricolaField,
             passwordLabel,
-            passwordField,
+            passwordFieldWrapper,
             loginButton,
             feedbackLabel,
             registerLine
@@ -183,5 +188,46 @@ public final class UniBoTutoringLoginApp {
         root.getChildren().addAll(topBar, brandBlock, formCard);
 
         return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
+    }
+
+    private static HBox createPasswordFieldWithToggle(final PasswordField passwordField) {
+        //crea un TextField per visualizzare la password in chiaro
+        final TextField visiblePasswordField = new TextField();
+        visiblePasswordField.setPromptText(passwordField.getPromptText());
+       // Applica lo stesso stile del PasswordField originale
+        FormControlStyle.apply(visiblePasswordField, 44);
+        visiblePasswordField.setFont(passwordField.getFont());
+        // Collega il TextField visibile al PasswordField originale
+        // in modo che entrambi abbiano lo stesso contenuto
+        visiblePasswordField.textProperty().bindBidirectional(passwordField.textProperty());
+        visiblePasswordField.setVisible(false);
+        visiblePasswordField.setManaged(false);
+
+        final AppIcon hiddenIcon = new AppIcon("eye_close.png", 22, 22);
+        final AppIcon visibleIcon = new AppIcon("eye.png", 22, 22);
+        //crea il pulsante per mostrare/nascondere la password
+        final Button toggleVisibilityButton = new Button("", hiddenIcon);
+        toggleVisibilityButton.setCursor(Cursor.HAND);
+        toggleVisibilityButton.setStyle("-fx-background-color: transparent; -fx-padding: 6;");
+        //toggleVisibilityButton.setFocusTraversable(false);
+
+        //crea una variabile booleana per lo stato di visibilità della password
+        //inizialmente la password è nascosta
+        final BooleanProperty passwordVisible = new SimpleBooleanProperty(false);
+        passwordVisible.addListener((observable, oldValue, newValue) -> {
+            passwordField.setVisible(!newValue);
+            passwordField.setManaged(!newValue);
+            visiblePasswordField.setVisible(newValue);
+            visiblePasswordField.setManaged(newValue);
+            toggleVisibilityButton.setGraphic(newValue ? visibleIcon : hiddenIcon);
+        });
+        //al click del pulsante cambia lo stato di visibilità della password
+        toggleVisibilityButton.setOnAction(event -> passwordVisible.set(!passwordVisible.get()));
+
+        final HBox wrapper = new HBox(8, passwordField, visiblePasswordField, toggleVisibilityButton);
+        wrapper.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(passwordField, Priority.ALWAYS);
+        HBox.setHgrow(visiblePasswordField, Priority.ALWAYS);
+        return wrapper;
     }
 }

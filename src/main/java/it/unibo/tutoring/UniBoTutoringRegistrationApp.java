@@ -2,10 +2,14 @@ package it.unibo.tutoring;
 
 import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
+import it.unibo.tutoring.view.components.AppIcon;
 import java.nio.file.Path;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -22,6 +26,7 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -116,13 +121,15 @@ public final class UniBoTutoringRegistrationApp {
         final TextField surnameField = createTextField("Rossi");
         final PasswordField passwordField = createPasswordField("min 6 caratteri, 1 numero");
         final PasswordField confirmPasswordField = createPasswordField("min 6 caratteri, 1 numero");
+        final HBox passwordFieldWrapper = createPasswordFieldWithToggle(passwordField);
+        final HBox confirmPasswordFieldWrapper = createPasswordFieldWithToggle(confirmPasswordField);
 
         addField(fieldsGrid, 0, 0, "Nome", nameField);
         addField(fieldsGrid, 1, 0, "Matricola", matricolaField);
         addField(fieldsGrid, 2, 0, "Email", emailField);
         addField(fieldsGrid, 0, 1, "Cognome", surnameField);
-        addField(fieldsGrid, 1, 1, "Password", passwordField);
-        addField(fieldsGrid, 2, 1, "Conferma password", confirmPasswordField);
+        addField(fieldsGrid, 1, 1, "Password", passwordFieldWrapper);
+        addField(fieldsGrid, 2, 1, "Conferma password", confirmPasswordFieldWrapper);
 
         final HBox submitWrap = new HBox();
         submitWrap.setAlignment(Pos.CENTER);
@@ -213,7 +220,7 @@ public final class UniBoTutoringRegistrationApp {
         return it.unibo.tutoring.view.components.WindowUtil.createScrollableScene(root);
     }
 
-    private static void addField(final GridPane grid, final int column, final int row, final String labelText, final TextField field) {
+    private static void addField(final GridPane grid, final int column, final int row, final String labelText, final Node field) {
         final VBox cell = new VBox(6);
         final Label label = new Label(labelText);
         label.setFont(Font.font("System", FontWeight.NORMAL, 22));
@@ -234,6 +241,39 @@ public final class UniBoTutoringRegistrationApp {
         field.setPromptText(placeholder);
         styleField(field);
         return field;
+    }
+
+    private static HBox createPasswordFieldWithToggle(final PasswordField passwordField) {
+        final TextField visiblePasswordField = new TextField();
+        visiblePasswordField.setPromptText(passwordField.getPromptText());
+        styleField(visiblePasswordField);
+        visiblePasswordField.textProperty().bindBidirectional(passwordField.textProperty());
+        visiblePasswordField.setVisible(false);
+        visiblePasswordField.setManaged(false);
+
+        final AppIcon hiddenIcon = new AppIcon("eye_close.png", 20, 20);
+        final AppIcon visibleIcon = new AppIcon("eye.png", 20, 20);
+
+        final Button toggleVisibilityButton = new Button("", hiddenIcon);
+        toggleVisibilityButton.setCursor(Cursor.HAND);
+        toggleVisibilityButton.setStyle("-fx-background-color: transparent; -fx-padding: 6;");
+        toggleVisibilityButton.setFocusTraversable(false);
+
+        final BooleanProperty passwordVisible = new SimpleBooleanProperty(false);
+        passwordVisible.addListener((observable, oldValue, newValue) -> {
+            passwordField.setVisible(!newValue);
+            passwordField.setManaged(!newValue);
+            visiblePasswordField.setVisible(newValue);
+            visiblePasswordField.setManaged(newValue);
+            toggleVisibilityButton.setGraphic(newValue ? visibleIcon : hiddenIcon);
+        });
+        toggleVisibilityButton.setOnAction(event -> passwordVisible.set(!passwordVisible.get()));
+
+        final HBox wrapper = new HBox(8, passwordField, visiblePasswordField, toggleVisibilityButton);
+        wrapper.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(passwordField, Priority.ALWAYS);
+        HBox.setHgrow(visiblePasswordField, Priority.ALWAYS);
+        return wrapper;
     }
 
     private static void styleField(final TextField field) {
