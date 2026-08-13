@@ -118,10 +118,10 @@ public final class AuthService {
         if (cleanPassword.length() < 6) {
             return false;
         }
-        final boolean hasLetter = password.matches(".*[A-Za-z].*");
+        final boolean hasUppercase = password.matches(".*[A-Z].*");        
         final boolean hasDigit = password.matches(".*[0-9].*");
         final boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?].*");
-        return hasLetter && hasDigit && hasSpecialCharacter;
+        return hasUppercase && hasDigit && hasSpecialCharacter;
     }
 
     private void loadUsers() {

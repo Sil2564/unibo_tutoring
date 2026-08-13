@@ -9,15 +9,16 @@ class AuthServiceTest {
 
     @Test
     void passwordWithEnoughLengthAndNumberIsAccepted() {
-        assertTrue(AuthService.isPasswordValid("Password1"));
+        assertTrue(AuthService.isPasswordValid("Password1!"));
     }
 
     @Test
     void passwordWithoutNumberOrTooShortIsRejected() {
         assertFalse(AuthService.isPasswordValid("pass"));
-        assertFalse(AuthService.isPasswordValid("password"));
-        assertFalse(AuthService.isPasswordValid("123456"));
-    }
+        assertFalse(AuthService.isPasswordValid("password1!")); 
+        assertFalse(AuthService.isPasswordValid("Password!"));  
+        assertFalse(AuthService.isPasswordValid("Password1"));  
+        }
 
     @Test
     void registrationRejectsDuplicateMatricolaAndEmail() {
@@ -31,7 +32,7 @@ class AuthServiceTest {
             "Rossi",
             matricola,
             email,
-            "Password1"
+            "Password1!"
         );
         assertTrue(first.isSuccess(), first.getMessage());
 
@@ -40,7 +41,7 @@ class AuthServiceTest {
             "Verdi",
             matricola,
             "another" + suffix + "@studio.unibo.it",
-            "Password2"
+            "Password2!"
         );
         assertFalse(duplicateMatricola.isSuccess());
         assertTrue(duplicateMatricola.getMessage().contains("matricola"));
@@ -50,7 +51,7 @@ class AuthServiceTest {
             "Bianchi",
             "5432" + suffix,
             email,
-            "Password3"
+            "Password3!"
         );
         assertFalse(duplicateEmail.isSuccess());
         assertTrue(duplicateEmail.getMessage().contains("email"));
