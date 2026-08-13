@@ -60,6 +60,12 @@ public class TutoringSessionController {
     private String motivoCancellazione = "";
     private final Set<String> cancellazioneVistaDa = new LinkedHashSet<>();
 
+    // Matricole che hanno letto tutti i messaggi correnti della chat. La
+    // presenza della riga dedicata nel file distingue il nuovo formato dai
+    // file vecchi, che non devono generare notifiche arretrate.
+    private final Set<String> chatVistaDa = new LinkedHashSet<>();
+    private boolean statoLetturaChatPresente = false;
+
     public TutoringSessionController(
             final String materia,
             final String nomeInserzionista,
@@ -271,10 +277,20 @@ public class TutoringSessionController {
         if (!(this.model.getStatoCorrente() instanceof ConfirmedState)) {
             throw new IllegalStateException("Solo una sessione confermata puo' essere completata.");
         }
-        if (!puoSegnalareCompletamento()) {
+        if (!fineSessioneRaggiunta()) {
             throw new IllegalStateException(
                     "La sessione puo' essere completata solo dopo la fine prevista: "
                             + getFinePrevista());
+        }
+
+        if (isStudenteCorrente() && !this.completatoTutor) {
+            throw new IllegalStateException(
+                    "Il tutor deve confermare per primo il completamento della sessione.");
+        }
+
+        if (haGiaSegnalatoCompletamento()) {
+            throw new IllegalStateException(
+                    "Hai gia' confermato il completamento della sessione.");
         }
 
         if (this.userMatricola.equals(this.tutorMatricola)) {
@@ -311,15 +327,9 @@ public class TutoringSessionController {
                 this.tutorMatricola
         );
 
-        setStatoCorrente(new CompletedState());
-        it.unibo.tutoring.AppConfig.getInstance()
-            .getEventBus()
-            .publish(
-                new it.unibo.tutoring.event.SessionCompletedEvent(
-                    this.tutorMatricola,
-                    completedHours
-                )
-            );
+        // La transizione a Completed e la pubblicazione dell'evento hanno un
+        // solo punto di responsabilita': ConfirmedState.completa().
+        this.model.completa();
     }
 
     public boolean isCompletatoDaTutor() {
@@ -353,7 +363,29 @@ public class TutoringSessionController {
         if (adesso == null) {
             throw new IllegalArgumentException("L'istante corrente e' obbligatorio.");
         }
+        return this.model.getStatoCorrente() instanceof ConfirmedState
+                && !haGiaSegnalatoCompletamento()
+                && fineSessioneRaggiunta(adesso)
+                && (!isStudenteCorrente() || this.completatoTutor);
+    }
+
+    public boolean fineSessioneRaggiunta() {
+        return fineSessioneRaggiunta(LocalDateTime.now());
+    }
+
+    boolean fineSessioneRaggiunta(final LocalDateTime adesso) {
+        if (adesso == null) {
+            throw new IllegalArgumentException("L'istante corrente e' obbligatorio.");
+        }
         return !adesso.isBefore(getFinePrevista());
+    }
+
+    public boolean isTutorCorrente() {
+        return this.userMatricola.equals(this.tutorMatricola);
+    }
+
+    public boolean isStudenteCorrente() {
+        return this.userMatricola.equals(this.studenteMatricola);
     }
 
     /** True se l'utente corrente ha gia' segnalato il proprio completamento. */
@@ -381,6 +413,30 @@ public class TutoringSessionController {
     public void inviaMessaggio(final String testo) {
         if (testo != null && !testo.trim().isEmpty()) {
             this.model.inviaMessaggio(testo.trim(), this.userMatricola);
+            // Ogni nuovo messaggio rende la conversazione non letta per la
+            // controparte e gia' letta per chi lo ha appena inviato.
+            this.chatVistaDa.clear();
+            this.chatVistaDa.add(this.userMatricola);
+            this.statoLetturaChatPresente = true;
+            salvaSuFile();
+        }
+    }
+
+    /** True quando l'utente corrente ha almeno un messaggio ricevuto non letto. */
+    public boolean haMessaggiChatNonLetti() {
+        if (!this.statoLetturaChatPresente
+                || this.chatVistaDa.contains(this.userMatricola)) {
+            return false;
+        }
+        return this.model.getStoricoChat().stream()
+                .anyMatch(message -> !SYSTEM_SENDER_ID.equals(message.getIdMittente())
+                        && !this.userMatricola.equals(message.getIdMittente()));
+    }
+
+    /** Segna come letti i messaggi correnti per l'utente che ha aperto la chat. */
+    public void segnaChatComeLetta() {
+        if (this.statoLetturaChatPresente
+                && this.chatVistaDa.add(this.userMatricola)) {
             salvaSuFile();
         }
     }
@@ -461,6 +517,9 @@ public class TutoringSessionController {
                 } else if (line.startsWith("CANCELLAZIONE_VISTA_DA;")) {
                     ripristinaVisualizzazioniCancellazione(
                             line.substring("CANCELLAZIONE_VISTA_DA;".length()));
+                } else if (line.startsWith("CHAT_VISTA_DA;")) {
+                    ripristinaVisualizzazioniChat(
+                            line.substring("CHAT_VISTA_DA;".length()));
                 }
             }
         } catch (IOException e) {
@@ -531,6 +590,18 @@ public class TutoringSessionController {
         }
     }
 
+    private void ripristinaVisualizzazioniChat(final String payload) {
+        this.statoLetturaChatPresente = true;
+        if (payload == null || payload.isBlank()) {
+            return;
+        }
+        for (final String matricola : payload.split(",")) {
+            if (!matricola.isBlank()) {
+                this.chatVistaDa.add(matricola.trim());
+            }
+        }
+    }
+
     // Ripristina i valori salvati della recensione da disco.
     private void ripristinaRecensione(final String payload) {
         final String[] campi = payload.split("\\|", 3);
@@ -575,6 +646,11 @@ public class TutoringSessionController {
                 writer.newLine();
                 writer.write("COMPLETO_STUDENTE;" + this.completatoStudente);
                 writer.newLine();
+
+                if (this.statoLetturaChatPresente) {
+                    writer.write("CHAT_VISTA_DA;" + String.join(",", this.chatVistaDa));
+                    writer.newLine();
+                }
 
                 if (this.cancellataAt != null) {
                     writer.write("CANCELLATA_DA;" + sanitizeLine(this.cancellataDa));

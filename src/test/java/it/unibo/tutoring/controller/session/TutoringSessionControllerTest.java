@@ -2,6 +2,7 @@ package it.unibo.tutoring.controller.session;
 
 import it.unibo.tutoring.model.credit.ReviewRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,6 +24,24 @@ class TutoringSessionControllerTest {
             "data", "sessions", "SESS_BOX_B_0000000002_0000000001_0000000002.csv");
     private final Path expiredSessionPath = Path.of(
             "data", "sessions", "SESS_ExpiredTest_0001_9999.csv");
+    private final Path unreadChatPath = Path.of(
+            "data", "sessions", "SESS_CHAT_UNREAD_0000000001_0000000002.csv");
+    private final Path tutorFirstPath = Path.of(
+            "data", "sessions", "SESS_TUTOR_FIRST_FLOW_FLOW_TUTOR_FLOW_STUDENT.csv");
+    private static final Path CREDITS_PATH = Path.of("data", "credits.csv");
+    private static final Path COMPLETED_SESSIONS_PATH = Path.of("data", "completed_sessions.csv");
+    private static final Path REVIEWS_PATH = Path.of("data", "reviews.csv");
+
+    private byte[] originalCredits;
+    private byte[] originalCompletedSessions;
+    private byte[] originalReviews;
+
+    @BeforeEach
+    void preserveSharedDataFiles() throws IOException {
+        this.originalCredits = readIfPresent(CREDITS_PATH);
+        this.originalCompletedSessions = readIfPresent(COMPLETED_SESSIONS_PATH);
+        this.originalReviews = readIfPresent(REVIEWS_PATH);
+    }
 
     @AfterEach
     void cleanup() throws IOException {
@@ -32,6 +51,11 @@ class TutoringSessionControllerTest {
         Files.deleteIfExists(firstConversationPath);
         Files.deleteIfExists(secondConversationPath);
         Files.deleteIfExists(expiredSessionPath);
+        Files.deleteIfExists(unreadChatPath);
+        Files.deleteIfExists(tutorFirstPath);
+        restoreFile(CREDITS_PATH, this.originalCredits);
+        restoreFile(COMPLETED_SESSIONS_PATH, this.originalCompletedSessions);
+        restoreFile(REVIEWS_PATH, this.originalReviews);
     }
 
     @Test
@@ -136,6 +160,9 @@ class TutoringSessionControllerTest {
         firstConversation.inviaMessaggio("Messaggio del primo annuncio");
         secondConversation.inviaMessaggio("Messaggio del secondo annuncio");
 
+        assertTrue(Files.exists(firstConversationPath));
+        assertTrue(Files.exists(secondConversationPath));
+        assertNotEquals(firstConversationPath, secondConversationPath);
         assertEquals(1, firstConversation.getModel().getStoricoChat().size());
         assertEquals(1, secondConversation.getModel().getStoricoChat().size());
         assertEquals(
@@ -151,18 +178,134 @@ class TutoringSessionControllerTest {
         final LocalDateTime start = LocalDateTime.of(2026, 8, 5, 11, 0);
         final TutoringSessionController controller = new TutoringSessionController(
                 "Test Materia",
-                "Test Tutor",
-                true,
-                "0001",
+                "Test Studente",
+                false,
                 "9999",
+                "0001",
                 start,
                 Duration.ofHours(2));
+        controller.confermaSessione();
 
         assertEquals(LocalDateTime.of(2026, 8, 5, 13, 0), controller.getFinePrevista());
         assertFalse(controller.puoSegnalareCompletamento(
                 LocalDateTime.of(2026, 8, 5, 12, 59, 59)));
         assertTrue(controller.puoSegnalareCompletamento(
                 LocalDateTime.of(2026, 8, 5, 13, 0)));
+    }
+
+    @Test
+    void tutorMustCompleteFirstAndCompletionEventMustBePublishedOnce() {
+        final LocalDateTime start = LocalDateTime.now().minusHours(2);
+        final Duration duration = Duration.ofHours(1);
+
+        final TutoringSessionController studentController = new TutoringSessionController(
+                "Tutor First Flow",
+                "Test Tutor",
+                true,
+                "FLOW_TUTOR",
+                "FLOW_STUDENT",
+                start,
+                duration,
+                "TUTOR_FIRST_FLOW");
+        studentController.confermaSessione();
+
+        final IllegalStateException studentFirstError = assertThrows(
+                IllegalStateException.class,
+                studentController::segnalaCompletamento);
+        assertTrue(studentFirstError.getMessage().contains("tutor deve confermare per primo"));
+        assertFalse(studentController.isCompletatoDaStudente());
+        assertFalse(studentController.shouldAskForReview());
+
+        final TutoringSessionController tutorController = new TutoringSessionController(
+                "Tutor First Flow",
+                "Test Studente",
+                false,
+                "FLOW_STUDENT",
+                "FLOW_TUTOR",
+                start,
+                duration,
+                "TUTOR_FIRST_FLOW");
+        tutorController.segnalaCompletamento();
+        assertTrue(tutorController.isCompletatoDaTutor());
+        assertTrue(tutorController.isConfermata());
+
+        final TutoringSessionController studentAfterTutor = new TutoringSessionController(
+                "Tutor First Flow",
+                "Test Tutor",
+                true,
+                "FLOW_TUTOR",
+                "FLOW_STUDENT",
+                start,
+                duration,
+                "TUTOR_FIRST_FLOW");
+        assertTrue(studentAfterTutor.puoSegnalareCompletamento());
+
+        studentAfterTutor.segnalaCompletamento();
+
+        assertTrue(studentAfterTutor.isCompletataDaEntrambi());
+        assertTrue(studentAfterTutor.shouldAskForReview());
+        assertEquals(
+                1,
+                it.unibo.tutoring.AppConfig.getInstance()
+                        .getCreditService()
+                        .getCreditRecord("FLOW_TUTOR")
+                        .getTotalHours(),
+                "L'evento di completamento deve essere pubblicato una sola volta.");
+    }
+
+    @Test
+    void shouldPersistUnreadChatUntilReceiverOpensConversation() throws IOException {
+        final LocalDateTime dataOra = LocalDateTime.now().plusDays(1);
+        final Duration durata = Duration.ofHours(1);
+        final TutoringSessionController studentController = new TutoringSessionController(
+                "OOP",
+                "Tutor Uno",
+                true,
+                "0000000001",
+                "0000000002",
+                dataOra,
+                durata,
+                "CHAT_UNREAD");
+
+        studentController.inviaMessaggio("Hai ricevuto questo messaggio");
+        assertFalse(studentController.haMessaggiChatNonLetti());
+        assertTrue(Files.readAllLines(unreadChatPath).contains(
+                "CHAT_VISTA_DA;0000000002"));
+
+        final TutoringSessionController tutorController = new TutoringSessionController(
+                "OOP",
+                "Studente Uno",
+                false,
+                "0000000002",
+                "0000000001",
+                dataOra,
+                durata,
+                "CHAT_UNREAD");
+        assertTrue(tutorController.haMessaggiChatNonLetti());
+
+        tutorController.segnaChatComeLetta();
+        final TutoringSessionController reloadedTutor = new TutoringSessionController(
+                "OOP",
+                "Studente Uno",
+                false,
+                "0000000002",
+                "0000000001",
+                dataOra,
+                durata,
+                "CHAT_UNREAD");
+        assertFalse(reloadedTutor.haMessaggiChatNonLetti());
+
+        reloadedTutor.inviaMessaggio("Risposta del tutor");
+        final TutoringSessionController reloadedStudent = new TutoringSessionController(
+                "OOP",
+                "Tutor Uno",
+                true,
+                "0000000001",
+                "0000000002",
+                dataOra,
+                durata,
+                "CHAT_UNREAD");
+        assertTrue(reloadedStudent.haMessaggiChatNonLetti());
     }
 
     @Test
@@ -302,5 +445,17 @@ class TutoringSessionControllerTest {
                 () -> expiredController.cancellaSessione("Troppo tardi"));
         assertTrue(error.getMessage().contains("dopo la fine prevista"));
         assertTrue(expiredController.isConfermata());
+    }
+
+    private static byte[] readIfPresent(final Path path) throws IOException {
+        return Files.exists(path) ? Files.readAllBytes(path) : null;
+    }
+
+    private static void restoreFile(final Path path, final byte[] originalContent) throws IOException {
+        if (originalContent == null) {
+            Files.deleteIfExists(path);
+        } else {
+            Files.write(path, originalContent);
+        }
     }
 }

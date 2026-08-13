@@ -65,6 +65,7 @@ public class TutoringSessionViewApp extends Application {
         if (this.controller.isAnnullata() && !this.controller.haVistoCancellazione()) {
             this.controller.segnaCancellazioneVista();
         }
+        this.controller.segnaChatComeLetta();
     }
 
     public static Scene createScene(

@@ -742,7 +742,7 @@ public final class AnnouncementDetailViewApp {
             });
 
             if (!controller.haGiaSegnalatoCompletamento()
-                    && !controller.puoSegnalareCompletamento()) {
+                    && !controller.fineSessioneRaggiunta()) {
                 final long millisecondiAllaFine = java.time.Duration.between(
                         LocalDateTime.now(),
                         controller.getFinePrevista()).toMillis();
@@ -793,10 +793,18 @@ public final class AnnouncementDetailViewApp {
             return;
         }
 
-        if (!controller.puoSegnalareCompletamento()) {
+        if (!controller.fineSessioneRaggiunta()) {
             completata.setText(
                     "Disponibile dal "
                             + controller.getFinePrevista().format(COMPLETION_DATE_FORMAT));
+            completata.setDisable(true);
+            completata.asPrimary(TEXT_MEDIUM);
+            return;
+        }
+
+        if (controller.isStudenteCorrente()
+                && !controller.isCompletatoDaTutor()) {
+            completata.setText("In attesa che il tutor confermi per primo...");
             completata.setDisable(true);
             completata.asPrimary(TEXT_MEDIUM);
             return;

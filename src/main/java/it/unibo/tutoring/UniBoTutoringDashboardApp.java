@@ -546,7 +546,9 @@ public class UniBoTutoringDashboardApp extends Application {
 					? "Annuncio eliminato dall'autore"
 					: hasUnreadSessionCancellation(box, me)
 						? "Sessione annullata dalla controparte"
-						: "Data/orario cambiati: conferma la tua disponibilita'");
+						: hasUnreadChatMessage(box, me)
+							? "Nuovo messaggio nella chat"
+							: "Data/orario cambiati: conferma la tua disponibilita'");
 			javafx.scene.control.Tooltip.install(notifIcon, notifTip);
 			tagRow.getChildren().add(notifIcon);
 		}
@@ -624,8 +626,8 @@ public class UniBoTutoringDashboardApp extends Application {
 	 * Indica se mostrare il simbolo di notifica sulla card, analogo a quello
 	 * di un nuovo messaggio: compare quando l'annuncio e' stato eliminato
 	 * dall'autore (per l'autore stesso e per il candidato confermato, finche'
-	 * non aprono l'annuncio) oppure quando l'autore ha cambiato data/ora e
-	 * l'utente corrente deve ancora riconfermare la propria disponibilita'.
+	 * non aprono l'annuncio), quando arriva un messaggio non letto oppure quando
+	 * l'autore cambia data/ora e l'utente deve riconfermare la disponibilita'.
 	 */
 	private static boolean hasNotification(final BoxTutoraggio box, final String me) {
 		if (me == null) {
@@ -639,7 +641,43 @@ public class UniBoTutoringDashboardApp extends Application {
 		if (hasUnreadSessionCancellation(box, me)) {
 			return true;
 		}
+		if (hasUnreadChatMessage(box, me)) {
+			return true;
+		}
 		return box.isInAttesaDiRiconferma(me);
+	}
+
+	private static boolean hasUnreadChatMessage(
+		final BoxTutoraggio box,
+		final String me
+	) {
+		if (me == null) {
+			return false;
+		}
+
+		if (!me.equals(box.getAutoreMatricola())) {
+			return SessionLinkUtil.buildController(
+				box,
+				box.getAutoreMatricola(),
+				me).haMessaggiChatNonLetti();
+		}
+
+		final java.util.Set<String> controparti = new java.util.LinkedHashSet<>(
+			box.getContatti());
+		controparti.addAll(box.getCandidati());
+		if (box.getConfermato() != null) {
+			controparti.add(box.getConfermato());
+		}
+
+		for (final String controparte : controparti) {
+			if (SessionLinkUtil.buildController(
+					box,
+					controparte,
+					me).haMessaggiChatNonLetti()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean hasUnreadSessionCancellation(
