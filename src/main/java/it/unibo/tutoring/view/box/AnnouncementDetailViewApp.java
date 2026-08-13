@@ -84,6 +84,22 @@ public final class AnnouncementDetailViewApp {
             it.unibo.tutoring.model.box.BoxRepository.saveAll();
         }
 
+        // La cancellazione della sessione e' distinta dall'eliminazione
+        // dell'annuncio. Aprendo il dettaglio, il partecipante prende visione
+        // della relativa notifica persistente.
+        if (!box.isCancellato() && box.getConfermato() != null
+                && me != null && (isAutore || isConfermato)) {
+            final String controparte = isAutore
+                    ? box.getConfermato()
+                    : box.getAutoreMatricola();
+            final TutoringSessionController sessionController =
+                    SessionLinkUtil.buildController(box, controparte, me);
+            if (sessionController.isAnnullata()
+                    && !sessionController.haVistoCancellazione()) {
+                sessionController.segnaCancellazioneVista();
+            }
+        }
+
         final VBox root = new VBox();
         root.getStyleClass().add("app-shell");
         root.setBackground(
@@ -498,9 +514,12 @@ public final class AnnouncementDetailViewApp {
             preview = "Conversazione aperta, nessun messaggio inviato.";
         } else {
             final var lastMessage = messages.get(messages.size() - 1);
-            final String sender = lastMessage.getIdMittente().equals(box.getAutoreMatricola())
-                    ? "Tu"
-                    : contactName;
+            final String sender = TutoringSessionController.SYSTEM_SENDER_ID.equals(
+                    lastMessage.getIdMittente())
+                    ? "Sistema"
+                    : lastMessage.getIdMittente().equals(box.getAutoreMatricola())
+                            ? "Tu"
+                            : contactName;
             preview = sender + ": " + lastMessage.getTesto();
         }
 
@@ -698,6 +717,20 @@ public final class AnnouncementDetailViewApp {
         final String nomeControparte = SessionLinkUtil.nomeCompleto(counterparty);
         final TutoringSessionController controller = SessionLinkUtil.buildController(box, counterparty, me);
 
+        if (controller.isAnnullata()) {
+            final String autoreCancellazione = SessionLinkUtil.nomeCompleto(controller.getCancellataDa());
+            final String quando = controller.getCancellataAt() != null
+                    ? controller.getCancellataAt().format(COMPLETION_DATE_FORMAT)
+                    : "data non disponibile";
+            final StringBuilder testo = new StringBuilder(
+                    "Sessione annullata da " + autoreCancellazione + " il " + quando + ".");
+            if (!controller.getMotivoCancellazione().isBlank()) {
+                testo.append(" Motivo: ").append(controller.getMotivoCancellazione());
+            }
+            section.getChildren().add(infoLabel(testo.toString()));
+            return section;
+        }
+
         if (!controller.isCompletataDaEntrambi()) {
             final Label info = infoLabel("Sessione confermata con " + nomeControparte + ".");
 
@@ -730,7 +763,12 @@ public final class AnnouncementDetailViewApp {
                 }
             }
 
-            section.getChildren().addAll(info, buttonRow(completata));
+            final AppButton annulla = AppButton.secondary("Annulla sessione");
+            annulla.setDisable(!controller.puoCancellareSessione());
+            annulla.setOnAction(event ->
+                    mostraConfermaCancellazione(stage, box, controller, annulla));
+
+            section.getChildren().addAll(info, buttonRow(completata, annulla));
             return section;
         }
 
@@ -767,6 +805,42 @@ public final class AnnouncementDetailViewApp {
         completata.setText("Segna come completata");
         completata.setDisable(false);
         completata.asPrimary(PRIMARY_RED);
+    }
+
+    private static void mostraConfermaCancellazione(
+            final Stage stage,
+            final BoxTutoraggio box,
+            final TutoringSessionController controller,
+            final Button sourceButton) {
+        final javafx.scene.control.Alert dialog = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        dialog.setTitle("Annulla sessione");
+        dialog.setHeaderText("Vuoi annullare questa sessione confermata?");
+
+        final Label spiegazione = infoLabel(
+                "L'altra persona ricevera' una notifica. La chat e lo storico resteranno disponibili.");
+        final TextArea motivo = new TextArea();
+        motivo.setPromptText("Motivo (opzionale)");
+        motivo.setWrapText(true);
+        motivo.setPrefRowCount(3);
+
+        dialog.getDialogPane().setContent(new VBox(10, spiegazione, motivo));
+        final javafx.scene.control.ButtonType conferma = new javafx.scene.control.ButtonType(
+                "Conferma annullamento",
+                javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        dialog.getButtonTypes().setAll(
+                conferma,
+                javafx.scene.control.ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(response -> {
+            if (response == conferma) {
+                controller.cancellaSessione(motivo.getText());
+                final Stage win = stage != null
+                        ? stage
+                        : (Stage) sourceButton.getScene().getWindow();
+                refresh(win, box);
+            }
+        });
     }
 
     /** Form di recensione mostrato solo a chi ha ricevuto la lezione (lo studente), a completamento avvenuto. */
@@ -870,8 +944,8 @@ public final class AnnouncementDetailViewApp {
         return label;
     }
 
-    private static HBox buttonRow(final Button button) {
-        final HBox row = new HBox(button);
+    private static HBox buttonRow(final Button... buttons) {
+        final HBox row = new HBox(10, buttons);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }

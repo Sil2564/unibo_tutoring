@@ -62,6 +62,9 @@ public class TutoringSessionViewApp extends Application {
         this.box = box;
         this.counterpartyMatricola = counterpartyMatricola;
         this.controller = SessionLinkUtil.buildController(box, counterpartyMatricola, UserSession.getMatricola());
+        if (this.controller.isAnnullata() && !this.controller.haVistoCancellazione()) {
+            this.controller.segnaCancellazioneVista();
+        }
     }
 
     public static Scene createScene(
@@ -400,6 +403,9 @@ public class TutoringSessionViewApp extends Application {
         if (controller.isCompletataDaEntrambi()) {
             return "Sessione completata";
         }
+        if (controller.isAnnullata()) {
+            return "Sessione annullata";
+        }
         if (controller.isConfermata()) {
             return "Sessione confermata";
         }
@@ -438,6 +444,24 @@ public class TutoringSessionViewApp extends Application {
     }
 
     private HBox chatBubble(String text, String senderId, boolean isMe) {
+        if (TutoringSessionController.SYSTEM_SENDER_ID.equals(senderId)) {
+            final Label systemMessage = new Label(text);
+            systemMessage.setWrapText(true);
+            systemMessage.setFont(Font.font(
+                    "System",
+                    javafx.scene.text.FontPosture.ITALIC,
+                    12));
+            systemMessage.setTextFill(TEXT_MEDIUM);
+            systemMessage.setPadding(new Insets(8, 12, 8, 12));
+            systemMessage.setBackground(new Background(new BackgroundFill(
+                    Color.web("#F1F1F1"),
+                    new CornerRadii(12),
+                    Insets.EMPTY)));
+            final HBox row = new HBox(systemMessage);
+            row.setAlignment(Pos.CENTER);
+            return row;
+        }
+
         final VBox bubble = new VBox(3);
 
         if (!isMe) {

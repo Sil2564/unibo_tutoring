@@ -459,7 +459,8 @@ public class UniBoTutoringDashboardApp extends Application {
 	 * Un annuncio compare in "Le mie sessioni" se l'utente ne e' l'autore,
 	 * si e' candidato (in attesa di conferma), oppure e' il candidato
 	 * confermato. Se la sessione confermata risulta pero' gia' completata da
-	 * entrambe le parti, sparisce da qui (resta visibile solo nelle Statistiche).
+	 * entrambe le parti, sparisce da qui (resta visibile solo nelle Statistiche);
+	 * una sessione annullata rimane invece nello storico con il relativo stato.
 	 */
 	private static boolean isVisibleInMieSessioni(final BoxTutoraggio box, final String me) {
 		if (me == null) {
@@ -523,13 +524,14 @@ public class UniBoTutoringDashboardApp extends Application {
 
 		final HBox tagRow = new HBox(6, tag);
 		tagRow.setAlignment(Pos.CENTER_LEFT);
-		final String statusText = statusChipText(box);
+		final boolean sessionCancelled = isConfirmedSessionCancelled(box);
+		final String statusText = statusChipText(box, sessionCancelled);
 		if (statusText != null) {
 			final Label statusChip = new Label(statusText);
 			statusChip.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 9));
 			statusChip.setTextFill(Color.WHITE);
 			statusChip.setPadding(new Insets(2, 7, 2, 7));
-			final Color statusColor = box.isCancellato()
+			final Color statusColor = box.isCancellato() || sessionCancelled
 				? PRIMARY_RED
 				: box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9");
 			statusChip.setBackground(new Background(new BackgroundFill(
@@ -542,7 +544,9 @@ public class UniBoTutoringDashboardApp extends Application {
 			final javafx.scene.control.Tooltip notifTip = new javafx.scene.control.Tooltip(
 				box.isCancellato()
 					? "Annuncio eliminato dall'autore"
-					: "Data/orario cambiati: conferma la tua disponibilita'");
+					: hasUnreadSessionCancellation(box, me)
+						? "Sessione annullata dalla controparte"
+						: "Data/orario cambiati: conferma la tua disponibilita'");
 			javafx.scene.control.Tooltip.install(notifIcon, notifTip);
 			tagRow.getChildren().add(notifIcon);
 		}
@@ -632,13 +636,53 @@ public class UniBoTutoringDashboardApp extends Application {
 		if (box.isCancellato() && (isAutore || isConfermato) && !box.isCancellazioneVista(me)) {
 			return true;
 		}
+		if (hasUnreadSessionCancellation(box, me)) {
+			return true;
+		}
 		return box.isInAttesaDiRiconferma(me);
 	}
 
+	private static boolean hasUnreadSessionCancellation(
+		final BoxTutoraggio box,
+		final String me
+	) {
+		if (me == null || box.getConfermato() == null) {
+			return false;
+		}
+		final boolean isPartecipante = me.equals(box.getAutoreMatricola())
+			|| me.equals(box.getConfermato());
+		if (!isPartecipante) {
+			return false;
+		}
+		final TutoringSessionController controller = SessionLinkUtil.buildController(
+			box,
+			box.getConfermato(),
+			box.getAutoreMatricola());
+		return controller.isAnnullata()
+			&& controller.getCancellataAt() != null
+			&& !controller.isCancellazioneVistaDa(me);
+	}
+
+	private static boolean isConfirmedSessionCancelled(final BoxTutoraggio box) {
+		if (box.getConfermato() == null) {
+			return false;
+		}
+		return SessionLinkUtil.buildController(
+			box,
+			box.getConfermato(),
+			box.getAutoreMatricola()).isAnnullata();
+	}
+
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
-	private static String statusChipText(final BoxTutoraggio box) {
+	private static String statusChipText(
+		final BoxTutoraggio box,
+		final boolean sessionCancelled
+	) {
 		if (box.isCancellato()) {
 			return "Eliminata";
+		}
+		if (sessionCancelled) {
+			return "Annullata";
 		}
 		if (box.getConfermato() != null) {
 			return "Confermata";

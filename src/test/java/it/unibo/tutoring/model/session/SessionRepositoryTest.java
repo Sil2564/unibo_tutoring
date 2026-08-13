@@ -42,6 +42,9 @@ class SessionRepositoryTest {
 
         writeSession("Completed", date);
         assertTrue(repository.getConfirmedSessionsForUser(STUDENT).isEmpty());
+
+        writeSession("Cancelled", date);
+        assertTrue(repository.getConfirmedSessionsForUser(STUDENT).isEmpty());
     }
 
     private static void writeSession(final String state, final LocalDateTime date) throws IOException {

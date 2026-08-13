@@ -21,6 +21,8 @@ class TutoringSessionControllerTest {
             "data", "sessions", "SESS_BOX_A_0000000002_0000000001_0000000002.csv");
     private final Path secondConversationPath = Path.of(
             "data", "sessions", "SESS_BOX_B_0000000002_0000000001_0000000002.csv");
+    private final Path expiredSessionPath = Path.of(
+            "data", "sessions", "SESS_ExpiredTest_0001_9999.csv");
 
     @AfterEach
     void cleanup() throws IOException {
@@ -29,6 +31,7 @@ class TutoringSessionControllerTest {
         }
         Files.deleteIfExists(firstConversationPath);
         Files.deleteIfExists(secondConversationPath);
+        Files.deleteIfExists(expiredSessionPath);
     }
 
     @Test
@@ -163,6 +166,25 @@ class TutoringSessionControllerTest {
     }
 
     @Test
+    void cancellationShouldStopBeingAvailableExactlyAtScheduledEnd() {
+        final LocalDateTime start = LocalDateTime.of(2030, 8, 5, 11, 0);
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                start,
+                Duration.ofHours(2));
+        controller.confermaSessione();
+
+        assertTrue(controller.puoCancellareSessione(
+                LocalDateTime.of(2030, 8, 5, 12, 59, 59)));
+        assertFalse(controller.puoCancellareSessione(
+                LocalDateTime.of(2030, 8, 5, 13, 0)));
+    }
+
+    @Test
     void shouldRejectCompletionBeforeScheduledEnd() {
         final TutoringSessionController controller = new TutoringSessionController(
                 "Test Materia",
@@ -181,5 +203,104 @@ class TutoringSessionControllerTest {
         assertTrue(error.getMessage().contains("solo dopo la fine prevista"));
         assertFalse(controller.isCompletatoDaTutor());
         assertFalse(controller.isCompletatoDaStudente());
+    }
+
+    @Test
+    void shouldCancelConfirmedSessionAndPersistAuditChatAndUnreadNotification() throws IOException {
+        final LocalDateTime start = LocalDateTime.now().plusDays(2).withNano(0);
+        final TutoringSessionController studentController = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                start,
+                Duration.ofHours(2));
+
+        studentController.confermaSessione();
+        studentController.cancellaSessione("Imprevisto personale\nurgente");
+
+        assertTrue(studentController.isAnnullata());
+        assertFalse(studentController.puoCancellareSessione());
+        assertEquals("9999", studentController.getCancellataDa());
+        assertNotNull(studentController.getCancellataAt());
+        assertEquals("Imprevisto personale urgente", studentController.getMotivoCancellazione());
+        assertTrue(studentController.haVistoCancellazione());
+        assertFalse(studentController.shouldAskForReview());
+        assertThrows(IllegalStateException.class, studentController::segnalaCompletamento);
+
+        final var systemMessage = studentController.getModel().getStoricoChat().get(0);
+        assertEquals(TutoringSessionController.SYSTEM_SENDER_ID, systemMessage.getIdMittente());
+        assertTrue(systemMessage.getTesto().contains("Imprevisto personale urgente"));
+        assertEquals(studentController.getCancellataAt(), systemMessage.getTimestamp());
+
+        final List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+        assertTrue(lines.contains("STATO;Cancelled"));
+        assertTrue(lines.contains("CANCELLATA_DA;9999"));
+        assertTrue(lines.contains("MOTIVO_CANCELLAZIONE;Imprevisto personale urgente"));
+        assertTrue(lines.contains("CANCELLAZIONE_VISTA_DA;9999"));
+
+        // La stessa sessione viene ricostruita dal punto di vista del tutor:
+        // il file, la chat e i metadati sono condivisi, mentre la notifica e'
+        // ancora non letta per la controparte.
+        final TutoringSessionController tutorController = new TutoringSessionController(
+                "Test Materia",
+                "Test Studente",
+                false,
+                "9999",
+                "0001",
+                start,
+                Duration.ofHours(2));
+
+        assertTrue(tutorController.isAnnullata());
+        assertEquals("9999", tutorController.getCancellataDa());
+        assertEquals("Imprevisto personale urgente", tutorController.getMotivoCancellazione());
+        assertEquals(1, tutorController.getModel().getStoricoChat().size());
+        assertFalse(tutorController.haVistoCancellazione());
+
+        tutorController.segnaCancellazioneVista();
+        final TutoringSessionController reloadedTutorController = new TutoringSessionController(
+                "Test Materia",
+                "Test Studente",
+                false,
+                "9999",
+                "0001",
+                start,
+                Duration.ofHours(2));
+        assertTrue(reloadedTutorController.haVistoCancellazione());
+    }
+
+    @Test
+    void shouldRejectCancellationOfUnconfirmedOrAlreadyEndedSession() {
+        final TutoringSessionController proposedController = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                LocalDateTime.now().plusDays(1),
+                Duration.ofHours(1));
+
+        assertFalse(proposedController.puoCancellareSessione());
+        assertThrows(
+                IllegalStateException.class,
+                () -> proposedController.cancellaSessione("Non confermata"));
+
+        final TutoringSessionController expiredController = new TutoringSessionController(
+                "Expired Test",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                LocalDateTime.now().minusHours(2),
+                Duration.ofHours(1));
+        expiredController.confermaSessione();
+
+        assertFalse(expiredController.puoCancellareSessione());
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> expiredController.cancellaSessione("Troppo tardi"));
+        assertTrue(error.getMessage().contains("dopo la fine prevista"));
+        assertTrue(expiredController.isConfermata());
     }
 }

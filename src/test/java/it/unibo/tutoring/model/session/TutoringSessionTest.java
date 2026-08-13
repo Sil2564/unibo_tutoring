@@ -52,4 +52,14 @@ class TutoringSessionTest {
         assertEquals("studente_1", storico.get(0).getIdMittente());
         assertEquals("Perfetto, confermo la sessione!", storico.get(1).getTesto());
     }
+
+    @Test
+    void testSessioneConfermataPuoEssereAnnullataMaNonCompletata() {
+        session.conferma();
+        session.annulla();
+
+        assertTrue(session.getStatoCorrente() instanceof CancelledState);
+        assertThrows(IllegalStateException.class, session::completa);
+        assertThrows(IllegalStateException.class, session::annulla);
+    }
 }

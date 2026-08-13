@@ -20,8 +20,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class TutoringSessionController {
+
+    public static final String SYSTEM_SENDER_ID = "SYSTEM";
 
     private static final Path SESSION_FOLDER = Path.of("data", "sessions");
     private static final String FILE_PREFIX = "SESS_";
@@ -49,6 +53,12 @@ public class TutoringSessionController {
     // considera davvero completata solo quando entrambi sono true.
     private boolean completatoTutor = false;
     private boolean completatoStudente = false;
+
+    // Metadati della cancellazione di una sessione gia' confermata.
+    private String cancellataDa = "";
+    private LocalDateTime cancellataAt;
+    private String motivoCancellazione = "";
+    private final Set<String> cancellazioneVistaDa = new LinkedHashSet<>();
 
     public TutoringSessionController(
             final String materia,
@@ -174,6 +184,79 @@ public class TutoringSessionController {
     public void annullaSessione() {
         this.model.annulla();
         salvaSuFile();
+    }
+
+    /**
+     * Cancella una sessione gia' confermata e non ancora terminata. Il motivo
+     * e' facoltativo; autore, istante e motivo vengono conservati nel file
+     * condiviso e la chat riceve un messaggio di sistema permanente.
+     */
+    public void cancellaSessione(final String motivo) {
+        if (!(this.model.getStatoCorrente() instanceof ConfirmedState)) {
+            throw new IllegalStateException("Solo una sessione confermata puo' essere annullata.");
+        }
+
+        final LocalDateTime adesso = LocalDateTime.now();
+        if (!puoCancellareSessione(adesso)) {
+            throw new IllegalStateException(
+                    "La sessione non puo' essere annullata dopo la fine prevista: "
+                            + getFinePrevista());
+        }
+
+        this.cancellataDa = this.userMatricola;
+        this.cancellataAt = adesso;
+        this.motivoCancellazione = motivo == null ? "" : sanitizeLine(motivo).trim();
+        this.cancellazioneVistaDa.clear();
+        // Chi compie l'azione l'ha gia' vista; la notifica resta non letta per
+        // l'altra persona fino all'apertura dell'annuncio o della chat.
+        this.cancellazioneVistaDa.add(this.userMatricola);
+
+        this.model.annulla();
+        this.model.inviaMessaggio(
+                creaMessaggioSistemaCancellazione(),
+                SYSTEM_SENDER_ID,
+                this.cancellataAt);
+        salvaSuFile();
+    }
+
+    public boolean puoCancellareSessione() {
+        return puoCancellareSessione(LocalDateTime.now());
+    }
+
+    boolean puoCancellareSessione(final LocalDateTime adesso) {
+        if (adesso == null) {
+            throw new IllegalArgumentException("L'istante corrente e' obbligatorio.");
+        }
+        return this.model.getStatoCorrente() instanceof ConfirmedState
+                && adesso.isBefore(getFinePrevista());
+    }
+
+    public String getCancellataDa() {
+        return this.cancellataDa;
+    }
+
+    public LocalDateTime getCancellataAt() {
+        return this.cancellataAt;
+    }
+
+    public String getMotivoCancellazione() {
+        return this.motivoCancellazione;
+    }
+
+    public boolean isCancellazioneVistaDa(final String matricola) {
+        return matricola != null && this.cancellazioneVistaDa.contains(matricola);
+    }
+
+    public boolean haVistoCancellazione() {
+        return isCancellazioneVistaDa(this.userMatricola);
+    }
+
+    /** Segna come letta la notifica di cancellazione per l'utente corrente. */
+    public void segnaCancellazioneVista() {
+        if (isAnnullata() && this.cancellataAt != null
+                && this.cancellazioneVistaDa.add(this.userMatricola)) {
+            salvaSuFile();
+        }
     }
 
     /**
@@ -369,6 +452,15 @@ public class TutoringSessionController {
                     this.completatoTutor = Boolean.parseBoolean(line.substring("COMPLETO_TUTOR;".length()).trim());
                 } else if (line.startsWith("COMPLETO_STUDENTE;")) {
                     this.completatoStudente = Boolean.parseBoolean(line.substring("COMPLETO_STUDENTE;".length()).trim());
+                } else if (line.startsWith("CANCELLATA_DA;")) {
+                    this.cancellataDa = line.substring("CANCELLATA_DA;".length()).trim();
+                } else if (line.startsWith("CANCELLATA_AT;")) {
+                    ripristinaIstanteCancellazione(line.substring("CANCELLATA_AT;".length()));
+                } else if (line.startsWith("MOTIVO_CANCELLAZIONE;")) {
+                    this.motivoCancellazione = line.substring("MOTIVO_CANCELLAZIONE;".length()).trim();
+                } else if (line.startsWith("CANCELLAZIONE_VISTA_DA;")) {
+                    ripristinaVisualizzazioniCancellazione(
+                            line.substring("CANCELLAZIONE_VISTA_DA;".length()));
                 }
             }
         } catch (IOException e) {
@@ -417,6 +509,28 @@ public class TutoringSessionController {
         }
     }
 
+    private void ripristinaIstanteCancellazione(final String valore) {
+        if (valore == null || valore.isBlank()) {
+            return;
+        }
+        try {
+            this.cancellataAt = LocalDateTime.parse(valore.trim());
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // Un metadato non valido non deve impedire il caricamento della sessione.
+        }
+    }
+
+    private void ripristinaVisualizzazioniCancellazione(final String payload) {
+        if (payload == null || payload.isBlank()) {
+            return;
+        }
+        for (final String matricola : payload.split(",")) {
+            if (!matricola.isBlank()) {
+                this.cancellazioneVistaDa.add(matricola.trim());
+            }
+        }
+    }
+
     // Ripristina i valori salvati della recensione da disco.
     private void ripristinaRecensione(final String payload) {
         final String[] campi = payload.split("\\|", 3);
@@ -461,6 +575,19 @@ public class TutoringSessionController {
                 writer.newLine();
                 writer.write("COMPLETO_STUDENTE;" + this.completatoStudente);
                 writer.newLine();
+
+                if (this.cancellataAt != null) {
+                    writer.write("CANCELLATA_DA;" + sanitizeLine(this.cancellataDa));
+                    writer.newLine();
+                    writer.write("CANCELLATA_AT;" + this.cancellataAt);
+                    writer.newLine();
+                    writer.write("MOTIVO_CANCELLAZIONE;" + sanitizeLine(this.motivoCancellazione));
+                    writer.newLine();
+                    writer.write(
+                            "CANCELLAZIONE_VISTA_DA;"
+                                    + String.join(",", this.cancellazioneVistaDa));
+                    writer.newLine();
+                }
 
                 for (Message message : this.model.getStoricoChat()) {
                     writer.write(
@@ -524,6 +651,23 @@ public class TutoringSessionController {
 
     private static String sanitizeLine(final String value) {
         return value == null ? "" : value.replace('\n', ' ').replace('\r', ' ');
+    }
+
+    private String creaMessaggioSistemaCancellazione() {
+        final String nome = nomeUtente(this.cancellataDa);
+        final StringBuilder messaggio = new StringBuilder(
+                "La sessione e' stata annullata da " + nome + ".");
+        if (!this.motivoCancellazione.isBlank()) {
+            messaggio.append(" Motivo: ").append(this.motivoCancellazione);
+        }
+        return messaggio.toString();
+    }
+
+    private static String nomeUtente(final String matricola) {
+        final var user = AuthService.getInstance().getUser(matricola);
+        return user != null
+                ? user.getName() + " " + user.getSurname()
+                : matricola;
     }
 
     private static String requireText(final String value, final String fieldName) {
