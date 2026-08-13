@@ -109,7 +109,7 @@ public final class UniBoTutoringLoginApp {
         passwordLabel.setTextFill(TEXT_DARK);
 
         final PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("min 6 caratteri, 1 numero");
+        passwordField.setPromptText("min 6 caratteri, una maiuscola, un numero e un carattere speciale");
         FormControlStyle.apply(passwordField, 44);
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
 

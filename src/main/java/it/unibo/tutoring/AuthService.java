@@ -61,7 +61,7 @@ public final class AuthService {
             return new RegistrationResult(false, "La matricola deve contenere 10 cifre.");
         }
         if (!isPasswordValid(password)) {
-            return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una lettera e un numero.");
+            return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una maiuscola, un numero e un carattere speciale.");
         }
         if (this.usersByMatricola.containsKey(cleanMatricola)) {
             return new RegistrationResult(false, "La matricola è già registrata.");
@@ -102,17 +102,26 @@ public final class AuthService {
         return user.getPasswordHash().equals(hashPassword(password));
     }
 
+    /**
+     * Verifica se una password è valida.
+     *
+     * @param password la password da verificare
+     * @return {@code true} se la password è valida, {@code false} altrimenti
+     */
     public static boolean isPasswordValid(final String password) {
         if (password == null) {
             return false;
         }
+        // Rimuove eventuali spazi bianchi all'inizio e alla fine della password
         final String cleanPassword = password.trim();
+        // La password deve avere almeno 6 caratteri
         if (cleanPassword.length() < 6) {
             return false;
         }
-        final boolean hasLetter = cleanPassword.matches(".*[A-Za-z].*");
-        final boolean hasDigit = cleanPassword.matches(".*\\d.*");
-        return hasLetter && hasDigit;
+        final boolean hasLetter = password.matches(".*[A-Za-z].*");
+        final boolean hasDigit = password.matches(".*[0-9].*");
+        final boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?].*");
+        return hasLetter && hasDigit && hasSpecialCharacter;
     }
 
     private void loadUsers() {

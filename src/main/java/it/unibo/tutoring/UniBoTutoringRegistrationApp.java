@@ -171,7 +171,7 @@ public final class UniBoTutoringRegistrationApp {
                 return;
             }
             if (!AuthService.isPasswordValid(password)) {
-                feedbackLabel.setText("La password deve avere almeno 6 caratteri, una lettera e un numero.");
+                feedbackLabel.setText("La password deve avere almeno 6 caratteri, una maiuscola, un numero e un carattere speciale.");
                 feedbackLabel.setVisible(true);
                 return;
             }
