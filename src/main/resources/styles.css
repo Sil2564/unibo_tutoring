@@ -115,7 +115,6 @@
     -fx-background-color: #d91e43;
     -fx-background-radius: 999px;
     -fx-text-fill: #ffffff;
-    -fx-font-weight: 700;
     -fx-padding: 10 18 10 18;
 }
 
@@ -123,7 +122,6 @@
     -fx-background-color: rgba(255,255,255,0.16);
     -fx-background-radius: 999px;
     -fx-text-fill: #ffffff;
-    -fx-font-weight: 700;
     -fx-border-color: rgba(255,255,255,0.35);
     -fx-border-radius: 999px;
     -fx-border-width: 1px;
@@ -133,7 +131,6 @@
 .text-link {
     -fx-background-color: transparent;
     -fx-text-fill: #d91e43;
-    -fx-font-weight: 700;
 }
 
 .form-field {
@@ -211,7 +208,6 @@
 .section-title {
     -fx-text-fill: #1b1b1b;
     -fx-font-size: 24px;
-    -fx-font-weight: 800;
 }
 
 /* Back button: clean, static, slightly elevated */
@@ -222,7 +218,6 @@
     -fx-border-color: #e6e6e6;
     -fx-border-width: 1px;
     -fx-text-fill: #363636;
-    -fx-font-weight: 600;
     -fx-font-size: 14px;
     -fx-padding: 8 12 8 12;
     -fx-graphic-text-gap: 8px;
