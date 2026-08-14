@@ -144,12 +144,7 @@ public class UniBoTutoringHomeApp extends Application {
         subtitle.setTextFill(Color.gray(0.95));
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
-        final Button startNowButton = primaryWhiteButton("Inizia Subito");
-        startNowButton.setOnAction(event -> openRegistrationPage(startNowButton));
-        final Button existingAccountButton = secondaryButton("Ho già un account");
-        existingAccountButton.setOnAction(event -> openLoginPage(existingAccountButton));
-        final HBox ctaButtons = new HBox(12, startNowButton, existingAccountButton);
-        heroText.getChildren().addAll(title, subtitle, ctaButtons);
+        heroText.getChildren().addAll(title, subtitle);
         HBox.setHgrow(heroText, Priority.ALWAYS);
 
         final VBox imageCard = new VBox();
