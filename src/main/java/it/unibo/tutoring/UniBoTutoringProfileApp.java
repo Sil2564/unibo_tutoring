@@ -247,6 +247,22 @@ public final class UniBoTutoringProfileApp  {
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
+        final Button logoutButton = new Button("Logout");
+        logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        logoutButton.setTextFill(PRIMARY_RED);
+        logoutButton.setPadding(new Insets(8, 14, 8, 14));
+        logoutButton.setCursor(javafx.scene.Cursor.HAND);
+        logoutButton.setBackground(new Background(
+            new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)
+        ));
+        logoutButton.setBorder(new Border(
+            new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)
+        ));
+        logoutButton.setOnAction(event -> {
+            CurrentSession.clear();
+            NavigationHelper.goToLogin((Stage) logoutButton.getScene().getWindow());
+        });
+
         final HBox rightSide = new HBox(10);
         rightSide.setAlignment(Pos.CENTER_RIGHT);
         rightSide.getChildren().add(userName);
@@ -256,7 +272,12 @@ public final class UniBoTutoringProfileApp  {
             announcementSeparator.setPrefHeight(16);
             rightSide.getChildren().addAll(announcementSeparator, backToAnnouncementButton);
         }
-        rightSide.getChildren().addAll(separator, dashboardButton);
+        
+        final Separator logoutSeparator = new Separator();
+        logoutSeparator.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        logoutSeparator.setPrefHeight(16);
+        
+        rightSide.getChildren().addAll(separator, dashboardButton, logoutSeparator, logoutButton);
 
         header.getChildren().addAll(
             brandBlock,

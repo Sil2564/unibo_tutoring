@@ -91,8 +91,7 @@ public class AppHeader extends HBox {
         } else {
             final ImageView userIcon = new AppIcon("user.png", 16, 16);
             final Button userName = profileButton(userDisplayName);
-            final Button logoutButton = logoutButton(onLogout);
-            rightSide = new HBox(8, userIcon, userName, separator, logoutButton);
+            rightSide = new HBox(8, userIcon, userName);
         }
         rightSide.setAlignment(Pos.CENTER_RIGHT);
 
@@ -114,23 +113,4 @@ public class AppHeader extends HBox {
         });
         return button;
     }
-
-    private Button logoutButton(final Runnable onLogout) {
-        final Button button = new Button("Logout", new AppIcon("logout.png", 14, 14));
-        button.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        button.setTextFill(TEXT_DARK);
-        button.setBackground(Background.EMPTY);
-        button.setBorder(Border.EMPTY);
-        button.setOnAction(event -> {
-            if (onLogout != null) {
-                onLogout.run();
-                return;
-            }
-            CurrentSession.clear();
-            NavigationHelper.goToLogin((Stage) button.getScene().getWindow());
-        });
-        return button;
-    }
 }
-
-

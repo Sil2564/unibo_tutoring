@@ -61,7 +61,7 @@ public final class AuthService {
             return new RegistrationResult(false, "La matricola deve contenere 10 cifre.");
         }
         if (!isPasswordValid(password)) {
-            return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una maiuscola, un numero e un carattere speciale.");
+            return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale.");
         }
         if (this.usersByMatricola.containsKey(cleanMatricola)) {
             return new RegistrationResult(false, "La matricola è già registrata.");
@@ -118,10 +118,11 @@ public final class AuthService {
         if (cleanPassword.length() < 6) {
             return false;
         }
+        final boolean hasLowercase = password.matches(".*[a-z].*");
         final boolean hasUppercase = password.matches(".*[A-Z].*");        
         final boolean hasDigit = password.matches(".*[0-9].*");
         final boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?].*");
-        return hasUppercase && hasDigit && hasSpecialCharacter;
+        return hasLowercase && hasUppercase && hasDigit && hasSpecialCharacter;
     }
 
     private void loadUsers() {
