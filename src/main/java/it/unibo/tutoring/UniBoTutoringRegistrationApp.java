@@ -12,6 +12,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -125,13 +126,23 @@ public final class UniBoTutoringRegistrationApp {
         final HBox passwordFieldWrapper = createPasswordFieldWithToggle(passwordField);
         final HBox confirmPasswordFieldWrapper = createPasswordFieldWithToggle(confirmPasswordField);
 
+        // Aggiunto da Niki: Il menu a tendina per far scegliere il corso all'utente durante l'iscrizione.
+        // Carica in automatico gli stessi corsi definiti in CorsiDiStudio.TUTTI per rimanere coerente con la dashboard.
+        final ComboBox<String> corsoBox = new ComboBox<>();
+        corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
+        corsoBox.setPromptText("Seleziona corso");
+        corsoBox.setPrefWidth(205);
+        corsoBox.setPrefHeight(40);
+        corsoBox.setStyle("-fx-font-size: 16px;");
+
         addField(fieldsGrid, 0, 0, "Nome", nameField);
         addField(fieldsGrid, 1, 0, "Cognome", surnameField);
         addField(fieldsGrid, 2, 0, "Data di Nascita", birthDateField);
         addField(fieldsGrid, 0, 1, "Matricola", matricolaField);
         addField(fieldsGrid, 1, 1, "Email", emailField);
-        addField(fieldsGrid, 2, 1, "Password", passwordFieldWrapper);
-        addField(fieldsGrid, 0, 2, "Conferma password", confirmPasswordFieldWrapper);
+        addField(fieldsGrid, 2, 1, "Corso di Studi", corsoBox);
+        addField(fieldsGrid, 0, 2, "Password", passwordFieldWrapper);
+        addField(fieldsGrid, 1, 2, "Conferma password", confirmPasswordFieldWrapper);
 
         final HBox submitWrap = new HBox();
         submitWrap.setAlignment(Pos.CENTER);
@@ -157,8 +168,10 @@ public final class UniBoTutoringRegistrationApp {
             final String email = emailField.getText().trim();
             final String password = passwordField.getText();
             final String confirmPassword = confirmPasswordField.getText();
+            // Aggiunto da Niki: Preleviamo il corso selezionato. Se non seleziona nulla (null), la validazione sotto lo blocca.
+            final String corso = corsoBox.getValue();
 
-            if (name.isBlank() || surname.isBlank() || birthDate.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+            if (name.isBlank() || surname.isBlank() || birthDate.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() || corso == null) {
                 feedbackLabel.setText("Compila tutti i campi.");
                 feedbackLabel.setVisible(true);
                 return;
@@ -189,7 +202,8 @@ public final class UniBoTutoringRegistrationApp {
                 return;
             }
 
-            final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password, birthDate);
+            // Aggiunto da Niki: passiamo anche il corso all'AuthService per salvarlo correttamente
+            final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password, birthDate, corso);
             if (!result.isSuccess()) {
                 feedbackLabel.setText(result.getMessage());
                 feedbackLabel.setVisible(true);

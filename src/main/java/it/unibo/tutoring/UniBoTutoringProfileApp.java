@@ -355,7 +355,8 @@ switch (creditRecord.getBadge()) {
         final String birthDateStr = user.getBirthDate() != null && !user.getBirthDate().isBlank() ? user.getBirthDate() : "Non specificato";
         final Label annoNascitaLabel = createInfoLabel("ANNO NASCITA: " + birthDateStr);
         
-        final String corsoStr = user.getPresentazione() != null && !user.getPresentazione().isBlank() ? user.getPresentazione() : "Studente UniBo";
+        // Aggiunto da Niki: Adesso usiamo il corso vero scelto dal dropdown al posto della bio (presentazione)
+        final String corsoStr = user.getCorso() != null && !user.getCorso().isBlank() ? user.getCorso() : "Studente UniBo";
         final Label corsoLabel = createInfoLabel("CORSO: " + corsoStr);
         
         final Label emailLabel = createInfoLabel("E-MAIL: " + user.getEmail());

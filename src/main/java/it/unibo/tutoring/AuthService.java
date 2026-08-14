@@ -51,7 +51,8 @@ public final class AuthService {
         final String matricola,
         final String email,
         final String password,
-        final String birthDate
+        final String birthDate,
+        final String corso
     ) {
         final String cleanName = name.trim();
         final String cleanSurname = surname.trim();
@@ -71,13 +72,15 @@ public final class AuthService {
             return new RegistrationResult(false, "L'email è già registrata.");
         }
 
+        // Qui creiamo il nuovo utente passandogli tutti i dati inclusa la data di nascita e il corso di studi!
         final UserAccount user = new UserAccount(
             cleanName,
             cleanSurname,
             cleanMatricola,
             cleanEmail,
             hashPassword(password),
-            birthDate
+            birthDate,
+            corso
         );
 
         this.usersByMatricola.put(cleanMatricola, user);
@@ -145,7 +148,10 @@ public final class AuthService {
                 }
                 final String presentazione = fields.length >= 6 ? unescapeFromCsv(fields[5]) : "";
                 final String birthDate = fields.length >= 7 ? fields[6] : "";
-                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], birthDate, presentazione);
+                // Leggiamo l'ottavo campo (indice 7) per il corso. Se gli account vecchi non ce l'hanno, usiamo un fallback così non esplode niente
+                final String corso = fields.length >= 8 ? fields[7] : "Non specificato";
+                
+                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], birthDate, corso, presentazione);
                 this.usersByMatricola.put(user.getMatricola(), user);
                 this.usersByEmail.put(user.getEmail(), user);
             }
@@ -165,7 +171,9 @@ public final class AuthService {
                 user.getEmail(),
                 user.getPasswordHash(),
                 sanitizeForCsv(user.getPresentazione()),
-                user.getBirthDate() == null ? "" : user.getBirthDate()
+                user.getBirthDate() == null ? "" : user.getBirthDate(),
+                // Salviamo anche il corso in coda al CSV!
+                user.getCorso() == null ? "" : user.getCorso()
             ))
             .sorted()
             .toList();
@@ -226,6 +234,7 @@ public final class AuthService {
             user.getEmail(),
             hashPassword(newPassword),
             user.getBirthDate(),
+            user.getCorso(), // Manteniamo il corso intatto durante il cambio password
             user.getPresentazione()
         );
         this.usersByMatricola.put(updatedUser.getMatricola(), updatedUser);

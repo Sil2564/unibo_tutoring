@@ -7,7 +7,11 @@ public final class UserAccount {
     final String matricola;
     final String email;
     final String passwordHash;
+    // Aggiunto per tracciare la data di nascita (GG/MM/AAAA) richiesta durante la registrazione
     final String birthDate;
+    // Aggiunto per salvare il corso di studi selezionato dal menu a tendina
+    final String corso;
+    
     private String presentazione;
 
     public UserAccount(
@@ -16,9 +20,10 @@ public final class UserAccount {
         final String matricola,
         final String email,
         final String passwordHash,
-        final String birthDate
+        final String birthDate,
+        final String corso
     ) {
-        this(name, surname, matricola, email, passwordHash, birthDate, "");
+        this(name, surname, matricola, email, passwordHash, birthDate, corso, "");
     }
 
     public UserAccount(
@@ -28,6 +33,7 @@ public final class UserAccount {
         final String email,
         final String passwordHash,
         final String birthDate,
+        final String corso,
         final String presentazione
     ) {
         this.name = name;
@@ -36,6 +42,7 @@ public final class UserAccount {
         this.email = email;
         this.passwordHash = passwordHash;
         this.birthDate = birthDate == null ? "" : birthDate;
+        this.corso = corso == null ? "Non specificato" : corso;
         this.presentazione = presentazione == null ? "" : presentazione;
     }
 
@@ -61,6 +68,11 @@ public final class UserAccount {
 
     public String getBirthDate() {
         return this.birthDate;
+    }
+
+    // Metodo per recuperare il corso salvato nel profilo
+    public String getCorso() {
+        return this.corso;
     }
 
     /**
