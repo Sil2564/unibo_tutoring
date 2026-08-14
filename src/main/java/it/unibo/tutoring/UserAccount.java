@@ -7,6 +7,7 @@ public final class UserAccount {
     final String matricola;
     final String email;
     final String passwordHash;
+    final String birthDate;
     private String presentazione;
 
     public UserAccount(
@@ -14,9 +15,10 @@ public final class UserAccount {
         final String surname,
         final String matricola,
         final String email,
-        final String passwordHash
+        final String passwordHash,
+        final String birthDate
     ) {
-        this(name, surname, matricola, email, passwordHash, "");
+        this(name, surname, matricola, email, passwordHash, birthDate, "");
     }
 
     public UserAccount(
@@ -25,6 +27,7 @@ public final class UserAccount {
         final String matricola,
         final String email,
         final String passwordHash,
+        final String birthDate,
         final String presentazione
     ) {
         this.name = name;
@@ -32,6 +35,7 @@ public final class UserAccount {
         this.matricola = matricola;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.birthDate = birthDate == null ? "" : birthDate;
         this.presentazione = presentazione == null ? "" : presentazione;
     }
 
@@ -53,6 +57,10 @@ public final class UserAccount {
 
     public String getPasswordHash() {
         return this.passwordHash;
+    }
+
+    public String getBirthDate() {
+        return this.birthDate;
     }
 
     /**

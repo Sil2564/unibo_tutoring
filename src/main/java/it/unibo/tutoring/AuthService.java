@@ -50,7 +50,8 @@ public final class AuthService {
         final String surname,
         final String matricola,
         final String email,
-        final String password
+        final String password,
+        final String birthDate
     ) {
         final String cleanName = name.trim();
         final String cleanSurname = surname.trim();
@@ -75,7 +76,8 @@ public final class AuthService {
             cleanSurname,
             cleanMatricola,
             cleanEmail,
-            hashPassword(password)
+            hashPassword(password),
+            birthDate
         );
 
         this.usersByMatricola.put(cleanMatricola, user);
@@ -138,11 +140,12 @@ public final class AuthService {
                 final String[] fields = line.split(FIELD_SEPARATOR, -1);
                 // La colonna "presentazione" e' stata aggiunta in un secondo
                 // momento: righe salvate prima di allora hanno solo 5 campi.
-                if (fields.length != 5 && fields.length != 6) {
+                if (fields.length < 5) {
                     continue;
                 }
-                final String presentazione = fields.length == 6 ? unescapeFromCsv(fields[5]) : "";
-                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], presentazione);
+                final String presentazione = fields.length >= 6 ? unescapeFromCsv(fields[5]) : "";
+                final String birthDate = fields.length >= 7 ? fields[6] : "";
+                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], birthDate, presentazione);
                 this.usersByMatricola.put(user.getMatricola(), user);
                 this.usersByEmail.put(user.getEmail(), user);
             }
@@ -161,7 +164,8 @@ public final class AuthService {
                 user.getMatricola(),
                 user.getEmail(),
                 user.getPasswordHash(),
-                sanitizeForCsv(user.getPresentazione())
+                sanitizeForCsv(user.getPresentazione()),
+                user.getBirthDate() == null ? "" : user.getBirthDate()
             ))
             .sorted()
             .toList();
@@ -203,6 +207,35 @@ public final class AuthService {
             this.persistUsers();
             return true;
         } catch (final IOException ex) {
+            return false;
+        }
+    }
+
+    public synchronized boolean updatePassword(final String matricola, final String newPassword) {
+        if (matricola == null || !isPasswordValid(newPassword)) {
+            return false;
+        }
+        final UserAccount user = this.usersByMatricola.get(matricola.trim());
+        if (user == null) {
+            return false;
+        }
+        final UserAccount updatedUser = new UserAccount(
+            user.getName(),
+            user.getSurname(),
+            user.getMatricola(),
+            user.getEmail(),
+            hashPassword(newPassword),
+            user.getBirthDate(),
+            user.getPresentazione()
+        );
+        this.usersByMatricola.put(updatedUser.getMatricola(), updatedUser);
+        this.usersByEmail.put(updatedUser.getEmail(), updatedUser);
+        try {
+            this.persistUsers();
+            return true;
+        } catch (final IOException ex) {
+            this.usersByMatricola.put(user.getMatricola(), user);
+            this.usersByEmail.put(user.getEmail(), user);
             return false;
         }
     }

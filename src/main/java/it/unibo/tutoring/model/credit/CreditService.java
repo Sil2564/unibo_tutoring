@@ -8,7 +8,7 @@ import it.unibo.tutoring.event.SessionCompletedEvent;
 
 public final class CreditService implements EventSubscriber {
 
-    private static final int HOURS_PER_CREDIT = 2;
+    private static final int HOURS_PER_CREDIT = 25;
     private final BadgePolicy badgePolicy;
 
     public CreditService(final BadgePolicy badgePolicy) {
@@ -21,9 +21,10 @@ public final class CreditService implements EventSubscriber {
         if (stored.isPresent()) {
             final CreditRecord rec = stored.get();
             final int nextLevel = badgePolicy.getNextThreshold(rec.getTotalHours());
+            final int recalculatedCredits = rec.getTotalHours() / HOURS_PER_CREDIT;
             return new CreditRecord(
                 rec.getTotalHours(),
-                rec.getTotalCredits(),
+                recalculatedCredits,
                 badgePolicy.calculateBadge(rec.getTotalHours()),
                 rec.getRating(),
                 nextLevel

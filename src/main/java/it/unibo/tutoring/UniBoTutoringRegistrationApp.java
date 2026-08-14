@@ -115,21 +115,23 @@ public final class UniBoTutoringRegistrationApp {
         fieldsGrid.setHgap(16);
         fieldsGrid.setVgap(10);
 
-        final TextField nameField = createTextField("Mario");
+        final TextField nameField = createTextField("es. Mario");
+        final TextField surnameField = createTextField("es. Rossi");
+        final TextField birthDateField = createTextField("GG/MM/AAAA");
         final TextField matricolaField = createTextField("es. 1234567890");
         final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
-        final TextField surnameField = createTextField("Rossi");
         final PasswordField passwordField = createPasswordField("min 6 caratteri, 1 numero");
         final PasswordField confirmPasswordField = createPasswordField("min 6 caratteri, 1 numero");
         final HBox passwordFieldWrapper = createPasswordFieldWithToggle(passwordField);
         final HBox confirmPasswordFieldWrapper = createPasswordFieldWithToggle(confirmPasswordField);
 
         addField(fieldsGrid, 0, 0, "Nome", nameField);
-        addField(fieldsGrid, 1, 0, "Matricola", matricolaField);
-        addField(fieldsGrid, 2, 0, "Email", emailField);
-        addField(fieldsGrid, 0, 1, "Cognome", surnameField);
-        addField(fieldsGrid, 1, 1, "Password", passwordFieldWrapper);
-        addField(fieldsGrid, 2, 1, "Conferma password", confirmPasswordFieldWrapper);
+        addField(fieldsGrid, 1, 0, "Cognome", surnameField);
+        addField(fieldsGrid, 2, 0, "Data di Nascita", birthDateField);
+        addField(fieldsGrid, 0, 1, "Matricola", matricolaField);
+        addField(fieldsGrid, 1, 1, "Email", emailField);
+        addField(fieldsGrid, 2, 1, "Password", passwordFieldWrapper);
+        addField(fieldsGrid, 0, 2, "Conferma password", confirmPasswordFieldWrapper);
 
         final HBox submitWrap = new HBox();
         submitWrap.setAlignment(Pos.CENTER);
@@ -150,13 +152,19 @@ public final class UniBoTutoringRegistrationApp {
         registerButton.setOnAction(event -> {
             final String name = nameField.getText().trim();
             final String surname = surnameField.getText().trim();
+            final String birthDate = birthDateField.getText().trim();
             final String matricola = matricolaField.getText().trim();
             final String email = emailField.getText().trim();
             final String password = passwordField.getText();
             final String confirmPassword = confirmPasswordField.getText();
 
-            if (name.isBlank() || surname.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+            if (name.isBlank() || surname.isBlank() || birthDate.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
                 feedbackLabel.setText("Compila tutti i campi.");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (!birthDate.matches("\\d{2}/\\d{2}/\\d{4}")) {
+                feedbackLabel.setText("Formato data errato (GG/MM/AAAA).");
                 feedbackLabel.setVisible(true);
                 return;
             }
@@ -181,7 +189,7 @@ public final class UniBoTutoringRegistrationApp {
                 return;
             }
 
-            final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password);
+            final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password, birthDate);
             if (!result.isSuccess()) {
                 feedbackLabel.setText(result.getMessage());
                 feedbackLabel.setVisible(true);

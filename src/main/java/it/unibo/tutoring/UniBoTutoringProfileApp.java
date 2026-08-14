@@ -24,6 +24,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
@@ -322,163 +323,127 @@ switch (creditRecord.getBadge()) {
             content.getChildren().add(viewingBanner);
         }
 
-        final HBox heroSection = new HBox(20);
+        final VBox mainProfileCard = new VBox(20);
+        mainProfileCard.setAlignment(Pos.CENTER);
+        mainProfileCard.setPadding(new Insets(40, 24, 40, 24));
+        mainProfileCard.setMaxWidth(Double.MAX_VALUE);
+        mainProfileCard.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(16), Insets.EMPTY)));
+        mainProfileCard.setBorder(new Border(new BorderStroke(Color.web("#DADADA"), BorderStrokeStyle.SOLID, new CornerRadii(16), BorderWidths.DEFAULT)));
 
-heroSection.setAlignment(Pos.CENTER_LEFT);
+        final Label avatar = new Label(user.getName().substring(0, 1).toUpperCase());
+        avatar.setMinSize(120, 120);
+        avatar.setMaxSize(120, 120);
+        avatar.setAlignment(Pos.CENTER);
+        avatar.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 48));
+        avatar.setTextFill(Color.WHITE);
+        avatar.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
 
-heroSection.setPadding(new Insets(24));
+        final VBox nameBox = new VBox(4);
+        nameBox.setAlignment(Pos.CENTER);
+        final Label heroName = new Label((user.getName() + " " + user.getSurname()).toUpperCase());
+        heroName.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 28));
+        heroName.setTextFill(TEXT_DARK);
+        final Label heroMatricola = new Label(isOwnProfile ? user.getMatricola() : "N° MAT: " + user.getMatricola());
+        heroMatricola.setFont(Font.font("System", FontWeight.NORMAL, 16));
+        heroMatricola.setTextFill(TEXT_MEDIUM);
+        nameBox.getChildren().addAll(heroName, heroMatricola);
 
-heroSection.setBackground(
-    new Background(
-        new BackgroundFill(
-            Color.WHITE,
-            new CornerRadii(16),
-            Insets.EMPTY
-        )
-    )
-);
+        final VBox infoBox = new VBox(12);
+        infoBox.setAlignment(Pos.CENTER_LEFT);
+        infoBox.setPadding(new Insets(20, 0, 0, 0));
 
-heroSection.setBorder(
-    new Border(
-        new BorderStroke(
-            Color.web("#DADADA"),
-            BorderStrokeStyle.SOLID,
-            new CornerRadii(16),
-            BorderWidths.DEFAULT
-        )
-    )
-);
+        final String birthDateStr = user.getBirthDate() != null && !user.getBirthDate().isBlank() ? user.getBirthDate() : "Non specificato";
+        final Label annoNascitaLabel = createInfoLabel("ANNO NASCITA: " + birthDateStr);
+        
+        final String corsoStr = user.getPresentazione() != null && !user.getPresentazione().isBlank() ? user.getPresentazione() : "Studente UniBo";
+        final Label corsoLabel = createInfoLabel("CORSO: " + corsoStr);
+        
+        final Label emailLabel = createInfoLabel("E-MAIL: " + user.getEmail());
+        
+        final Label tutorLabel = createInfoLabel("TUTOR DI LIVELLO " + creditRecord.getBadge().name() + ": " + creditRecord.getTotalCredits() + " crediti ottenuti (" + creditRecord.getTotalHours() + " ore di tutor)");
 
-final Label avatar = new Label(
-    user.getName().substring(0, 1)
-);
+        infoBox.getChildren().addAll(annoNascitaLabel, corsoLabel, emailLabel, tutorLabel);
+        
+        mainProfileCard.getChildren().addAll(avatar, nameBox, infoBox);
 
-avatar.setMinSize(82, 82);
-avatar.setMaxSize(82, 82);
-
-avatar.setAlignment(Pos.CENTER);
-
-avatar.setFont(
-    Font.font("System", FontWeight.EXTRA_BOLD, 34)
-);
-
-avatar.setTextFill(Color.WHITE);
-
-avatar.setBackground(
-    new Background(
-        new BackgroundFill(
-            PRIMARY_RED,
-            new CornerRadii(999),
-            Insets.EMPTY
-        )
-    )
-);
-
-final Label heroName = new Label(
-    user.getName() + " " + user.getSurname()
-);
-
-heroName.setFont(
-    Font.font("System", FontWeight.EXTRA_BOLD, 34)
-);
-
-heroName.setTextFill(TEXT_DARK);
-
-final Label heroSubtitle = new Label(
-    "Studente UniBo • Informatica"
-);
-
-heroSubtitle.setFont(
-    Font.font("System", FontWeight.NORMAL, 17)
-);
-
-heroSubtitle.setTextFill(TEXT_MEDIUM);
-
-final Label heroBadge = new Label(
-    creditRecord.getBadge().getDisplayName()
-        + " Tutor"
-);
-
-heroBadge.setPadding(
-    new Insets(6, 14, 6, 14)
-);
-
-heroBadge.setFont(
-    Font.font("System", FontWeight.EXTRA_BOLD, 13)
-);
-
-heroBadge.setTextFill(Color.WHITE);
-
-heroBadge.setBackground(
-    new Background(
-        new BackgroundFill(
-            badgeColor,
-            new CornerRadii(999),
-            Insets.EMPTY
-        )
-    )
-);
-
-final VBox heroTexts = new VBox(8);
-
-heroTexts.getChildren().addAll(
-    heroName,
-    heroSubtitle,
-    heroBadge
-);
-
-heroSection.getChildren().addAll(
-    avatar,
-    heroTexts
-);
-
-        final VBox card = new VBox(16);
-
-        card.setPadding(new Insets(24));
-
-        card.setMaxWidth(500);
-
-        card.setBackground(new Background(
-            new BackgroundFill(
-                Color.WHITE,
-                new CornerRadii(12),
-                Insets.EMPTY
-            )
-        ));
-
-        card.setBorder(new Border(
-            new BorderStroke(
-                Color.web("#D6D6D6"),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(12),
-                BorderWidths.DEFAULT
-            )
-        ));
-
-        final Label nameLabel = createInfoLabel(
-            "Nome: " + user.getName()
-        );
-
-        final Label surnameLabel = createInfoLabel(
-            "Cognome: " + user.getSurname()
-        );
-
-        final Label matricolaLabel = createInfoLabel(
-            "Matricola: " + user.getMatricola()
-        );
-
-        final Label emailLabel = createInfoLabel(
-            "Email: " + user.getEmail()
-        );
-
-        card.getChildren().addAll(
-            nameLabel,
-            surnameLabel
-        );
         if (isOwnProfile) {
-            card.getChildren().add(matricolaLabel);
+            final Button changePasswordBtn = new Button("CAMBIA PASSWORD");
+            changePasswordBtn.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+            changePasswordBtn.setTextFill(PRIMARY_RED);
+            changePasswordBtn.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
+            changePasswordBtn.setBorder(new Border(new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+            changePasswordBtn.setCursor(javafx.scene.Cursor.HAND);
+            VBox.setMargin(changePasswordBtn, new Insets(10, 0, 0, 0));
+            
+            changePasswordBtn.setOnAction(event -> {
+                final Stage popupStage = new Stage();
+                popupStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+                popupStage.initOwner(changePasswordBtn.getScene().getWindow());
+                popupStage.setTitle("Cambia Password");
+                
+                final VBox popupRoot = new VBox(15);
+                popupRoot.setPadding(new Insets(24));
+                popupRoot.setAlignment(Pos.CENTER);
+                popupRoot.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+                
+                final Label popupTitle = new Label("Nuova Password");
+                popupTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
+                popupTitle.setTextFill(TEXT_DARK);
+                
+                final PasswordField newPwdField = new PasswordField();
+                newPwdField.setPromptText("Inserisci nuova password");
+                newPwdField.setFont(Font.font("System", 16));
+                
+                final PasswordField confirmPwdField = new PasswordField();
+                confirmPwdField.setPromptText("Conferma nuova password");
+                confirmPwdField.setFont(Font.font("System", 16));
+                
+                final Label errorLabel = new Label();
+                errorLabel.setTextFill(PRIMARY_RED);
+                errorLabel.setWrapText(true);
+                errorLabel.setVisible(false);
+                
+                final Button confirmBtn = new Button("Aggiorna Password");
+                confirmBtn.setFont(Font.font("System", FontWeight.BOLD, 16));
+                confirmBtn.setTextFill(Color.WHITE);
+                confirmBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+                confirmBtn.setCursor(javafx.scene.Cursor.HAND);
+                
+                confirmBtn.setOnAction(e -> {
+                    final String p1 = newPwdField.getText();
+                    final String p2 = confirmPwdField.getText();
+                    if (p1.isBlank() || p2.isBlank()) {
+                        errorLabel.setText("Compila tutti i campi.");
+                        errorLabel.setVisible(true);
+                        return;
+                    }
+                    if (!p1.equals(p2)) {
+                        errorLabel.setText("Le password non coincidono.");
+                        errorLabel.setVisible(true);
+                        return;
+                    }
+                    if (!AuthService.isPasswordValid(p1)) {
+                        errorLabel.setText("Almeno 6 car., 1 maiuscola, 1 minuscola, 1 numero, 1 simbolo.");
+                        errorLabel.setVisible(true);
+                        return;
+                    }
+                    final boolean success = AuthService.getInstance().updatePassword(user.getMatricola(), p1);
+                    if (success) {
+                        CurrentSession.setUser(AuthService.getInstance().getUser(user.getMatricola()));
+                        popupStage.close();
+                    } else {
+                        errorLabel.setText("Errore durante l'aggiornamento.");
+                        errorLabel.setVisible(true);
+                    }
+                });
+                
+                popupRoot.getChildren().addAll(popupTitle, newPwdField, confirmPwdField, errorLabel, confirmBtn);
+                popupStage.setScene(new Scene(popupRoot, 350, 300));
+                popupStage.show();
+            });
+            
+            infoBox.getChildren().add(changePasswordBtn);
         }
-        card.getChildren().add(emailLabel);
 
         final VBox bioCard = createBioCard(user, isOwnProfile);
 
@@ -666,7 +631,6 @@ statsRow.getChildren().addAll(
 );
 leftColumn.getChildren().addAll(
     statsRow,
-    card,
     bioCard
 );
 // "Recensioni ricevute" compare solo sul profilo di un altro utente: sul
@@ -697,7 +661,7 @@ rightColumn.getChildren().addAll(
         }
 
         content.getChildren().addAll(
-                heroSection,
+                mainProfileCard,
                 columns
         );
 
