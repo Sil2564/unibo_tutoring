@@ -553,8 +553,8 @@ public class UniBoTutoringDashboardApp extends Application {
 			tagRow.getChildren().add(notifIcon);
 		}
 
-		final String autoreNome = estraiNomeAutore(box.getTitolo());
-		final Label titleLabel = new Label(box.getTitolo() + (offer ? " (Tutor)" : " (Studente)"));
+		final String autoreNome = it.unibo.tutoring.view.session.SessionLinkUtil.nomeCompleto(box.getAutoreMatricola());
+		final Label titleLabel = new Label(box.getTitolo());
 		titleLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 12));
 		titleLabel.setTextFill(TEXT_DARK);
 		titleLabel.setWrapText(true);
@@ -730,11 +730,6 @@ public class UniBoTutoringDashboardApp extends Application {
 			return n + " candidat" + (n == 1 ? "o" : "i");
 		}
 		return null;
-	}
-
-	private static String estraiNomeAutore(final String titolo) {
-		final String prefix = "Sessione con ";
-		return titolo != null && titolo.startsWith(prefix) ? titolo.substring(prefix.length()) : titolo;
 	}
 
     public static void run(final String[] args) {

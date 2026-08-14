@@ -64,12 +64,6 @@ public final class CreateAnnouncementViewApp {
         final UserAccount user =
             CurrentSession.getUser();
 
-        final String userNome =
-            user != null ? user.getName() : "Utente";
-
-        final String userCognome =
-            user != null ? user.getSurname() : "sconosciuto";
-
         final String userMatricola =
             user != null ? user.getMatricola() : "N/D";
 
@@ -132,12 +126,7 @@ public final class CreateAnnouncementViewApp {
         card.setAlignment(Pos.TOP_LEFT);
 
         final Label sessionLabel =
-            new Label(
-                "Sessione con "
-                + userNome
-                + " "
-                + userCognome
-            );
+            new Label("");
 
         sessionLabel.setFont(
             Font.font(
@@ -222,6 +211,13 @@ public final class CreateAnnouncementViewApp {
         final HBox tipoRow = new HBox(12, offertaBox, richiestaBox);
         tipoRow.setAlignment(Pos.CENTER_LEFT);
 
+        final Runnable aggiornaAnteprimaTitolo = () -> sessionLabel.setText(
+            it.unibo.tutoring.model.box.TitoloAnnuncioGenerator.generaTitolo(
+                offertaRadio.isSelected() ? BoxType.OFFER : BoxType.REQUEST,
+                materiaField.getText()
+            )
+        );
+
         tipoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             final boolean offerSelected = offertaRadio.isSelected();
             offertaBox.setStyle(offerSelected
@@ -230,7 +226,10 @@ public final class CreateAnnouncementViewApp {
             richiestaBox.setStyle(!offerSelected
                 ? "-fx-background-color: #FFF5F7; -fx-border-color: #D91E43; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8;"
                 : "-fx-background-color: white; -fx-border-color: #D6D6D6; -fx-border-radius: 8; -fx-background-radius: 8;");
+            aggiornaAnteprimaTitolo.run();
         });
+        materiaField.textProperty().addListener((obs, oldText, newText) -> aggiornaAnteprimaTitolo.run());
+        aggiornaAnteprimaTitolo.run();
 
         final Label feedbackLabel = new Label();
         feedbackLabel.setTextFill(PRIMARY_RED);
@@ -281,10 +280,7 @@ public final class CreateAnnouncementViewApp {
                         : BoxType.REQUEST;
 
                 final String titolo =
-                    "Sessione con "
-                    + userNome
-                    + " "
-                    + userCognome;
+                    it.unibo.tutoring.model.box.TitoloAnnuncioGenerator.generaTitolo(tipo, materiaField.getText());
 
                 final BoxTutoraggioImpl box =
                     new BoxTutoraggioImpl(

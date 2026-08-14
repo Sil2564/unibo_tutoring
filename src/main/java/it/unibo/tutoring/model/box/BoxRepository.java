@@ -155,6 +155,7 @@ public final class BoxRepository {
             }
 
             final List<String> lines = Files.readAllLines(DB, StandardCharsets.UTF_8);
+            boolean titoloCorretto = false;
             for (final String line : lines) {
                 if (line == null || line.isBlank() || line.startsWith("id" + SEP)) {
                     continue; // header o riga vuota
@@ -167,7 +168,7 @@ public final class BoxRepository {
 
                 try {
                     final UUID id = UUID.fromString(parts[0].trim());
-                    final String titolo = parts[1];
+                    final String titoloSalvato = parts[1];
                     final String corso = parts[2];
                     final String materia = parts[3];
                     final String argomento = parts[4];
@@ -189,6 +190,16 @@ public final class BoxRepository {
                     final List<String> daRiconfermare = parts.length > 16 ? parseLista(parts[16]) : List.of();
                     final List<String> cancellazioneVistaDa = parts.length > 17 ? parseLista(parts[17]) : List.of();
 
+                    // Normalizza automaticamente i titoli che non rispettano lo
+                    // schema standard "Aiuto con .../Ripetizioni di ..." (es.
+                    // vecchi annunci "Sessione con Nome Cognome"), cosi' anche
+                    // gli annunci pubblicati prima di questa regola si allineano.
+                    final String titoloAtteso = TitoloAnnuncioGenerator.generaTitolo(tipo, materia);
+                    final String titolo = titoloAtteso.equals(titoloSalvato) ? titoloSalvato : titoloAtteso;
+                    if (!titolo.equals(titoloSalvato)) {
+                        titoloCorretto = true;
+                    }
+
                     BOXES.add(new BoxTutoraggioImpl(
                         id, titolo, corso, materia, argomento, data, ora, durataOre,
                         autoreMatricola, tipo, candidati, confermato, contatti, note,
@@ -197,6 +208,9 @@ public final class BoxRepository {
                 } catch (final IllegalArgumentException | java.time.format.DateTimeParseException ex) {
                     // riga corrotta: la saltiamo senza bloccare il caricamento delle altre
                 }
+            }
+            if (titoloCorretto) {
+                saveAll();
             }
         } catch (final IOException e) {
             // se il file non e' leggibile si parte semplicemente senza annunci pregressi

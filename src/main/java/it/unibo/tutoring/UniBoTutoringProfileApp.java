@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Locale;
 
 import it.unibo.tutoring.controller.profile.ProfileController;
+import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.credit.CreditRecord;
+import it.unibo.tutoring.model.credit.ReviewRepository;
+import it.unibo.tutoring.model.credit.ReviewRepository.Review;
 import it.unibo.tutoring.model.user.UserRepository;
 import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.TutoringSession;
@@ -58,7 +61,7 @@ public final class UniBoTutoringProfileApp  {
 
     public static Scene createScene() {
         final UserAccount currentUser = CurrentSession.getUser();
-        return buildScene(currentUser != null ? currentUser.getMatricola() : null, currentUser);
+        return buildScene(currentUser != null ? currentUser.getMatricola() : null, currentUser, null);
     }
 
     /**
@@ -68,10 +71,24 @@ public final class UniBoTutoringProfileApp  {
      */
     public static Scene createScene(final String matricolaDaVedere) {
         final UserAccount currentUser = CurrentSession.getUser();
-        return buildScene(matricolaDaVedere, currentUser);
+        return buildScene(matricolaDaVedere, currentUser, null);
     }
 
-    private static Scene buildScene(final String matricolaDaVedere, final UserAccount currentUser) {
+    /**
+     * Come {@link #createScene(String)}, ma ricordando anche da quale
+     * annuncio si e' arrivati al profilo: mostra un pulsante "← Annuncio"
+     * nell'intestazione, che riporta esattamente ai dettagli dell'annuncio di
+     * partenza invece di scaricare l'utente sempre in dashboard.
+     */
+    public static Scene createScene(final String matricolaDaVedere, final BoxTutoraggio annuncioDiProvenienza) {
+        final UserAccount currentUser = CurrentSession.getUser();
+        return buildScene(matricolaDaVedere, currentUser, annuncioDiProvenienza);
+    }
+
+    private static Scene buildScene(
+            final String matricolaDaVedere,
+            final UserAccount currentUser,
+            final BoxTutoraggio annuncioDiProvenienza) {
 
         final ProfileController controller = new ProfileController(new UserRepository());
         final boolean isOwnProfile = matricolaDaVedere == null
@@ -101,7 +118,7 @@ public final class UniBoTutoringProfileApp  {
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
         root.getChildren().addAll(
-            createHeader(currentUser),
+            createHeader(currentUser, annuncioDiProvenienza),
             scrollPane
         );
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -123,7 +140,7 @@ public final class UniBoTutoringProfileApp  {
         return content;
     }
 
-    private static HBox createHeader(final UserAccount user) {
+    private static HBox createHeader(final UserAccount user, final BoxTutoraggio annuncioDiProvenienza) {
 
         final HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -177,6 +194,37 @@ public final class UniBoTutoringProfileApp  {
         separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
         separator.setPrefHeight(16);
 
+        // Pulsante "← Annuncio": presente solo quando si e' arrivati al
+        // profilo cliccando sul nome dell'autore/candidato di un annuncio.
+        // Riporta esattamente a quell'annuncio invece di forzare il ritorno
+        // in dashboard, cosi' come "← Dashboard" fa gia' per la bacheca.
+        final Button backToAnnouncementButton;
+        if (annuncioDiProvenienza != null) {
+            final Button annuncioButton = new Button("← Annuncio");
+            annuncioButton.getStyleClass().add("text-link");
+            annuncioButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+            annuncioButton.setTextFill(PRIMARY_RED);
+            annuncioButton.setPadding(new Insets(8, 14, 8, 14));
+            annuncioButton.setCursor(javafx.scene.Cursor.HAND);
+            annuncioButton.setBackground(new Background(
+                new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)
+            ));
+            annuncioButton.setBorder(new Border(
+                new BorderStroke(Color.web("#CFCFCF"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)
+            ));
+
+            final BoxTutoraggio box = annuncioDiProvenienza;
+            annuncioButton.setOnAction(event -> {
+                final Stage stage = (Stage) annuncioButton.getScene().getWindow();
+                stage.setScene(it.unibo.tutoring.view.box.AnnouncementDetailViewApp.createScene(stage, box));
+                stage.setTitle("UniBo Tutoring - Dettaglio Annuncio");
+                it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+            });
+            backToAnnouncementButton = annuncioButton;
+        } else {
+            backToAnnouncementButton = null;
+        }
+
         final Button dashboardButton = new Button("← Dashboard");
         dashboardButton.getStyleClass().add("text-link");
         dashboardButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
@@ -199,14 +247,16 @@ public final class UniBoTutoringProfileApp  {
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
-        final HBox rightSide = new HBox(
-            10,
-            userName,
-            separator,
-            dashboardButton
-        );
-
+        final HBox rightSide = new HBox(10);
         rightSide.setAlignment(Pos.CENTER_RIGHT);
+        rightSide.getChildren().add(userName);
+        if (backToAnnouncementButton != null) {
+            final Separator announcementSeparator = new Separator();
+            announcementSeparator.setOrientation(javafx.geometry.Orientation.VERTICAL);
+            announcementSeparator.setPrefHeight(16);
+            rightSide.getChildren().addAll(announcementSeparator, backToAnnouncementButton);
+        }
+        rightSide.getChildren().addAll(separator, dashboardButton);
 
         header.getChildren().addAll(
             brandBlock,
@@ -561,6 +611,9 @@ creditCard.getChildren().addAll(
         final VBox leftColumn = new VBox(20);
         final HBox statsRow = new HBox(16);
 
+final List<Review> reviews = ReviewRepository.loadReviewsForRecipient(user.getMatricola());
+final double avgRating = reviews.stream().mapToInt(Review::stars).average().orElse(0.0);
+
 final VBox hoursCard = createStatCard(
     String.valueOf(
         creditRecord.getTotalHours()
@@ -580,8 +633,8 @@ final VBox badgeCard = createStatCard(
 );
 
 final VBox ratingCard = createStatCard(
-    "4.9★",
-    "Rating"
+    reviews.isEmpty() ? "N/D" : String.format(Locale.ITALIAN, "%.1f★", avgRating),
+    reviews.isEmpty() ? "Rating" : "Rating (" + reviews.size() + ")"
 );
 
 statsRow.getChildren().addAll(
@@ -595,6 +648,12 @@ leftColumn.getChildren().addAll(
     card,
     bioCard
 );
+// "Recensioni ricevute" compare solo sul profilo di un altro utente: sul
+// proprio profilo restano visibili solo nella pagina Statistiche, per non
+// mostrarle due volte nello stesso posto.
+if (!isOwnProfile) {
+    leftColumn.getChildren().add(createReviewsCard(user.getMatricola()));
+}
 
 final VBox rightColumn = new VBox(20);
 rightColumn.getChildren().addAll(
@@ -722,6 +781,125 @@ rightColumn.getChildren().addAll(
 
         bioCard.getChildren().addAll(bioTitle, bioBody);
         return bioCard;
+    }
+
+    /**
+     * Card "Recensioni ricevute": mostra a chiunque visiti il profilo (sia il
+     * proprietario sia altri utenti) l'elenco delle recensioni ricevute dalla
+     * persona in questione, cosi' che anche chi guarda il profilo di un altro
+     * utente possa vederle (prima erano visibili solo nella pagina
+     * Statistiche, accessibile pero' solo per il proprio account).
+     */
+    private static VBox createReviewsCard(final String matricola) {
+        final VBox reviewsCard = new VBox(14);
+        reviewsCard.setPadding(new Insets(24));
+        reviewsCard.setMaxWidth(500);
+        reviewsCard.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(12), Insets.EMPTY)));
+        reviewsCard.setBorder(new Border(
+            new BorderStroke(Color.web("#D6D6D6"), BorderStrokeStyle.SOLID, new CornerRadii(12), BorderWidths.DEFAULT)
+        ));
+
+        final Label title = new Label("Recensioni ricevute");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 16));
+        title.setTextFill(TEXT_DARK);
+        reviewsCard.getChildren().add(title);
+
+        final List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
+        if (reviews.isEmpty()) {
+            final Label none = new Label("Ancora nessuna recensione ricevuta.");
+            none.setFont(Font.font("System", FontWeight.NORMAL, 13));
+            none.setTextFill(TEXT_MEDIUM);
+            reviewsCard.getChildren().add(none);
+            return reviewsCard;
+        }
+
+        final List<Review> sorted = new java.util.ArrayList<>(reviews);
+        sorted.sort((a, b) -> parseReviewDate(b.date()).compareTo(parseReviewDate(a.date())));
+
+        final VBox listBox = new VBox(10);
+        for (final Review review : sorted) {
+            listBox.getChildren().add(createReviewRow(review));
+        }
+
+        final ScrollPane scroll = new ScrollPane(listBox);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroll.setPrefHeight(Math.min(280, 70 + sorted.size() * 70));
+        scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;");
+
+        reviewsCard.getChildren().add(scroll);
+        return reviewsCard;
+    }
+
+    /** Singola recensione mostrata nella card "Recensioni ricevute" del profilo. */
+    private static VBox createReviewRow(final Review review) {
+        final VBox row = new VBox(4);
+        row.setPadding(new Insets(12));
+        row.setBackground(new Background(new BackgroundFill(Color.web("#F8F9FA"), new CornerRadii(8), Insets.EMPTY)));
+
+        final HBox topRow = new HBox();
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        final Label reviewer = new Label(review.reviewerName());
+        reviewer.setFont(Font.font("System", FontWeight.BOLD, 13));
+        reviewer.setTextFill(TEXT_DARK);
+
+        final Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        final String starsString = "★".repeat(Math.max(0, Math.min(5, review.stars())))
+            + "☆".repeat(Math.max(0, 5 - review.stars()));
+        final Label stars = new Label(starsString);
+        stars.setFont(Font.font("System", 13));
+        stars.setTextFill(Color.web("#FFC107"));
+
+        topRow.getChildren().addAll(reviewer, spacer, stars);
+
+        final Label subjectDate = new Label(review.subject() + " • " + review.date());
+        subjectDate.setFont(Font.font("System", FontWeight.NORMAL, 11));
+        subjectDate.setTextFill(TEXT_MEDIUM);
+
+        row.getChildren().addAll(topRow, subjectDate);
+
+        if (review.comment() != null && !review.comment().isBlank()) {
+            final Label comment = new Label(review.comment());
+            comment.setWrapText(true);
+            comment.setFont(Font.font("System", FontWeight.NORMAL, 12));
+            comment.setTextFill(TEXT_DARK);
+            row.getChildren().add(comment);
+        }
+
+        return row;
+    }
+
+    /**
+     * Interpreta la data testuale di una recensione (salvata come "dd-MM-yyyy")
+     * per poterle ordinare cronologicamente. Non e' un confronto lessicografico
+     * di stringhe: "05-01-2026" e "12-12-2025" andrebbero ordinate male se
+     * confrontate come semplice testo.
+     */
+    private static java.time.LocalDate parseReviewDate(final String raw) {
+        if (raw == null || raw.isBlank()) {
+            return java.time.LocalDate.MIN;
+        }
+        final String trimmed = raw.trim();
+        final DateTimeFormatter[] formats = {
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+        };
+        for (final DateTimeFormatter format : formats) {
+            try {
+                return java.time.LocalDate.parse(trimmed, format);
+            } catch (final java.time.format.DateTimeParseException ignored) {
+                // prova il formato successivo
+            }
+        }
+        try {
+            return java.time.LocalDate.parse(trimmed);
+        } catch (final java.time.format.DateTimeParseException ignored) {
+            return java.time.LocalDate.MIN;
+        }
     }
 
     private static Label createInfoLabel(final String text) {

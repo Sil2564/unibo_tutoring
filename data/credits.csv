@@ -7,12 +7,7 @@ matricola;firstName;lastName;totalHours;totalCredits;badge;rating
 2323232;;;2;1;BEGINNER;0.0
 1111111111;;;1;0;BEGINNER;0.0
 2222222222;;;3;1;BEGINNER;0.0
-<<<<<<< HEAD
 0006478154;;;6;3;BEGINNER;0.0
-<<<<<<< HEAD
-=======
-0006478154;;;4;2;BEGINNER;0.0
->>>>>>> ed40437821b643d90b76e8a05a2e3f809b64c9c9
 0003636989;;;1;0;BEGINNER;0.0
 3333333333;;;0;0;BEGINNER;0.0
 0011223344;Marco;Fabbri;12;5;INTERMEDIATE;4.6
@@ -32,3 +27,4 @@ matricola;firstName;lastName;totalHours;totalCredits;badge;rating
 0011224488;Simone;Galli;20;9;INTERMEDIATE;4.7
 0011224499;Beatrice;Marchetti;0;0;BEGINNER;0.0
 0000000000;;;0;0;BEGINNER;0.0
+4923840342;;;0;0;BEGINNER;0.0

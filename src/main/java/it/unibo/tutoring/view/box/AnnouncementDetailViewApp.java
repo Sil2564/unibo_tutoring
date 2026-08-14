@@ -151,7 +151,7 @@ public final class AnnouncementDetailViewApp {
         titleName.setCursor(Cursor.HAND);
         titleName.setOnMouseClicked(event -> {
             final Stage win = (Stage) card.getScene().getWindow();
-            win.setScene(it.unibo.tutoring.UniBoTutoringProfileApp.createScene(box.getAutoreMatricola()));
+            win.setScene(it.unibo.tutoring.UniBoTutoringProfileApp.createScene(box.getAutoreMatricola(), box));
             win.setTitle("UniBo Tutoring - Profilo");
             it.unibo.tutoring.view.components.WindowUtil.maximize(win);
         });
