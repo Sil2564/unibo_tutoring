@@ -177,7 +177,10 @@ public final class AuthService {
             ))
             .sorted()
             .toList();
-        Files.write(STORAGE_PATH, rows, StandardCharsets.UTF_8);
+        final String content = rows.isEmpty()
+            ? ""
+            : String.join(System.lineSeparator(), rows) + System.lineSeparator();
+        Files.writeString(STORAGE_PATH, content, StandardCharsets.UTF_8);
     }
 
     private static String sanitizeForCsv(final String value) {

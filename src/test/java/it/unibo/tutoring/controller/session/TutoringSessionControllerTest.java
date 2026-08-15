@@ -1,5 +1,6 @@
 package it.unibo.tutoring.controller.session;
 
+import it.unibo.tutoring.model.credit.CompletedSessionRepository;
 import it.unibo.tutoring.model.credit.ReviewRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -414,6 +415,81 @@ class TutoringSessionControllerTest {
     }
 
     @Test
+    void cancelledSessionShouldRemainVisibleForTwentyFourHours() {
+        final LocalDateTime start = LocalDateTime.now().plusDays(2).withNano(0);
+        final TutoringSessionController controller = new TutoringSessionController(
+                "Test Materia",
+                "Test Tutor",
+                true,
+                "0001",
+                "9999",
+                start,
+                Duration.ofHours(2));
+
+        controller.confermaSessione();
+        controller.cancellaSessione("");
+        final LocalDateTime cancelledAt = controller.getCancellataAt();
+
+        assertTrue(controller.isCancellazioneVisibile(cancelledAt.plusHours(23)));
+        assertTrue(controller.isCancellazioneVisibile(cancelledAt.plusHours(24)));
+        assertFalse(controller.isCancellazioneVisibile(
+                cancelledAt.plusHours(24).plusNanos(1)));
+    }
+
+    @Test
+    void completedSessionAppendShouldRepairMissingFinalNewLine() throws IOException {
+        Files.writeString(
+                COMPLETED_SESSIONS_PATH,
+                "studentName;subject;date;hours;creditsGiven;tutorMatricola\n"
+                        + "Studente Esistente;OOP;01-08-2026;2;0;TUTOR_TEST",
+                StandardCharsets.UTF_8);
+
+        CompletedSessionRepository.saveCompletedSession(
+                "Nuovo Studente",
+                "Programmazione",
+                "14-08-2026",
+                2,
+                1,
+                "TUTOR_TEST");
+
+        final List<String> lines = Files.readAllLines(COMPLETED_SESSIONS_PATH, StandardCharsets.UTF_8);
+        assertEquals(3, lines.size());
+        assertEquals(
+                "Nuovo Studente;Programmazione;14-08-2026;2;1;TUTOR_TEST",
+                lines.get(2));
+        assertTrue(fileEndsWithNewLine(COMPLETED_SESSIONS_PATH));
+        assertEquals(2, CompletedSessionRepository.loadCompletedSessionsForTutor("TUTOR_TEST").size());
+    }
+
+    @Test
+    void reviewAppendShouldRepairMissingFinalNewLine() throws IOException {
+        Files.writeString(
+                REVIEWS_PATH,
+                "reviewerName;subject;date;stars;comment;tutorMatricola\n"
+                        + "Studente Esistente;OOP;01-08-2026;4;Chiara;TUTOR_TEST",
+                StandardCharsets.UTF_8);
+
+        ReviewRepository.saveReview(
+                "Nuovo Studente",
+                "Programmazione",
+                "14-08-2026",
+                5,
+                "Recensione separata",
+                "TUTOR_TEST");
+
+        final List<String> lines = Files.readAllLines(REVIEWS_PATH, StandardCharsets.UTF_8);
+        assertEquals(3, lines.size());
+        assertEquals(
+                "Nuovo Studente;Programmazione;14-08-2026;5;Recensione separata;TUTOR_TEST",
+                lines.get(2));
+        assertTrue(fileEndsWithNewLine(REVIEWS_PATH));
+        final List<ReviewRepository.Review> reviews =
+                ReviewRepository.loadReviewsForRecipient("TUTOR_TEST");
+        assertEquals(2, reviews.size());
+        assertEquals("Recensione separata", reviews.get(1).comment());
+    }
+
+    @Test
     void shouldRejectCancellationOfUnconfirmedOrAlreadyEndedSession() {
         final TutoringSessionController proposedController = new TutoringSessionController(
                 "Test Materia",
@@ -457,5 +533,11 @@ class TutoringSessionControllerTest {
         } else {
             Files.write(path, originalContent);
         }
+    }
+
+    private static boolean fileEndsWithNewLine(final Path path) throws IOException {
+        final byte[] content = Files.readAllBytes(path);
+        return content.length > 0
+                && (content[content.length - 1] == '\n' || content[content.length - 1] == '\r');
     }
 }

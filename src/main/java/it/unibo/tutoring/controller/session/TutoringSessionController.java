@@ -31,6 +31,7 @@ public class TutoringSessionController {
     private static final String FILE_PREFIX = "SESS_";
     private static final String FILE_EXTENSION = ".csv";
     private static final int DEFAULT_COMPLETED_HOURS = 1;
+    private static final long ORE_VISIBILITA_SESSIONE_CANCELLATA = 24;
 
     private final TutoringSession model;
     private final String materia;
@@ -243,6 +244,27 @@ public class TutoringSessionController {
 
     public LocalDateTime getCancellataAt() {
         return this.cancellataAt;
+    }
+
+    /**
+     * Una sessione cancellata resta consultabile per le 24 ore successive,
+     * come un annuncio eliminato che ha gia' dei candidati.
+     *
+     * @return {@code true} finche' la finestra di visibilita' non e' scaduta
+     */
+    public boolean isCancellazioneVisibile() {
+        return isCancellazioneVisibile(LocalDateTime.now());
+    }
+
+    boolean isCancellazioneVisibile(final LocalDateTime adesso) {
+        if (adesso == null) {
+            throw new IllegalArgumentException("L'istante corrente e' obbligatorio.");
+        }
+        return isAnnullata()
+                && this.cancellataAt != null
+                && !this.cancellataAt
+                        .plusHours(ORE_VISIBILITA_SESSIONE_CANCELLATA)
+                        .isBefore(adesso);
     }
 
     public String getMotivoCancellazione() {
