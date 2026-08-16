@@ -118,9 +118,36 @@ public final class CompletedSessionRepository {
                 Integer.toString(creditsGiven),
                 sanitizeCsvValue(tutorMatricola)
             );
-            Files.writeString(DB, line + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            appendLine(line);
         } catch (final IOException e) {
             // ignora errori di scrittura per non bloccare l'app
+        }
+    }
+
+    /**
+     * Aggiunge una riga anche quando il file esistente non termina con un
+     * carattere di fine riga. In questo modo due record CSV non possono
+     * essere concatenati accidentalmente.
+     */
+    private static void appendLine(final String line) throws IOException {
+        final boolean needsLeadingNewLine = Files.exists(DB)
+                && Files.size(DB) > 0
+                && !endsWithNewLine(DB);
+        final String prefix = needsLeadingNewLine ? System.lineSeparator() : "";
+        Files.writeString(
+                DB,
+                prefix + line + System.lineSeparator(),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND);
+    }
+
+    private static boolean endsWithNewLine(final Path path) throws IOException {
+        try (var channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            final var lastByte = java.nio.ByteBuffer.allocate(1);
+            channel.position(channel.size() - 1);
+            channel.read(lastByte);
+            final byte value = lastByte.array()[0];
+            return value == '\n' || value == '\r';
         }
     }
 

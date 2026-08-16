@@ -459,8 +459,9 @@ public class UniBoTutoringDashboardApp extends Application {
 	 * Un annuncio compare in "Le mie sessioni" se l'utente ne e' l'autore,
 	 * si e' candidato (in attesa di conferma), oppure e' il candidato
 	 * confermato. Se la sessione confermata risulta pero' gia' completata da
-	 * entrambe le parti, sparisce da qui (resta visibile solo nelle Statistiche);
-	 * una sessione annullata rimane invece nello storico con il relativo stato.
+	 * entrambe le parti, sparisce da qui (resta visibile solo nelle Statistiche).
+	 * Una sessione annullata resta consultabile per 24 ore, poi viene nascosta
+	 * senza cancellarne file, chat o storico.
 	 */
 	private static boolean isVisibleInMieSessioni(final BoxTutoraggio box, final String me) {
 		if (me == null) {
@@ -478,7 +479,8 @@ public class UniBoTutoringDashboardApp extends Application {
 		if (box.getConfermato() != null) {
 			final TutoringSessionController controller =
 				SessionLinkUtil.buildController(box, box.getConfermato(), box.getAutoreMatricola());
-			return !controller.isCompletataDaEntrambi();
+			return !controller.isCompletataDaEntrambi()
+				&& (!controller.isAnnullata() || controller.isCancellazioneVisibile());
 		}
 
 		return true;

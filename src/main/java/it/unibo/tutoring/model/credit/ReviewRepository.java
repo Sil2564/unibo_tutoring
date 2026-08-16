@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,14 +119,31 @@ public final class ReviewRepository {
                 sanitize(comment),
                 sanitize(recipientMatricola)
             );
-            Files.writeString(
-                DB,
-                line + System.lineSeparator(),
-                java.nio.file.StandardOpenOption.CREATE,
-                java.nio.file.StandardOpenOption.APPEND
-            );
+            appendLine(line);
         } catch (final IOException e) {
             // ignora errori di scrittura per non bloccare l'app
+        }
+    }
+
+    private static void appendLine(final String line) throws IOException {
+        final boolean needsLeadingNewLine = Files.exists(DB)
+                && Files.size(DB) > 0
+                && !endsWithNewLine(DB);
+        final String prefix = needsLeadingNewLine ? System.lineSeparator() : "";
+        Files.writeString(
+                DB,
+                prefix + line + System.lineSeparator(),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND);
+    }
+
+    private static boolean endsWithNewLine(final Path path) throws IOException {
+        try (var channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            final var lastByte = java.nio.ByteBuffer.allocate(1);
+            channel.position(channel.size() - 1);
+            channel.read(lastByte);
+            final byte value = lastByte.array()[0];
+            return value == '\n' || value == '\r';
         }
     }
 
