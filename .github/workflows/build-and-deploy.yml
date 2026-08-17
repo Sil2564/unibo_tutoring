@@ -34,6 +34,10 @@ jobs:
           distribution: temurin
           java-version: '25'
 
+      - name: Make Gradle wrapper executable
+        shell: bash
+        run: chmod +x gradlew
+
       # shell: bash forza l'uso di Git Bash anche su Windows,
       # cosi' possiamo invocare sempre ./gradlew (niente bisogno
       # di distinguere gradlew.bat).
