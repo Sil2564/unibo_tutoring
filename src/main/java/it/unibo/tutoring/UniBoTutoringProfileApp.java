@@ -5,7 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 
@@ -29,6 +31,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.scene.shape.Circle;
@@ -375,6 +378,24 @@ switch (creditRecord.getBadge()) {
         
         if (isOwnProfile) {
             avatarContainer.setCursor(Cursor.HAND);
+            
+            // Aggiungiamo un overlay visibile al passaggio del mouse
+            final StackPane overlay = new StackPane();
+            overlay.setMinSize(120, 120);
+            overlay.setMaxSize(120, 120);
+            overlay.setBackground(new Background(new BackgroundFill(Color.color(0, 0, 0, 0.5), new CornerRadii(999), Insets.EMPTY)));
+            final Label editLbl = new Label("CAMBIA\nFOTO");
+            editLbl.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            editLbl.setFont(Font.font("System", FontWeight.BOLD, 14));
+            editLbl.setTextFill(Color.WHITE);
+            overlay.getChildren().add(editLbl);
+            overlay.setOpacity(0); // invisibile di default
+            
+            avatarContainer.getChildren().add(overlay);
+            
+            avatarContainer.setOnMouseEntered(e -> overlay.setOpacity(1));
+            avatarContainer.setOnMouseExited(e -> overlay.setOpacity(0));
+            
             // Hint per far capire che si può cliccare
             final javafx.scene.control.Tooltip t = new javafx.scene.control.Tooltip("Clicca per cambiare l'immagine di profilo");
             javafx.scene.control.Tooltip.install(avatarContainer, t);
@@ -429,98 +450,84 @@ switch (creditRecord.getBadge()) {
         infoBox.setPadding(new Insets(20, 0, 0, 0));
 
         final String birthDateStr = user.getBirthDate() != null && !user.getBirthDate().isBlank() ? user.getBirthDate() : "Non specificato";
-        final Label annoNascitaLabel = createInfoLabel("ANNO NASCITA: " + birthDateStr);
         
-        // Aggiunto da Niki: Adesso usiamo il corso vero scelto dal dropdown al posto della bio (presentazione)
+        final HBox annoNascitaRow = new HBox(10);
+        annoNascitaRow.setAlignment(Pos.CENTER_LEFT);
+        final Label annoNascitaPrefix = new Label("ANNO NASCITA:");
+        annoNascitaPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        annoNascitaPrefix.setTextFill(Color.web("#535353"));
+        
+        if (isOwnProfile) {
+            final DatePicker datePicker = new DatePicker();
+            datePicker.setStyle("-fx-font-size: 14px;");
+            datePicker.setPrefWidth(160);
+            if (!"Non specificato".equals(birthDateStr)) {
+                try {
+                    datePicker.setValue(LocalDate.parse(birthDateStr, DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                } catch (Exception ex) {
+                    // Ignore parsing error, keep null
+                }
+            }
+            datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                    AuthService.getInstance().saveChanges();
+                }
+            });
+            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
+        } else {
+            final Label annoNascitaVal = new Label(birthDateStr);
+            annoNascitaVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
+            annoNascitaVal.setTextFill(Color.web("#535353"));
+            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, annoNascitaVal);
+        }
+        
         final String corsoStr = user.getCorso() != null && !user.getCorso().isBlank() ? user.getCorso() : "Studente UniBo";
-        final Label corsoLabel = createInfoLabel("CORSO: " + corsoStr);
+        
+        final HBox corsoRow = new HBox(10);
+        corsoRow.setAlignment(Pos.CENTER_LEFT);
+        final Label corsoPrefix = new Label("CORSO:");
+        corsoPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+        corsoPrefix.setTextFill(Color.web("#535353"));
+        
+        if (isOwnProfile) {
+            final ComboBox<String> corsoBox = new ComboBox<>();
+            corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
+            corsoBox.setValue(user.getCorso() != null && !user.getCorso().isBlank() && !"Non specificato".equals(user.getCorso()) ? user.getCorso() : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
+            corsoBox.setStyle("-fx-font-size: 14px; -fx-pref-width: 320px;");
+            
+            corsoBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    user.setCorso(newVal);
+                    AuthService.getInstance().saveChanges();
+                }
+            });
+            corsoRow.getChildren().addAll(corsoPrefix, corsoBox);
+        } else {
+            final Label corsoVal = new Label(corsoStr);
+            corsoVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
+            corsoVal.setTextFill(Color.web("#535353"));
+            corsoRow.getChildren().addAll(corsoPrefix, corsoVal);
+        }
         
         final Label emailLabel = createInfoLabel("E-MAIL: " + user.getEmail());
         
         final Label tutorLabel = createInfoLabel("TUTOR DI LIVELLO " + creditRecord.getBadge().name() + ": " + creditRecord.getTotalCredits() + " crediti ottenuti (" + creditRecord.getTotalHours() + " ore di tutor)");
 
-        infoBox.getChildren().addAll(annoNascitaLabel, corsoLabel, emailLabel, tutorLabel);
+        infoBox.getChildren().addAll(annoNascitaRow, corsoRow, emailLabel, tutorLabel);
         
         mainProfileCard.getChildren().addAll(avatarContainer, nameBox, infoBox);
 
         if (isOwnProfile) {
-            final HBox buttonsBox = new HBox(10);
-            
             final Button changePasswordBtn = new Button("CAMBIA PASSWORD");
             changePasswordBtn.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
             changePasswordBtn.setTextFill(PRIMARY_RED);
             changePasswordBtn.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
             changePasswordBtn.setBorder(new Border(new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
             changePasswordBtn.setCursor(javafx.scene.Cursor.HAND);
+            VBox.setMargin(changePasswordBtn, new Insets(10, 0, 0, 0));
             
-            final Button editProfileBtn = new Button("MODIFICA PROFILO");
-            editProfileBtn.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-            editProfileBtn.setTextFill(Color.WHITE);
-            editProfileBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
-            editProfileBtn.setBorder(new Border(new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
-            editProfileBtn.setCursor(javafx.scene.Cursor.HAND);
-            
-            VBox.setMargin(buttonsBox, new Insets(10, 0, 0, 0));
-            buttonsBox.getChildren().addAll(changePasswordBtn, editProfileBtn);
-            infoBox.getChildren().add(buttonsBox);
-            
-            editProfileBtn.setOnAction(event -> {
-                final Stage popupStage = new Stage();
-                popupStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-                popupStage.initOwner(editProfileBtn.getScene().getWindow());
-                popupStage.setTitle("Modifica Profilo");
-                
-                final VBox popupRoot = new VBox(15);
-                popupRoot.setPadding(new Insets(24));
-                popupRoot.setAlignment(Pos.CENTER);
-                popupRoot.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-                
-                final Label popupTitle = new Label("Modifica Dati");
-                popupTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
-                popupTitle.setTextFill(TEXT_DARK);
-                
-                final TextField birthDateField = new TextField(user.getBirthDate());
-                birthDateField.setPromptText("Data di nascita (GG/MM/AAAA)");
-                birthDateField.setFont(Font.font("System", 16));
-                
-                final ComboBox<String> corsoBox = new ComboBox<>();
-                corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
-                corsoBox.setValue(user.getCorso() != null && !user.getCorso().isBlank() && !"Non specificato".equals(user.getCorso()) ? user.getCorso() : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
-                corsoBox.setStyle("-fx-font-size: 16px; -fx-pref-width: 300px;");
-                
-                final Label errorLabel = new Label();
-                errorLabel.setTextFill(PRIMARY_RED);
-                errorLabel.setVisible(false);
-                
-                final Button confirmBtn = new Button("Salva Modifiche");
-                confirmBtn.setFont(Font.font("System", FontWeight.BOLD, 16));
-                confirmBtn.setTextFill(Color.WHITE);
-                confirmBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
-                confirmBtn.setCursor(javafx.scene.Cursor.HAND);
-                
-                confirmBtn.setOnAction(e -> {
-                    final String bd = birthDateField.getText().trim();
-                    if (!bd.matches("\\d{2}/\\d{2}/\\d{4}")) {
-                        errorLabel.setText("Formato data non valido. Usa GG/MM/AAAA");
-                        errorLabel.setVisible(true);
-                        return;
-                    }
-                    
-                    user.setBirthDate(bd);
-                    user.setCorso(corsoBox.getValue());
-                    AuthService.getInstance().saveChanges();
-                    
-                    popupStage.close();
-                    
-                    final Stage stage = (Stage) editProfileBtn.getScene().getWindow();
-                    stage.setScene(UniBoTutoringProfileApp.createScene(user.getMatricola(), null));
-                    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
-                });
-                
-                popupRoot.getChildren().addAll(popupTitle, birthDateField, corsoBox, errorLabel, confirmBtn);
-                popupStage.setScene(new Scene(popupRoot, 400, 300));
-                popupStage.show();
-            });
+            infoBox.getChildren().add(changePasswordBtn);
             
             changePasswordBtn.setOnAction(event -> {
                 final Stage popupStage = new Stage();
