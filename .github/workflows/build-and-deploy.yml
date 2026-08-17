@@ -1,11 +1,9 @@
 name: CI
+
 on:
   push:
-    tags: '*'
-    branches-ignore:
-      - 'autodelivery**'
-      - 'bump-**'
-      - 'renovate/**'
+    branches: [ main ]
+    tags: [ 'v*' ]
     paths-ignore:
       - 'CHANGELOG.md'
       - 'LICENSE'
@@ -14,20 +12,70 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  Build:
-    if: contains(github.repository, 'sample-javafx-project') && !github.event.repository.fork
+  # Compila e testa il progetto su tutte le piattaforme supportate
+  # (JavaFX include i nativi per linux, mac e win)
+  build-and-test:
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows, macos, ubuntu]
-        jvm_version: [17, 18, 19]
-    runs-on: ${{ matrix.os }}-latest
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: DanySK/action-checkout@0.2.28
-      - uses: DanySK/build-check-deploy-gradle-action@4.0.24
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.jvm_version }}
-          should-run-codecov: false
-          should-deploy: false
-          should-validate-wrapper: ${{ matrix.os == 'ubuntu' && matrix.jvm_version == '17' }}
+          distribution: temurin
+          java-version: '25'
+
+      # shell: bash forza l'uso di Git Bash anche su Windows,
+      # cosi' possiamo invocare sempre ./gradlew (niente bisogno
+      # di distinguere gradlew.bat).
+      - name: Build with Gradle
+        shell: bash
+        run: ./gradlew build
+
+      - name: Run tests
+        shell: bash
+        run: ./gradlew test
+
+  # Verifica una sola volta (non per ogni combinazione della matrice)
+  # che il gradle-wrapper.jar committato sia quello ufficiale.
+  validate-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+  # Crea il fat jar (shadowJar) e lo pubblica come artifact solo
+  # quando viene pushato un tag di release (es. v1.0.0).
+  create-release:
+    needs: [ build-and-test, validate-wrapper ]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Build fat jar
+        run: ./gradlew shadowJar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unibo-tutoring-jar
+          path: build/libs/*-all.jar
