@@ -33,7 +33,7 @@ java {
 }
 
 val javaFxVersion = 25
-val supportedPlatforms = listOf("linux", "mac", "win")
+val supportedPlatforms = listOf("linux", "mac", "mac-aarch64", "win")
 
 dependencies {
     // Suppressions for SpotBugs
