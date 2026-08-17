@@ -1,6 +1,9 @@
 package it.unibo.tutoring;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -25,6 +28,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
+import javafx.scene.shape.Circle;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
@@ -330,13 +337,82 @@ switch (creditRecord.getBadge()) {
         mainProfileCard.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(16), Insets.EMPTY)));
         mainProfileCard.setBorder(new Border(new BorderStroke(Color.web("#DADADA"), BorderStrokeStyle.SOLID, new CornerRadii(16), BorderWidths.DEFAULT)));
 
-        final Label avatar = new Label(user.getName().substring(0, 1).toUpperCase());
-        avatar.setMinSize(120, 120);
-        avatar.setMaxSize(120, 120);
-        avatar.setAlignment(Pos.CENTER);
-        avatar.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 48));
-        avatar.setTextFill(Color.WHITE);
-        avatar.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
+        // Aggiunto da Niki: Gestione dell'immagine del profilo con file chooser
+        final StackPane avatarContainer = new StackPane();
+        avatarContainer.setMinSize(120, 120);
+        avatarContainer.setMaxSize(120, 120);
+
+        final Label avatarInitials = new Label(user.getName().substring(0, 1).toUpperCase());
+        avatarInitials.setMinSize(120, 120);
+        avatarInitials.setMaxSize(120, 120);
+        avatarInitials.setAlignment(Pos.CENTER);
+        avatarInitials.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 48));
+        avatarInitials.setTextFill(Color.WHITE);
+        avatarInitials.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(999), Insets.EMPTY)));
+        
+        avatarContainer.getChildren().add(avatarInitials);
+        
+        if (user.getAvatarPath() != null && !user.getAvatarPath().isBlank()) {
+            try {
+                final File avatarFile = new File(user.getAvatarPath());
+                if (avatarFile.exists()) {
+                    final Image img = new Image(avatarFile.toURI().toString());
+                    final ImageView imageView = new ImageView(img);
+                    imageView.setFitWidth(120);
+                    imageView.setFitHeight(120);
+                    imageView.setPreserveRatio(false);
+                    
+                    final Circle clip = new Circle(60, 60, 60);
+                    imageView.setClip(clip);
+                    
+                    avatarContainer.getChildren().clear();
+                    avatarContainer.getChildren().add(imageView);
+                }
+            } catch (Exception e) {
+                // Fallback alle iniziali se c'è un errore
+            }
+        }
+        
+        if (isOwnProfile) {
+            avatarContainer.setCursor(Cursor.HAND);
+            // Hint per far capire che si può cliccare
+            final javafx.scene.control.Tooltip t = new javafx.scene.control.Tooltip("Clicca per cambiare l'immagine di profilo");
+            javafx.scene.control.Tooltip.install(avatarContainer, t);
+            
+            avatarContainer.setOnMouseClicked(event -> {
+                final FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Scegli Immagine di Profilo");
+                fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg", "*.gif")
+                );
+                final Stage stage = (Stage) avatarContainer.getScene().getWindow();
+                final File selectedFile = fileChooser.showOpenDialog(stage);
+                if (selectedFile != null) {
+                    try {
+                        final File avatarsDir = new File("data/avatars");
+                        if (!avatarsDir.exists()) {
+                            avatarsDir.mkdirs();
+                        }
+                        
+                        final String ext = selectedFile.getName().substring(selectedFile.getName().lastIndexOf('.'));
+                        final File destFile = new File(avatarsDir, user.getMatricola() + ext);
+                        
+                        Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        
+                        // Aggiorniamo il modello
+                        user.setAvatarPath(destFile.getPath());
+                        AuthService.getInstance().saveChanges();
+                        
+                        // Ricarica la vista
+                        stage.setScene(UniBoTutoringProfileApp.createScene(user.getMatricola(), null));
+                        it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+                        
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+        }
 
         final VBox nameBox = new VBox(4);
         nameBox.setAlignment(Pos.CENTER);
@@ -365,16 +441,86 @@ switch (creditRecord.getBadge()) {
 
         infoBox.getChildren().addAll(annoNascitaLabel, corsoLabel, emailLabel, tutorLabel);
         
-        mainProfileCard.getChildren().addAll(avatar, nameBox, infoBox);
+        mainProfileCard.getChildren().addAll(avatarContainer, nameBox, infoBox);
 
         if (isOwnProfile) {
+            final HBox buttonsBox = new HBox(10);
+            
             final Button changePasswordBtn = new Button("CAMBIA PASSWORD");
             changePasswordBtn.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
             changePasswordBtn.setTextFill(PRIMARY_RED);
             changePasswordBtn.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
             changePasswordBtn.setBorder(new Border(new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
             changePasswordBtn.setCursor(javafx.scene.Cursor.HAND);
-            VBox.setMargin(changePasswordBtn, new Insets(10, 0, 0, 0));
+            
+            final Button editProfileBtn = new Button("MODIFICA PROFILO");
+            editProfileBtn.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+            editProfileBtn.setTextFill(Color.WHITE);
+            editProfileBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+            editProfileBtn.setBorder(new Border(new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
+            editProfileBtn.setCursor(javafx.scene.Cursor.HAND);
+            
+            VBox.setMargin(buttonsBox, new Insets(10, 0, 0, 0));
+            buttonsBox.getChildren().addAll(changePasswordBtn, editProfileBtn);
+            infoBox.getChildren().add(buttonsBox);
+            
+            editProfileBtn.setOnAction(event -> {
+                final Stage popupStage = new Stage();
+                popupStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+                popupStage.initOwner(editProfileBtn.getScene().getWindow());
+                popupStage.setTitle("Modifica Profilo");
+                
+                final VBox popupRoot = new VBox(15);
+                popupRoot.setPadding(new Insets(24));
+                popupRoot.setAlignment(Pos.CENTER);
+                popupRoot.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+                
+                final Label popupTitle = new Label("Modifica Dati");
+                popupTitle.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));
+                popupTitle.setTextFill(TEXT_DARK);
+                
+                final TextField birthDateField = new TextField(user.getBirthDate());
+                birthDateField.setPromptText("Data di nascita (GG/MM/AAAA)");
+                birthDateField.setFont(Font.font("System", 16));
+                
+                final ComboBox<String> corsoBox = new ComboBox<>();
+                corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
+                corsoBox.setValue(user.getCorso() != null && !user.getCorso().isBlank() && !"Non specificato".equals(user.getCorso()) ? user.getCorso() : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
+                corsoBox.setStyle("-fx-font-size: 16px; -fx-pref-width: 300px;");
+                
+                final Label errorLabel = new Label();
+                errorLabel.setTextFill(PRIMARY_RED);
+                errorLabel.setVisible(false);
+                
+                final Button confirmBtn = new Button("Salva Modifiche");
+                confirmBtn.setFont(Font.font("System", FontWeight.BOLD, 16));
+                confirmBtn.setTextFill(Color.WHITE);
+                confirmBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
+                confirmBtn.setCursor(javafx.scene.Cursor.HAND);
+                
+                confirmBtn.setOnAction(e -> {
+                    final String bd = birthDateField.getText().trim();
+                    if (!bd.matches("\\d{2}/\\d{2}/\\d{4}")) {
+                        errorLabel.setText("Formato data non valido. Usa GG/MM/AAAA");
+                        errorLabel.setVisible(true);
+                        return;
+                    }
+                    
+                    user.setBirthDate(bd);
+                    user.setCorso(corsoBox.getValue());
+                    AuthService.getInstance().saveChanges();
+                    
+                    popupStage.close();
+                    
+                    final Stage stage = (Stage) editProfileBtn.getScene().getWindow();
+                    stage.setScene(UniBoTutoringProfileApp.createScene(user.getMatricola(), null));
+                    it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
+                });
+                
+                popupRoot.getChildren().addAll(popupTitle, birthDateField, corsoBox, errorLabel, confirmBtn);
+                popupStage.setScene(new Scene(popupRoot, 400, 300));
+                popupStage.show();
+            });
             
             changePasswordBtn.setOnAction(event -> {
                 final Stage popupStage = new Stage();
@@ -442,8 +588,6 @@ switch (creditRecord.getBadge()) {
                 popupStage.setScene(new Scene(popupRoot, 350, 300));
                 popupStage.show();
             });
-            
-            infoBox.getChildren().add(changePasswordBtn);
         }
 
         final VBox bioCard = createBioCard(user, isOwnProfile);

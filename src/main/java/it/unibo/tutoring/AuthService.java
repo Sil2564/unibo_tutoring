@@ -151,7 +151,10 @@ public final class AuthService {
                 // Leggiamo l'ottavo campo (indice 7) per il corso. Se gli account vecchi non ce l'hanno, usiamo un fallback così non esplode niente
                 final String corso = fields.length >= 8 ? fields[7] : "Non specificato";
                 
-                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], birthDate, corso, presentazione);
+                // Aggiunto da Niki: avatar path
+                final String avatarPath = fields.length >= 9 ? fields[8] : "";
+                
+                final UserAccount user = new UserAccount(fields[0], fields[1], fields[2], fields[3], fields[4], birthDate, corso, presentazione, avatarPath);
                 this.usersByMatricola.put(user.getMatricola(), user);
                 this.usersByEmail.put(user.getEmail(), user);
             }
@@ -173,7 +176,9 @@ public final class AuthService {
                 sanitizeForCsv(user.getPresentazione()),
                 user.getBirthDate() == null ? "" : user.getBirthDate(),
                 // Salviamo anche il corso in coda al CSV!
-                user.getCorso() == null ? "" : user.getCorso()
+                user.getCorso() == null ? "" : user.getCorso(),
+                // Aggiunto da Niki: Salviamo l'avatar path!
+                user.getAvatarPath() == null ? "" : user.getAvatarPath()
             ))
             .sorted()
             .toList();
@@ -237,8 +242,9 @@ public final class AuthService {
             user.getEmail(),
             hashPassword(newPassword),
             user.getBirthDate(),
-            user.getCorso(), // Manteniamo il corso intatto durante il cambio password
-            user.getPresentazione()
+            user.getCorso(),
+            user.getPresentazione(),
+            user.getAvatarPath()
         );
         this.usersByMatricola.put(updatedUser.getMatricola(), updatedUser);
         this.usersByEmail.put(updatedUser.getEmail(), updatedUser);
@@ -249,6 +255,15 @@ public final class AuthService {
             this.usersByMatricola.put(user.getMatricola(), user);
             this.usersByEmail.put(user.getEmail(), user);
             return false;
+        }
+    }
+    
+    // Aggiunto da Niki: salva permanentemente le modifiche apportate direttamente al profilo (es. corso, avatar, data di nascita)
+    public void saveChanges() {
+        try {
+            persistUsers();
+        } catch (final IOException ex) {
+            // Ignoriamo temporaneamente l'errore se non si può scrivere, come per le altre operazioni
         }
     }
 
