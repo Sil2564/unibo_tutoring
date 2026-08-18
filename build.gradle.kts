@@ -5,11 +5,9 @@ plugins {
     // Apply the application plugin to add support for building a CLI application
     // You can run your app via task "run": ./gradlew run
     application
-    id("org.javamodularity.moduleplugin") version "2.0.0"
     /*
-     * Adds tasks to export a runnable jar.
-     * In order to create it, launch the "shadowJar" task.
-     * The runnable jar will be found in build/libs/projectname-all.jar
+     * Crea il fat jar tramite:
+     * ./gradlew shadowJar
      */
     id("com.gradleup.shadow") version "9.3.2"
 }
@@ -17,6 +15,14 @@ plugins {
 repositories {
     mavenCentral()
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
+val javaFxVersion = "25"
 
 val javaFXModules = listOf(
     "base",
@@ -26,28 +32,28 @@ val javaFXModules = listOf(
     "graphics"
 )
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
-
-val javaFxVersion = 25
-val supportedPlatforms = listOf("linux", "mac", "mac-aarch64", "win")
+val supportedPlatforms = listOf(
+    "linux",
+    "mac",
+    "mac-aarch64",
+    "win"
+)
 
 dependencies {
     // Suppressions for SpotBugs
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.9.8")
-    val jUnitVersion = "6.0.3"
-    // JUnit API and testing engine
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$jUnitVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$jUnitVersion")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:$jUnitVersion")
+
     for (platform in supportedPlatforms) {
         for (module in javaFXModules) {
             implementation("org.openjfx:javafx-$module:$javaFxVersion:$platform")
         }
     }
+
+    val jUnitVersion = "6.0.3"
+    // JUnit API and testing engine
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$jUnitVersion")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$jUnitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:$jUnitVersion")
 }
 
 tasks.withType<Test> {
