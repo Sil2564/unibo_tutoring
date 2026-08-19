@@ -4,6 +4,7 @@ import it.unibo.tutoring.UserSession;
 import it.unibo.tutoring.controller.session.TutoringSessionController;
 import it.unibo.tutoring.model.box.BoxTutoraggio;
 import it.unibo.tutoring.model.chat.Message;
+import it.unibo.tutoring.model.chat.ChatObserver;
 import it.unibo.tutoring.view.components.AppHeader;
 import it.unibo.tutoring.view.components.AppCard;
 import it.unibo.tutoring.view.components.DashboardButton;
@@ -26,11 +27,12 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.application.Platform;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TutoringSessionViewApp extends Application {
+public class TutoringSessionViewApp extends Application implements ChatObserver{
 
     private static final Color PRIMARY_RED = Color.web("#D91E43");
     private static final Color PAGE_BG = Color.web("#EFEFEF");
@@ -41,6 +43,7 @@ public class TutoringSessionViewApp extends Application {
     private final String counterpartyMatricola;
     private StackPane reviewOverlay;
     private Label notificationLabel;
+    private VBox messageArea;
 
     public TutoringSessionViewApp() {
         this.controller = new TutoringSessionController(
@@ -203,7 +206,7 @@ public class TutoringSessionViewApp extends Application {
         chatTitle.getStyleClass().add("section-title");
         chatHeader.getChildren().add(chatTitle);
 
-        final VBox messageArea = new VBox(10);
+        messageArea = new VBox(10);
         messageArea.setPadding(new Insets(15));
 
         final ScrollPane scrollPane = new ScrollPane(messageArea);
@@ -227,13 +230,15 @@ public class TutoringSessionViewApp extends Application {
         sendBtn.setPrefHeight(40);
         sendBtn.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(6), Insets.EMPTY)));
 
+        aggiornaMessaggi(this.messageArea);
+        controller.addChatObserver(this);
+
         // PATTERN FACADE
         sendBtn.setOnAction(e -> {
             String testo = messageField.getText();
             if (!testo.trim().isEmpty()) {
                 controller.inviaMessaggio(testo);
                 messageField.clear();
-                aggiornaMessaggi(messageArea);
             }
         });
 
@@ -490,6 +495,22 @@ public class TutoringSessionViewApp extends Application {
         HBox row = new HBox(bubble);
         row.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         return row;
+    }
+
+    @Override
+    public void onNewMessage(final Message message) {
+        if (this.messageArea == null) {
+            return;
+        }
+
+        final Runnable update =
+                () -> aggiornaMessaggi(this.messageArea);
+
+        if (Platform.isFxApplicationThread()) {
+            update.run();
+        } else {
+            Platform.runLater(update);
+        }
     }
 
 

@@ -2,6 +2,7 @@ package it.unibo.tutoring.controller.session;
 
 import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.model.chat.Message;
+import it.unibo.tutoring.model.chat.ChatObserver;
 import it.unibo.tutoring.model.credit.CompletedSessionRepository;
 import it.unibo.tutoring.model.session.CancelledState;
 import it.unibo.tutoring.model.session.CompletedState;
@@ -773,5 +774,9 @@ public class TutoringSessionController {
             throw new IllegalArgumentException(fieldName + " non puo' essere vuoto.");
         }
         return value.trim();
+    }
+
+    public void addChatObserver(final ChatObserver observer) {
+        this.model.addChatObserver(observer);
     }
 }

@@ -1,6 +1,7 @@
 package it.unibo.tutoring.model.session;
 
 import it.unibo.tutoring.model.chat.Message;
+import it.unibo.tutoring.model.chat.ChatObserver;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public interface TutoringSession {
     // PATTERN FACADE: Metodi delegati alla Chat
     void inviaMessaggio(String testo, String idMittente);
     void inviaMessaggio(String testo, String idMittente, LocalDateTime timestamp);
+    void addChatObserver(ChatObserver observer);
 
     List<Message> getStoricoChat();
 

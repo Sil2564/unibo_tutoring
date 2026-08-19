@@ -2,6 +2,7 @@ package it.unibo.tutoring.model.session;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,5 +62,23 @@ class TutoringSessionTest {
         assertTrue(session.getStatoCorrente() instanceof CancelledState);
         assertThrows(IllegalStateException.class, session::completa);
         assertThrows(IllegalStateException.class, session::annulla);
+    }
+
+    @Test
+    void testObserverChatAttraversoSessione() {
+        final TutoringSession session = new TutoringSessionImpl(
+                "OOP",
+                LocalDateTime.now().plusDays(1),
+                Duration.ofHours(1),
+                "1234567890"
+        );
+
+        final List<Message> ricevuti = new ArrayList<>();
+
+        session.addChatObserver(ricevuti::add);
+        session.inviaMessaggio("Ciao", "0987654321");
+
+        assertEquals(1, ricevuti.size());
+        assertEquals("Ciao", ricevuti.getFirst().getTesto());
     }
 }

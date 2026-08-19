@@ -5,7 +5,7 @@ In questa sezione vengono analizzati i requisiti e il dominio applicativo del pr
 L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o progettuali.
 
 ## Analisi dei requisiti
-L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti dell'Università di Bologna in cui gli utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
+L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti del Campus di Cesena dell'Università di Bologna in cui gli utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
 
 **Requisiti funzionali**
 
@@ -14,7 +14,7 @@ L'applicazione dovrà permettere le seguenti funzionalità principali:
 - Gli utenti potranno creare, modificare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
-- Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa
+- Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa o cancellata (stato che interrompe il flusso senza generare crediti)
 - Deve essere disponibile una chat privata per la comunicazione diretta tra tutor e studente, utile a concordare i dettagli dell'incontro
 - Ogni utente dovrà disporre di un profilo personale, con le informazioni base (nome, cognome, matricola) e le attività svolte
 
@@ -35,7 +35,7 @@ Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creaz
 Gli elementi principali del dominio sono:
 - Utente: rappresenta uno studente iscritto all'Università di Bologna.
 - BoxTutoraggio: rappresenta un'offerta o una richiesta di tutoraggio. Contiene informazioni sulla materia e una breve descrizione.
-- Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa)
+- Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa o cancellata)
 - Chat: rappresenta il canale di comunicazione tra gli utenti che partecipano a una sessione.
 - Credito: rappresenta il numero di ore e CFU accumulati dal tutor per le attività svolte.
 
@@ -76,7 +76,7 @@ classDiagram
         +data
         +ora
         +durataOre
-        +stato  // proposta, confermata, sospesa
+        +stato  // proposta, confermata, conclusa, cancellata
     }
 
 
@@ -376,11 +376,13 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
     classDiagram
 
     class TutoringSession {
-        -int id
-        -Date dataOra
+        -UUID id
+        -LocalDateTime dataOra
         -Duration durata
         -String materia
         -StatoSessione statoCorrente
+        -String tutorMatricola;
+        -Chat chat;
         +conferma()
         +annulla()
         +completa()
@@ -409,7 +411,7 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
     }
 
     class CompletedState {
-
+        // i 3 metodi ereditati si limitano a lanciare eccezioni
     }
 
     TutoringSession --> SessionState : ha uno stato 
@@ -418,16 +420,17 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
     SessionState <|.. CompletedState
 
     class Chat {
-        -int idSessione
         +aggiungiMessaggio(messaggio)
         +getMessaggi() messaggi<>
     }
 
     class Message {
         -String testo
-        -Date timestamp
+        -LocalDateTime timestamp
         -String idMittente
         +getTesto()
+        +getIdMittente()
+        +getTimestamp() 
     }
 
     
@@ -439,10 +442,10 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
 Il modulo relativo alla gestione delle sessioni di tutoraggio e della messaggistica privata è stato progettato per massimizzare la flessibilità e separare chiaramente le responsabilità.
 
 #### 1. Gestione del ciclo di vita della Sessione (State Pattern)
-Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Proposta, Confermata, Conclusa). Invece di gestire queste transizioni tramite complessi e fragili blocchi `if/switch` all'interno della classe principale, si è optato per l'utilizzo del **Pattern State**.
+Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Proposta, Confermata, Conclusa), prima che sia conclusa la sessione può interrompere il flusso senza generare crediti o feedback entrando nello stato Cancellata. Invece di gestire queste transizioni tramite complessi e fragili blocchi `if/switch` all'interno della classe principale, si è optato per l'utilizzo del **Pattern State**.
 * **`SessionState` (Interfaccia):** Definisce le azioni possibili su una sessione (`conferma()`, `annulla()`, `completa()`).
-* **Stati Concreti (`ProposedState`, `ConfirmedState`, `CompletedState`):** Implementano le transizioni consentite. Ad esempio, chiamare `conferma()` su uno stato `ProposedState` sposterà la sessione in `ConfirmedState`, mentre chiamare la stessa operazione su una sessione già in `CompletedState` solleverà un'eccezione, garantendo la coerenza del dominio.
-* **Vantaggi:** Questo approccio rispetta l'*Open/Closed Principle*. Qualora in futuro si decidesse di aggiungere un nuovo stato (es. `SuspendedState`), basterà creare una nuova classe senza dover modificare la logica preesistente della `TutoringSession`.
+* **Stati Concreti (`ProposedState`, `ConfirmedState`, `CompletedState`, `CancelledState`):** Implementano le transizioni consentite. Ad esempio, chiamare `conferma()` su uno stato `ProposedState` sposterà la sessione in `ConfirmedState`, mentre chiamare la stessa operazione su una sessione già in `CompletedState` solleverà un'eccezione, garantendo la coerenza del dominio.
+* **Vantaggi:** Questo approccio rispetta l'*Open/Closed Principle*. Qualora in futuro si decidesse di aggiungere un nuovo stato (es. `SuspendedState`), basterà creare una nuova classe senza dover modificare la logica preesistente della `TutoringSession`. (Come avvenuto con cancelledState )
 
 #### 2. Architettura della Chat Privata (Composizione e Observer)
 La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
