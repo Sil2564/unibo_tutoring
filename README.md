@@ -364,30 +364,37 @@ classDiagram
 ```
 ## GESTIONE SESSIONI E CHAT
 
-Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o conclusa.
+Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richiesta di tutoraggio e comunicare tramite una chat privata associata alla sessione. La sessione attraversa gli stati proposta, confermata, completata o cancellata; le sessioni future confermate vengono inoltre mostrate nel calendario personale dei partecipanti.
 
 
 ```mermaid
   %% ============================================================
     %% DESIGN DETTAGLIATO - SESSIONI E CHAT (ANDREA)
-    %% Pattern: Observer + Strategy
+    %% Pattern: State + Observer + Facade
     %% ============================================================
 
     classDiagram
 
     class TutoringSession {
-        -UUID id
-        -LocalDateTime dataOra
-        -Duration durata
-        -String materia
-        -StatoSessione statoCorrente
-        -String tutorMatricola;
-        -Chat chat;
+        <<interface>>
+        +getId() UUID
+        +getDataOra() LocalDateTime
+        +getDurata() Duration
+        +getMateria() String
+        +getStatoCorrente() SessionState
+        +getTutorMatricola() String
         +conferma()
         +annulla()
         +completa()
         +inviaMessaggio(testo, mittente)
+        +addChatObserver(observer)
         +getStoricoChat() : List~Message~
+    }
+
+    class TutoringSessionImpl {
+        -SessionState statoCorrente
+        -Chat chat
+        +setStatoCorrente(nuovoStato)
     }
 
     %% PATTERN STATE: Gestione degli stati
@@ -411,46 +418,76 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
     }
 
     class CompletedState {
-        // i 3 metodi ereditati si limitano a lanciare eccezioni
     }
 
-    TutoringSession --> SessionState : ha uno stato 
+    class CancelledState {
+    }
+
+    TutoringSession <|.. TutoringSessionImpl
+    TutoringSessionImpl --> SessionState : ha uno stato
     SessionState <|.. ProposedState
     SessionState <|.. ConfirmedState
     SessionState <|.. CompletedState
+    SessionState <|.. CancelledState
 
     class Chat {
+        <<interface>>
         +aggiungiMessaggio(messaggio)
-        +getMessaggi() messaggi<>
+        +getStoricoMessaggi() : List~Message~
+        +addObserver(observer)
+    }
+
+    class ChatImpl {
+        -List~Message~ storicoMessaggi
+        -List~ChatObserver~ observers
+    }
+
+    class ChatObserver {
+        <<interface>>
+        +onNewMessage(message)
     }
 
     class Message {
-        -String testo
-        -LocalDateTime timestamp
-        -String idMittente
+        <<interface>>
         +getTesto()
         +getIdMittente()
         +getTimestamp() 
     }
 
-    
-    TutoringSession "1" *-- "1" Chat : possiede 
-    Chat "1" o-- "*" Message : contiene 
+    class MessageImpl
+    class TutoringSessionViewApp
+
+    Chat <|.. ChatImpl
+    Message <|.. MessageImpl
+    TutoringSessionImpl "1" *-- "1" Chat : possiede
+    ChatImpl "1" o-- "*" Message : contiene
+    ChatImpl --> ChatObserver : notifica
+    ChatObserver <|.. TutoringSessionViewApp
 ```
 ### Scelte Progettuali: Gestione Sessioni e Chat (Andrea)
 
 Il modulo relativo alla gestione delle sessioni di tutoraggio e della messaggistica privata è stato progettato per massimizzare la flessibilità e separare chiaramente le responsabilità.
 
 #### 1. Gestione del ciclo di vita della Sessione (State Pattern)
-Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Proposta, Confermata, Conclusa), prima che sia conclusa la sessione può interrompere il flusso senza generare crediti o feedback entrando nello stato Cancellata. Invece di gestire queste transizioni tramite complessi e fragili blocchi `if/switch` all'interno della classe principale, si è optato per l'utilizzo del **Pattern State**.
+
+Una `TutoringSession` attraversa le fasi Proposta, Confermata, Completata e Cancellata. Invece di gestire le transizioni con blocchi `if/switch` nella classe principale, si è scelto il **Pattern State**.
+
 * **`SessionState` (Interfaccia):** Definisce le azioni possibili su una sessione (`conferma()`, `annulla()`, `completa()`).
-* **Stati Concreti (`ProposedState`, `ConfirmedState`, `CompletedState`, `CancelledState`):** Implementano le transizioni consentite. Ad esempio, chiamare `conferma()` su uno stato `ProposedState` sposterà la sessione in `ConfirmedState`, mentre chiamare la stessa operazione su una sessione già in `CompletedState` solleverà un'eccezione, garantendo la coerenza del dominio.
-* **Vantaggi:** Questo approccio rispetta l'*Open/Closed Principle*. Qualora in futuro si decidesse di aggiungere un nuovo stato (es. `SuspendedState`), basterà creare una nuova classe senza dover modificare la logica preesistente della `TutoringSession`. (Come avvenuto con cancelledState )
+* **Stati concreti (`ProposedState`, `ConfirmedState`, `CompletedState`, `CancelledState`):** Implementano le transizioni consentite. `CompletedState` e `CancelledState` sono terminali e rifiutano ulteriori transizioni tramite eccezioni.
+* **Regole coordinate dal Controller:** `TutoringSessionController` persiste proposta e conferma, consente il completamento solo dopo la fine prevista e impone che il tutor confermi per primo; la transizione a `CompletedState` avviene soltanto dopo la conferma di entrambi. La pubblicazione del `SessionCompletedEvent` e il cambio di stato sono concentrati in `ConfirmedState.completa()`.
+* **Modifica della programmazione:** l'autore può modificare data, ora e durata finché non è presente una candidatura attiva o un candidato confermato. Modello e View applicano lo stesso controllo.
+* **Cancellazione e persistenza:** una sessione confermata può essere cancellata prima della fine prevista. Autore, data, motivo e lettura della notifica vengono salvati; la sessione cancellata rimane consultabile per 24 ore e lo stato `Cancelled` viene ripristinato dal file. `SessionLinkUtil` genera inoltre un identificativo di conversazione a partire dall'annuncio e dalla controparte, evitando collisioni fra sessioni diverse.
+* **Vantaggi:** ogni stato mantiene isolate le proprie regole e l'aggiunta di un nuovo stato richiede una nuova implementazione di `SessionState` e l'aggiornamento delle sole transizioni che devono raggiungerlo.
 
 #### 2. Architettura della Chat Privata (Composizione e Observer)
 La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
 * La classe `TutoringSession` fa da facciata (Façade pattern) verso l'esterno: espone il metodo `inviaMessaggio(...)` facendo in realtà eseguire all'oggetto `Chat` interno.
-* Questa separazione prepara il terreno per l'implementazione del pattern **Observer** lato GUI (Model-View-Controller). La View della Chat in JavaFX potrà "osservare" la lista dei messaggi nel Modello; ogni volta che un nuovo `Message` verrà aggiunto alla `Chat`, la View verrà notificata e si aggiornerà in modo reattivo, senza accoppiamento stretto tra logica di business e interfaccia grafica.
+* Il pattern **Observer** è implementato dal modello alla GUI: `ChatImpl` notifica i `ChatObserver` registrati, mentre `TutoringSessionViewApp` implementa l'interfaccia e aggiorna i messaggi sul thread JavaFX quando il proprio modello riceve un nuovo `Message`.
+* I messaggi e i relativi timestamp vengono persistiti nel file condiviso della sessione. Il controller conserva anche lo stato di lettura della chat, usato dalla Dashboard per mostrare il simbolo di notifica alla controparte.
+
+#### 3. Calendario personale
+
+`SessionRepository` legge i file delle sessioni e restituisce, in ordine cronologico, soltanto quelle future in stato `Confirmed` alle quali partecipa l'utente. `UniBoTutoringProfileApp` usa il repository per popolare la sezione **I Tuoi Prossimi Impegni**, distinguendo le sessioni svolte come tutor da quelle ricevute come studente.
 
 
 ## GESTIONE FEEDBACK E RECENSIONI
