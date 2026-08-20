@@ -10,7 +10,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 **Requisiti funzionali**
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
-- Gli studenti potranno registrarsi e autenticarsi usando la matricola universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
+- Gli studenti potranno registrarsi e autenticarsi usando la matricola o l'email universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
 - Gli utenti potranno creare, modificare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
@@ -161,7 +161,7 @@ classDiagram
 ```
 
 ## Design dettagliato- Gestione fasi Login e Registrazione
-Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola e password.
+Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola oppure l'indirizzo email universitario e la password.
 Il sistema è organizzato secondo una separazione tra interfaccia utente, logica applicativa e gestione dei dati.
 
 ```mermaid
@@ -172,20 +172,20 @@ classDiagram
         -cognome: String
         -email: String
         -password: String
-        +login(matricola, password): Boolean
+        +login(identifier, password): Boolean
         +register(nome, cognome, email, matricola, password): Boolean
         +validateMatricola(): Boolean
         +validateEmail(): Boolean
     }
     class AuthenticationService {
         -users: List~User~
-        +authenticateUser(matricola, password): User
+        +authenticateUser(identifier, password): User
         +registerNewUser(userData): User
         +checkMatricolaExists(matricola): Boolean
         +hashPassword(password): String
     }
     class LoginView {
-        -matricolaInput: String
+        -identifierInput: String
         -passwordInput: String
         +displayLoginForm(): void
         +onLoginClick(): void
@@ -204,8 +204,8 @@ classDiagram
     class Database {
         -users: List~User~
         +saveUser(user): Boolean
-        +findUserByMatricola(matricola): User
-        +getUserByCredentials(matricola, password): User
+        +findUserByIdentifier(identifier): User
+        +getUserByCredentials(identifier, password): User
     }
     LoginView --> AuthenticationService: usa
     RegistrationView --> AuthenticationService: usa
@@ -236,14 +236,14 @@ Essa funge da livello intermedio tra l'interfaccia utente e il database.
 Gli attributi includono una lista di utenti registrati: users: List<User>
 
 I metodi principali sono:
-- authenticateUser(): verifica se la matricola e la password inserite corrispondono a un utente registrato
+- authenticateUser(): verifica che l’identificativo inserito (matricola o e-mail) e la password inserite corrispondono a un utente registrato
 - registerNewUser(): gestisce il processo di registrazione di un nuovo utente
 - checkMatricolaExists(): controlla se una matricola è già presente nel sistema
 - hashPassword(): converte la password in formato cifrato per garantire maggiore sicurezza
 
 ## Classe LoginView
 La classe LoginView rappresenta l'interfaccia grafica utilizzata dall'utente per effettuare l'accesso al sistema.
-Gli attributi rappresentano i campi inseriti dall'utente ovvero matricolaInput e passwordInput.
+Gli attributi rappresentano i campi inseriti dall'utente ovvero `identifierInput` (matricola o e-mail) e `passwordInput`.
 
 I metodi gestiscono l'interazione con l'interfaccia:
 - displayLoginForm(): mostra il modulo di login
