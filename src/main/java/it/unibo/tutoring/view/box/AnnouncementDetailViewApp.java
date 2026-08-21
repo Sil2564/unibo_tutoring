@@ -679,16 +679,33 @@ public final class AnnouncementDetailViewApp {
         final AppButton conferma = AppButton.primary("Conferma", GREEN);
         conferma.setPadding(new Insets(6, 14, 6, 14));
         conferma.setOnAction(event -> {
-            // Conferma questo candidato: le altre candidature pendenti vengono annullate
-            // e rimosse dalla lista, cosi' spariscono anche dalla loro sezione "Le mie sessioni".
+            final TutoringSessionController controller = SessionLinkUtil.buildController(
+                    box,
+                    candidatoMatricola,
+                    box.getAutoreMatricola());
+            try {
+                // Il controller verifica prima la disponibilita' di entrambi i
+                // partecipanti. In caso di conflitto il box e le altre
+                // candidature rimangono invariati.
+                controller.confermaSessione();
+            } catch (final IllegalStateException exception) {
+                mostraErroreConferma(stage, exception.getMessage());
+                return;
+            }
+
+            box.confermaCandidato(candidatoMatricola);
+
+            // Le altre candidature pendenti vengono annullate e rimosse,
+            // cosi' spariscono anche dalla loro sezione "Le mie sessioni".
             for (final String altro : List.copyOf(box.getCandidati())) {
                 if (!altro.equals(candidatoMatricola)) {
-                    SessionLinkUtil.buildController(box, altro, box.getAutoreMatricola()).annullaSessione();
+                    SessionLinkUtil.buildController(
+                            box,
+                            altro,
+                            box.getAutoreMatricola()).annullaSessione();
                     box.rimuoviCandidato(altro);
                 }
             }
-            box.confermaCandidato(candidatoMatricola);
-            SessionLinkUtil.buildController(box, candidatoMatricola, box.getAutoreMatricola()).confermaSessione();
             refresh(stage, box);
         });
 
@@ -702,6 +719,18 @@ public final class AnnouncementDetailViewApp {
 
         row.getChildren().addAll(infoBox, conferma, rifiuta);
         return row;
+    }
+
+    private static void mostraErroreConferma(final Stage stage, final String message) {
+        final javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle("Sessione non disponibile");
+        alert.setHeaderText("Impossibile confermare la sessione");
+        alert.setContentText(message);
+        if (stage != null) {
+            alert.initOwner(stage);
+        }
+        alert.showAndWait();
     }
 
     /** Sezione mostrata quando c'e' gia' un candidato confermato: bottone Completata + eventuale recensione. */

@@ -8,6 +8,7 @@ import it.unibo.tutoring.model.session.CancelledState;
 import it.unibo.tutoring.model.session.CompletedState;
 import it.unibo.tutoring.model.session.ConfirmedState;
 import it.unibo.tutoring.model.session.ProposedState;
+import it.unibo.tutoring.model.session.SessionRepository;
 import it.unibo.tutoring.model.session.SessionState;
 import it.unibo.tutoring.model.session.TutoringSession;
 import it.unibo.tutoring.model.session.TutoringSessionImpl;
@@ -33,6 +34,8 @@ public class TutoringSessionController {
     private static final String FILE_EXTENSION = ".csv";
     private static final int DEFAULT_COMPLETED_HOURS = 1;
     private static final long ORE_VISIBILITA_SESSIONE_CANCELLATA = 24;
+    private static final DateTimeFormatter CONFLICT_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final TutoringSession model;
     private final String materia;
@@ -181,8 +184,41 @@ public class TutoringSessionController {
     }
 
     public void confermaSessione() {
+        verificaAssenzaSovrapposizioni();
         this.model.conferma();
         salvaSuFile();
+    }
+
+    /**
+     * Impedisce di confermare la sessione quando il tutor o lo studente hanno
+     * gia' un'altra sessione confermata nello stesso intervallo temporale.
+     */
+    private void verificaAssenzaSovrapposizioni() {
+        final SessionRepository repository = new SessionRepository();
+        verificaDisponibilitaPartecipante(repository, "Il tutor", this.tutorMatricola);
+        verificaDisponibilitaPartecipante(repository, "Lo studente", this.studenteMatricola);
+    }
+
+    private void verificaDisponibilitaPartecipante(
+            final SessionRepository repository,
+            final String ruolo,
+            final String matricola) {
+        repository.findOverlappingConfirmedSession(
+                        matricola,
+                        this.model.getDataOra(),
+                        this.model.getDurata(),
+                        this.fileCondivisoPath)
+                .ifPresent(conflict -> {
+                    throw new IllegalStateException(
+                            ruolo
+                                    + " ha gia' una sessione confermata per '"
+                                    + conflict.materia()
+                                    + "' dal "
+                                    + conflict.inizio().format(CONFLICT_DATE_FORMAT)
+                                    + " al "
+                                    + conflict.fine().format(CONFLICT_DATE_FORMAT)
+                                    + ".");
+                });
     }
 
     /**
