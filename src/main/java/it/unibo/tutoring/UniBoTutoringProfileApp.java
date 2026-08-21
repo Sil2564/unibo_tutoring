@@ -289,12 +289,6 @@ public final class UniBoTutoringProfileApp  {
             });
             rightSide.getChildren().addAll(logoutSeparator, logoutButton);
         }
-        
-        final Separator logoutSeparator = new Separator();
-        logoutSeparator.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        logoutSeparator.setPrefHeight(16);
-        
-        rightSide.getChildren().addAll(separator, dashboardButton, logoutSeparator, logoutButton);
 
         header.getChildren().addAll(
             brandBlock,
