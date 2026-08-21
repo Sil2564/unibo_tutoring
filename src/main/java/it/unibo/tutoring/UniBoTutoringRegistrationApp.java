@@ -4,6 +4,9 @@ import it.unibo.tutoring.AuthService;
 import it.unibo.tutoring.UniBoTutoringDashboardApp;
 import it.unibo.tutoring.view.components.AppIcon;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
@@ -13,6 +16,8 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DateCell;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -34,6 +39,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 public final class UniBoTutoringRegistrationApp {
 
@@ -41,6 +47,9 @@ public final class UniBoTutoringRegistrationApp {
     private static final Color PAGE_BG = Color.web("#ECECEC");
     private static final Color CARD_BG = Color.web("#ffffff");
     private static final Color TEXT_DARK = Color.web("#111111");
+    private static final DateTimeFormatter BIRTH_DATE_FORMAT = DateTimeFormatter
+            .ofPattern("dd/MM/uuuu")
+            .withResolverStyle(ResolverStyle.STRICT);
 
     private UniBoTutoringRegistrationApp() {
     }
@@ -118,7 +127,7 @@ public final class UniBoTutoringRegistrationApp {
 
         final TextField nameField = createTextField("es. Mario");
         final TextField surnameField = createTextField("es. Rossi");
-        final TextField birthDateField = createTextField("GG/MM/AAAA");
+        final DatePicker birthDatePicker = createBirthDatePicker();
         final TextField matricolaField = createTextField("es. 1234567890");
         final TextField emailField = createTextField("mario.rossi@studio.unibo.it");
         final PasswordField passwordField = createPasswordField("min 6 caratteri, 1 numero");
@@ -137,7 +146,7 @@ public final class UniBoTutoringRegistrationApp {
 
         addField(fieldsGrid, 0, 0, "Nome", nameField);
         addField(fieldsGrid, 1, 0, "Cognome", surnameField);
-        addField(fieldsGrid, 2, 0, "Data di Nascita", birthDateField);
+        addField(fieldsGrid, 2, 0, "Data di Nascita", birthDatePicker);
         addField(fieldsGrid, 0, 1, "Matricola", matricolaField);
         addField(fieldsGrid, 1, 1, "Email", emailField);
         addField(fieldsGrid, 2, 1, "Corso di Studi", corsoBox);
@@ -163,7 +172,8 @@ public final class UniBoTutoringRegistrationApp {
         registerButton.setOnAction(event -> {
             final String name = nameField.getText().trim();
             final String surname = surnameField.getText().trim();
-            final String birthDate = birthDateField.getText().trim();
+            final String birthDateText = birthDatePicker.getEditor().getText().trim();
+            final LocalDate selectedBirthDate = parseBirthDate(birthDateText);
             final String matricola = matricolaField.getText().trim();
             final String email = emailField.getText().trim();
             final String password = passwordField.getText();
@@ -171,13 +181,18 @@ public final class UniBoTutoringRegistrationApp {
             // Aggiunto da Niki: Preleviamo il corso selezionato. Se non seleziona nulla (null), la validazione sotto lo blocca.
             final String corso = corsoBox.getValue();
 
-            if (name.isBlank() || surname.isBlank() || birthDate.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() || corso == null) {
+            if (name.isBlank() || surname.isBlank() || birthDateText.isBlank() || matricola.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() || corso == null) {
                 feedbackLabel.setText("Compila tutti i campi.");
                 feedbackLabel.setVisible(true);
                 return;
             }
-            if (!birthDate.matches("\\d{2}/\\d{2}/\\d{4}")) {
-                feedbackLabel.setText("Formato data errato (GG/MM/AAAA).");
+            if (selectedBirthDate == null) {
+                feedbackLabel.setText("Inserisci una data di nascita valida (GG/MM/AAAA).");
+                feedbackLabel.setVisible(true);
+                return;
+            }
+            if (selectedBirthDate.isAfter(LocalDate.now())) {
+                feedbackLabel.setText("La data di nascita non può essere futura.");
                 feedbackLabel.setVisible(true);
                 return;
             }
@@ -203,6 +218,7 @@ public final class UniBoTutoringRegistrationApp {
             }
 
             // Aggiunto da Niki: passiamo anche il corso all'AuthService per salvarlo correttamente
+            final String birthDate = selectedBirthDate.format(BIRTH_DATE_FORMAT);
             final AuthService.RegistrationResult result = AuthService.getInstance().register(name, surname, matricola, email, password, birthDate, corso);
             if (!result.isSuccess()) {
                 feedbackLabel.setText(result.getMessage());
@@ -256,6 +272,44 @@ public final class UniBoTutoringRegistrationApp {
         field.setPromptText(placeholder);
         styleField(field);
         return field;
+    }
+
+    private static DatePicker createBirthDatePicker() {
+        final DatePicker picker = new DatePicker();
+        picker.setPromptText("GG/MM/AAAA");
+        picker.setPrefWidth(205);
+        picker.setPrefHeight(40);
+        picker.setStyle("-fx-font-size: 18px;");
+        picker.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(final LocalDate date) {
+                return date == null ? "" : date.format(BIRTH_DATE_FORMAT);
+            }
+
+            @Override
+            public LocalDate fromString(final String value) {
+                return parseBirthDate(value);
+            }
+        });
+        picker.setDayCellFactory(datePicker -> new DateCell() {
+            @Override
+            public void updateItem(final LocalDate date, final boolean empty) {
+                super.updateItem(date, empty);
+                setDisable(empty || date == null || date.isAfter(LocalDate.now()));
+            }
+        });
+        return picker;
+    }
+
+    private static LocalDate parseBirthDate(final String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim(), BIRTH_DATE_FORMAT);
+        } catch (final java.time.format.DateTimeParseException exception) {
+            return null;
+        }
     }
 
     private static PasswordField createPasswordField(final String placeholder) {
