@@ -175,7 +175,7 @@ classDiagram
         -corsoDiStudi: String
         -password: String
         +login(identifier, password): Boolean
-        +register(ome, cognome, email, matricola, dataNascita, corsoDiStudi, password): Boolean
+        +register(nome, cognome, email, matricola, dataNascita, corsoDiStudi, password): Boolean
         +validateMatricola(): Boolean
         +validateEmail(): Boolean
     }
