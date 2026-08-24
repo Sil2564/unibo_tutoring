@@ -83,11 +83,16 @@ public class UniBoTutoringDashboardApp extends Application {
             mainArea,
             new AppFooter()
         );
-        scrollContent.setMinHeight(Region.USE_PREF_SIZE);
         VBox.setVgrow(mainArea, Priority.ALWAYS);
 
 		final ScrollPane scrollPane = new ScrollPane(scrollContent);
 		it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
+        // Il contenuto deve essere sempre alto almeno quanto la finestra:
+        // cosi', quando c'e' poco contenuto (es. "Le mie sessioni" vuota), il
+        // footer resta ancorato in fondo invece di risalire subito dopo il
+        // contenuto corto. Se il contenuto e' piu' alto della finestra, questo
+        // vincolo non impedisce comunque lo scroll (e' solo un minimo).
+        scrollContent.minHeightProperty().bind(scrollPane.heightProperty());
 
         root.getChildren().addAll(new AppHeader(), scrollPane);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
