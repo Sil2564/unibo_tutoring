@@ -893,7 +893,9 @@ Lo sviluppo di questo progetto è stato molto interessante e formativo, mi ha pe
 Aver visto la programmazione a oggetti con un linguaggio differente da quello imparato durante il mio percorso di studi precedente e nel mondo del lavoro (C# e PHP) mi ha permesso di cogliere nuove sfumature dell'architettura software. Il risultato finale mi ha soddisfatto molto, nonostante sia ancora possibile effettuare migliorie al codice e implementare o migliorare funzionalità. 
 Lavorare in un gruppo di 4 persone trovo che sia stato estremamente formativo dato che spero in futuro di lavorare in un team composto da un numero anche più grande di questo. Ciò mi ha permesso di approfondire l'uso di Git e gestire casi di merge quando si opera su stessi file in più persone e soprattutto ho imparato a collaborare con persone che programmano e ragionano in modo diverso rispetto al mio.
 
-
+### Sofia 
+Prima d'ora non avevo mai sviluppato un'applicazione in Java, ma nonostante questo si è rivelata un'attività molto formativa. Negli ultimi mesi ho dedicato quanto più tempo possibile alla realizzazione del lavoro, pur dovendo conciliare la preparazione di altri esami e la stesura della tesi.
+In merito al mio contributo personale, sono molto soddisfatta del lavoro svolto sulla [progettazione del mockup](https://www.figma.com/design/3MEAg0FptniksMuH9Hc6E1/prova?node-id=2085-32&t=rp5Om2WcU6haJwdm-1), sull'implementazione dei moduli di login e registrazione e sullo sviluppo della pagina delle statistiche. Sebbene all'inizio la realizzazione del progetto mi intimorisse e il coordinamento delle disponibilità di ciascuno sia stato complesso, ritengo il risultato finale positivo. Lavorare in un team di quattro persone è stato senz'altro più impegnativo rispetto a un lavoro individuale, ma altrettanto prezioso per fare esperienza con dinamiche di cooperazione molto vicine a quelle del contesto lavorativo.
 
 ## Difficoltà incontrate e commenti per i docenti
 
