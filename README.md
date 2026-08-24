@@ -171,9 +171,11 @@ classDiagram
         -nome: String
         -cognome: String
         -email: String
+        -dataNascita: LocalDate
+        -corsoDiStudi: String
         -password: String
         +login(identifier, password): Boolean
-        +register(nome, cognome, email, matricola, password): Boolean
+        +register(ome, cognome, email, matricola, dataNascita, corsoDiStudi, password): Boolean
         +validateMatricola(): Boolean
         +validateEmail(): Boolean
     }
@@ -196,11 +198,13 @@ classDiagram
         -cognomeInput: String
         -emailInput: String
         -matricolaInput: String
+        -dataNascitaInput: LocalDate
+        -corsoDiStudiInput: String
         -passwordInput: String
         +displayRegistrationForm(): void
         +onRegisterClick(): void
         +validateFormData(): Boolean
-    }
+}
     class Database {
         -users: List~User~
         +saveUser(user): Boolean
@@ -221,6 +225,8 @@ Gli attributi della classe contengono le informazioni personali necessarie per l
 - nome: nome dell'utente
 - cognome: cognome dell'utente
 - email: indirizzo email dell'utente
+- dataNascita: data di nascita dell’utente, richiesta in fase di registrazione;
+- corsoDiStudi: corso di studi selezionato dall’utente in fase di registrazione.
 - password: password associata all'account
 
 La classe include inoltre diversi metodi che permettono la gestione delle operazioni di autenticazione:
@@ -253,7 +259,7 @@ I metodi gestiscono l'interazione con l'interfaccia:
 ## Classe RegistrationView
 
 La classe RegistrationView invece, rappresenta l'interfaccia grafica per la registrazione di nuovi utenti.
-Gli attributi corrispondono ai campi del modulo di registrazione quindi nomeInput,cognomeInput, emailInput, matricolaInput e passwordInput.
+Gli attributi corrispondono ai campi del modulo di registrazione: nome, cognome, e-mail, matricola, data di nascita, corso di studi e password.
 
 I metodi principali sono:
 - displayRegistrationForm(): visualizza il modulo di registrazione
