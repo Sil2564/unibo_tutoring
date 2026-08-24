@@ -803,6 +803,86 @@ public void onNewMessage(final Message message) {
 
 La callback Observer può essere invocata da un thread diverso da quello grafico. Il controllo su `Platform.isFxApplicationThread()` evita aggiornamenti JavaFX non sicuri e usa `Platform.runLater` soltanto quando necessario.
 
+### Sofia
+
+#### Binding bidirezionale e proprietà osservabili per la visibilità della password
+**Dove:** [`it.unibo.tutoring.UniBoTutoringLoginApp`](src/main/java/it/unibo/tutoring/UniBoTutoringLoginApp.java)
+
+```java
+ visiblePasswordField.textProperty().bindBidirectional(passwordField.textProperty());
+        visiblePasswordField.setVisible(false);
+        visiblePasswordField.setManaged(false);
+
+        final AppIcon hiddenIcon = new AppIcon("eye_close.png", 22, 22);
+        final AppIcon visibleIcon = new AppIcon("eye.png", 22, 22);
+        //crea il pulsante per mostrare/nascondere la password
+        final Button toggleVisibilityButton = new Button("", hiddenIcon);
+        toggleVisibilityButton.setCursor(Cursor.HAND);
+        toggleVisibilityButton.setStyle("-fx-background-color: transparent; -fx-padding: 6;");
+        //toggleVisibilityButton.setFocusTraversable(false);
+
+        //crea una variabile booleana per lo stato di visibilità della password
+        //inizialmente la password è nascosta
+        final BooleanProperty passwordVisible = new SimpleBooleanProperty(false);
+        passwordVisible.addListener((observable, oldValue, newValue) -> {
+            passwordField.setVisible(!newValue);
+            passwordField.setManaged(!newValue);
+            visiblePasswordField.setVisible(newValue);
+            visiblePasswordField.setManaged(newValue);
+            toggleVisibilityButton.setGraphic(newValue ? visibleIcon : hiddenIcon);
+        });
+        //al click del pulsante cambia lo stato di visibilità della password
+        toggleVisibilityButton.setOnAction(event -> passwordVisible.set(!passwordVisible.get()));
+```
+In questo codice viene utilizzato un binding bidirezionale tra due campi di testo. Vengono usati due campi collegati tra loro, uno in chiaro e uno con la password nascosta. Il loro testo si sincronizza in automatico: quando l'utente clicca sull'icona dell'occhio, il sistema mostra o nasconde il campo giusto e aggiorna l'icona in tempo reale.
+
+
+#### Calcolo della valutazione media tramite Stream
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringStatisticApp`](src/main/java/it/unibo/tutoring/UniBoTutoringStatisticApp.java)
+
+Metodo `createKpiCards`
+
+```java
+ List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
+    
+    /**
+     * @stream() trasforma la lista in un flusso 
+     * @mapToInt(Review::stars) estrae il voto numerico delle recensioni 
+     * @average calcola la media 
+     * @orElse(0.0) restituisce zero se non si hanno recensioni */
+ double avgRating = reviews.stream()
+.mapToInt(Review::stars)
+.average()
+.orElse(0.0);
+```
+Il codice vede l'utilizzo di Stream API per estrarre i voti dalle recensioni (`mapToInt`), calcolarne la media (`average`) e gestire l’assenza di recensioni con `.orElse(0.0)`.
+
+
+#### Elaborazione funzionale dei dati per il grafico mensile
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringStatisticApp`](src/main/java/it/unibo/tutoring/UniBoTutoringStatisticApp.java)
+
+Metodo `createMonthlySessionsChart`
+
+```java
+  sessions.stream()
+        //prende le sessioni, ne estrae le date e le trasforma in LocalDate
+            .map(session -> parseDateSafe(session.date()))
+        //scarta le date non valide 
+            .filter(date -> !date.equals(LocalDate.MIN))
+            .sorted()  //ordina cronologicamente
+            //prende ogni data
+            .forEach(date -> {
+            //applica il DateTimeFormatter definito in precedenza
+                final String monthLabel = date.format(formatter);
+                //cerca nella mappa se esiste già una chiave corrispondente a monthLabel
+                countsByMonth.put(monthLabel, countsByMonth.getOrDefault(monthLabel, 0) + 1); //prende il valore ottenuto ed aggiunge 1
+            });
+```
+Il seguente frammento di codice utilizza una pipeline di operazioni Stream (`map, filter, sorted e forEach`). Questi passaggi permettono di convertire le date delle sessioni, escludere quelle non valide, ordinarle cronologicamente e aggiornare il conteggio mensile all’interno di una `LinkedHashMap`, preservando l’ordine di inserimento necessario per il grafico.
+
+
 # Commenti finali
 
 ## Autovalutazione e lavori futuri
