@@ -12,10 +12,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -113,6 +110,19 @@ public final class UniBoTutoringLoginApp {
         FormControlStyle.apply(passwordField, 44);
         passwordField.setFont(Font.font("System", FontWeight.NORMAL, 20));
 
+        Hyperlink forgotPasswordLink = new Hyperlink("Password dimenticata?");
+        forgotPasswordLink.setStyle("-fx-text-fill: #0056b3; -fx-font-size: 13px; -fx-border-color: transparent; -fx-padding: 0;");
+
+        forgotPasswordLink.setOnAction(e -> {
+            // Creazione della finestra di avviso
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Recupero Password");
+            alert.setHeaderText(null);
+            alert.setContentText("Contatta il nostro supporto tutoring@unibo.it e ti invieremo le nuove credenziali il prima possibile.");
+
+            alert.showAndWait();
+        });
+
         final HBox passwordFieldWrapper = createPasswordFieldWithToggle(passwordField);
 
         final AppButton loginButton = AppButton.primary("Accedi");
@@ -180,6 +190,7 @@ public final class UniBoTutoringLoginApp {
             matricolaField,
             passwordLabel,
             passwordFieldWrapper,
+            forgotPasswordLink,
             loginButton,
             feedbackLabel,
             registerLine

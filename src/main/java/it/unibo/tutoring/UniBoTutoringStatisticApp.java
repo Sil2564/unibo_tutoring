@@ -255,10 +255,11 @@ public class UniBoTutoringStatisticApp extends Application {
         titleBox.setPadding(new Insets(0, 0, 12, 0));
 
         // Blocchi KPI superiori
+        //createKpiCards per calcolare la media delle stelle
         final HBox kpiCards = createKpiCards(matricola);
 
-        // Sezioni Centrali dell'interfaccia
-        final VBox reviewsSection = createReviewsSection(matricola);
+        // Sezioni Centrali dell'interfaccia:  creano le liste dei vari punti
+        final VBox reviewsSection = createReviewsSection(matricola); 
         final VBox sessionsSection = createSessionsSection(matricola);
         final VBox chartSection = createMonthlySessionsChart(matricola);
 
@@ -302,11 +303,18 @@ public class UniBoTutoringStatisticApp extends Application {
                 .getCreditRecord(matricola);
         final TutorStatistics statistics = TutorStatistics.from(creditRecord, sessions);
         List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
+    
+    /**
+     * @stream() trasforma la lista in un flusso 
+     * @mapToInt(Review::stars) estrae il voto numerico delle recensioni 
+     * @average calcola la media 
+     * @orElse(0.0) restituisce zero se non si hanno recensioni */
         double avgRating = reviews.stream().mapToInt(Review::stars).average().orElse(0.0);
 
         final VBox card1 = createKpiCard("clock_red.png", "Ore totali", statistics.totalHours() + "h", "di tutoraggio svolto");
         final VBox card2 = createKpiCard("coccarda.png", "Crediti", Integer.toString(statistics.totalCredits()), "crediti accumulati");
         final VBox card3 = createKpiCard("graph_red.png", "Sessioni", Integer.toString(statistics.totalSessions()), "completate con successo");
+        //formatta la media ad un acifra arrotondata
         final VBox card4 = createKpiCard("star_red.png", "Valutazioni", String.format("%.1f/5", avgRating), "recensioni");
 
         kpiBox.getChildren().addAll(card1, card2, card3, card4);
@@ -367,7 +375,7 @@ public class UniBoTutoringStatisticApp extends Application {
 
         // Carica TUTTE le recensioni associate alla matricola dell'utente corrente
         List<Review> reviews = ReviewRepository.loadReviewsForRecipient(matricola);
-
+        // Se non ci sono recensioni, mostra un messaggio di placeholder
         if (reviews.isEmpty()) {
             final Label none = new Label("Ancora nessuna recensione");
             none.setFont(Font.font("System", FontWeight.NORMAL, 13));
@@ -375,16 +383,21 @@ public class UniBoTutoringStatisticApp extends Application {
             reviewsList.getChildren().add(none);
         } else {
             // Ordina tutte le recensioni in ordine cronologico inverso (dalla più recente)
+            //senza alterare l'ordine originale della lista, creando una copia ordinata
             List<Review> sorted = reviews.stream().collect(Collectors.toList());
+            /*  confronta due recensioni a e b, estrae le date, le converte in LocalDate 
+                e le confronta per ottenere l'ordine decrescente */
             sorted.sort((a, b) -> {
                 LocalDate da = parseDateSafe(a.date());
                 LocalDate db = parseDateSafe(b.date());
-                return db.compareTo(da);
+                return db.compareTo(da);    // Confronto inverso per ordine decrescente
             });
 
             // Cicla ed inserisce l'intera lista delle recensioni all'interno del box scorrevole
             for (final Review review : sorted) {
+                //crea una stringa di 5 stelle, riempiendo con stelle piene e vuote in base al voto della recensione
                 final String starsString = "★".repeat(Math.max(0, Math.min(5, review.stars()))) + "☆".repeat(Math.max(0, 5 - review.stars()));
+                //popola la lista delle recensioni con le card personalizzate create con i dati della recensione
                 VBox reviewCard = createCustomReviewCard(review.reviewerName(), review.subject(), starsString, review.date(), review.comment());
                 reviewCard.setMaxWidth(Double.MAX_VALUE);
                 reviewsList.getChildren().add(reviewCard);
@@ -447,23 +460,28 @@ public class UniBoTutoringStatisticApp extends Application {
         final Region spacer2 = new Region();
         HBox.setHgrow(spacer2, Priority.ALWAYS);
 
+        //crea un'etichetta per la data della recensione, con font e colore specifici
         final Label dateLabel = new Label(dateStr);
         dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 11));
         dateLabel.setTextFill(TEXT_MEDIUM);
+        //aggiunge le etichette del soggetto e della data alla riga centrale della card
         middleRow.getChildren().addAll(subLabel, spacer2, dateLabel);
-
+        //crea un'etichetta per il commento della recensione, con testo a capo, font e colore specifici
         final Label commentLabel = new Label(comment);
         commentLabel.setWrapText(true);
         commentLabel.setFont(Font.font("System", FontWeight.NORMAL, 12));
         commentLabel.setTextFill(TEXT_DARK);
-
+        //aggiunge le tre righe (intestazione, soggetto/data, commento) alla card della recensione
         card.getChildren().addAll(topRow, middleRow, commentLabel);
-        return card;
+        return card;    //restituisce la card pronta
     }
-
+    // Funzione di utilità per convertire una stringa in LocalDate in modo sicuro, gestendo formati diversi e valori nulli
     private static LocalDate parseDateSafe(final String s) {
+        // Se la stringa è nulla, restituisce LocalDate.MIN come valore di fallback
         if (s == null) return LocalDate.MIN;
+        //rimuove eventuali spazi bianchi all'inizio e alla fine della stringa
         final String t = s.trim();
+        //definisce un array di formati di data comuni per tentare il parsing della stringa
         final DateTimeFormatter[] fmts = new DateTimeFormatter[] {
             DateTimeFormatter.ofPattern("dd-MM-yyyy"),
             DateTimeFormatter.ofPattern("d-M-yyyy"),
@@ -472,16 +490,21 @@ public class UniBoTutoringStatisticApp extends Application {
             DateTimeFormatter.ofPattern("dd MMM yyyy"),
             DateTimeFormatter.ofPattern("dd MMMM yyyy")
         };
+        //cicla attraverso i formati definiti e tenta di convertire la stringa in LocalDate
         for (final DateTimeFormatter f : fmts) {
             try {
+                //se il parsing ha successo, restituisce la data convertita
                 return LocalDate.parse(t, f);
+                //se il parsing fallisce, cattura l'eccezione e passa al formato successivo
             } catch (DateTimeParseException e) {
                 // try next
             }
         }
         // fallback: try ISO
         try {
+            //se tutti i formati precedenti falliscono, tenta di convertire la stringa come data ISO standard
             return LocalDate.parse(t);
+            //se anche il parsing ISO fallisce, cattura l'eccezione e restituisce LocalDate.MIN come valore di fallback
         } catch (Exception e) {
             return LocalDate.MIN;
         }

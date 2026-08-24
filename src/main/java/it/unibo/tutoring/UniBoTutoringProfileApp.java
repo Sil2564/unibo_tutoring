@@ -5,9 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,7 +29,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.scene.shape.Circle;
@@ -129,8 +126,8 @@ public final class UniBoTutoringProfileApp  {
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(scrollPane);
 
         root.getChildren().addAll(
-            createHeader(currentUser, annuncioDiProvenienza),
-            scrollPane
+                createHeader(currentUser, annuncioDiProvenienza, isOwnProfile),
+                scrollPane
         );
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
@@ -151,7 +148,7 @@ public final class UniBoTutoringProfileApp  {
         return content;
     }
 
-    private static HBox createHeader(final UserAccount user, final BoxTutoraggio annuncioDiProvenienza) {
+    private static HBox createHeader(final UserAccount user, final BoxTutoraggio annuncioDiProvenienza, final boolean isOwnProfile) {
 
         final HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -258,22 +255,6 @@ public final class UniBoTutoringProfileApp  {
             it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
         });
 
-        final Button logoutButton = new Button("Logout");
-        logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        logoutButton.setTextFill(PRIMARY_RED);
-        logoutButton.setPadding(new Insets(8, 14, 8, 14));
-        logoutButton.setCursor(javafx.scene.Cursor.HAND);
-        logoutButton.setBackground(new Background(
-            new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)
-        ));
-        logoutButton.setBorder(new Border(
-            new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)
-        ));
-        logoutButton.setOnAction(event -> {
-            CurrentSession.clear();
-            NavigationHelper.goToLogin((Stage) logoutButton.getScene().getWindow());
-        });
-
         final HBox rightSide = new HBox(10);
         rightSide.setAlignment(Pos.CENTER_RIGHT);
         rightSide.getChildren().add(userName);
@@ -283,12 +264,31 @@ public final class UniBoTutoringProfileApp  {
             announcementSeparator.setPrefHeight(16);
             rightSide.getChildren().addAll(announcementSeparator, backToAnnouncementButton);
         }
-        
-        final Separator logoutSeparator = new Separator();
-        logoutSeparator.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        logoutSeparator.setPrefHeight(16);
-        
-        rightSide.getChildren().addAll(separator, dashboardButton, logoutSeparator, logoutButton);
+
+        rightSide.getChildren().addAll(separator, dashboardButton);
+
+        if (isOwnProfile) {
+            final Separator logoutSeparator = new Separator();
+            logoutSeparator.setOrientation(javafx.geometry.Orientation.VERTICAL);
+            logoutSeparator.setPrefHeight(16);
+
+            final Button logoutButton = new Button("Logout");
+            logoutButton.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
+            logoutButton.setTextFill(PRIMARY_RED);
+            logoutButton.setPadding(new Insets(8, 14, 8, 14));
+            logoutButton.setCursor(javafx.scene.Cursor.HAND);
+            logoutButton.setBackground(new Background(
+                    new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)
+            ));
+            logoutButton.setBorder(new Border(
+                    new BorderStroke(PRIMARY_RED, BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)
+            ));
+            logoutButton.setOnAction(event -> {
+                CurrentSession.clear();
+                NavigationHelper.goToLogin((Stage) logoutButton.getScene().getWindow());
+            });
+            rightSide.getChildren().addAll(logoutSeparator, logoutButton);
+        }
 
         header.getChildren().addAll(
             brandBlock,
@@ -453,35 +453,15 @@ switch (creditRecord.getBadge()) {
         
         final HBox annoNascitaRow = new HBox(10);
         annoNascitaRow.setAlignment(Pos.CENTER_LEFT);
-        final Label annoNascitaPrefix = new Label("ANNO NASCITA:");
+        final Label annoNascitaPrefix = new Label("DATA DI NASCITA:");
         annoNascitaPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
         annoNascitaPrefix.setTextFill(Color.web("#535353"));
-        
-        if (isOwnProfile) {
-            final DatePicker datePicker = new DatePicker();
-            datePicker.setStyle("-fx-font-size: 14px;");
-            datePicker.setPrefWidth(160);
-            if (!"Non specificato".equals(birthDateStr)) {
-                try {
-                    datePicker.setValue(LocalDate.parse(birthDateStr, DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                } catch (Exception ex) {
-                    // Ignore parsing error, keep null
-                }
-            }
-            datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal != null) {
-                    user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                    AuthService.getInstance().saveChanges();
-                }
-            });
-            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
-        } else {
-            final Label annoNascitaVal = new Label(birthDateStr);
-            annoNascitaVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
-            annoNascitaVal.setTextFill(Color.web("#535353"));
-            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, annoNascitaVal);
-        }
-        
+
+        final Label annoNascitaVal = new Label(birthDateStr);
+        annoNascitaVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
+        annoNascitaVal.setTextFill(Color.web("#535353"));
+        annoNascitaRow.getChildren().addAll(annoNascitaPrefix, annoNascitaVal);
+
         final String corsoStr = user.getCorso() != null && !user.getCorso().isBlank() ? user.getCorso() : "Studente UniBo";
         
         final HBox corsoRow = new HBox(10);

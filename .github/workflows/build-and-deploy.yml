@@ -1,4 +1,4 @@
-name: CI
+name: Java CI
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - 'README.md'
       - 'renovate.json'
   pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -19,64 +20,51 @@ jobs:
   # Compila e testa il progetto su tutte le piattaforme supportate
   # (JavaFX include i nativi per linux, mac e win)
   build-and-test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
+          cache: gradle
 
-      - name: Make Gradle wrapper executable
-        shell: bash
-        run: chmod +x gradlew
+      - name: Build and test with Gradle
+        run: .\gradlew.bat build --no-daemon
 
-      # shell: bash forza l'uso di Git Bash anche su Windows,
-      # cosi' possiamo invocare sempre ./gradlew (niente bisogno
-      # di distinguere gradlew.bat).
-      - name: Build with Gradle
-        shell: bash
-        run: ./gradlew build
-
-      - name: Run tests
-        shell: bash
-        run: ./gradlew test
-
-  # Verifica una sola volta (non per ogni combinazione della matrice)
-  # che il gradle-wrapper.jar committato sia quello ufficiale.
   validate-wrapper:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
   # Crea il fat jar (shadowJar) e lo pubblica come artifact solo
   # quando viene pushato un tag di release (es. v1.0.0).
   create-release:
-    needs: [ build-and-test, validate-wrapper ]
+    needs: [build-and-test, validate-wrapper]
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
+          cache: gradle
 
       - name: Build fat jar
-        run: ./gradlew shadowJar
+        run: .\gradlew.bat shadowJar --no-daemon
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

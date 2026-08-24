@@ -5,16 +5,16 @@ In questa sezione vengono analizzati i requisiti e il dominio applicativo del pr
 L'obiettivo è definire in modo chiaro cosa dovrà fare la nostra applicazione e quali elementi caratterizzano il contesto, senza entrare nei dettagli tecnici o progettuali.
 
 ## Analisi dei requisiti
-L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti dell'Università di Bologna in cui gli utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
+L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digitale per gli studenti del Campus di Cesena dell'Università di Bologna in cui gli utenti possono mettersi in contatto per offrire o richiedere aiuti su specifiche materie.
 
 **Requisiti funzionali**
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
-- Gli studenti potranno registrarsi e autenticarsi usando la matricola universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
+- Gli studenti potranno registrarsi e autenticarsi usando la matricola o l'email universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
 - Gli utenti potranno creare, modificare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
-- Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa
+- Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa o cancellata (stato che interrompe il flusso senza generare crediti)
 - Deve essere disponibile una chat privata per la comunicazione diretta tra tutor e studente, utile a concordare i dettagli dell'incontro
 - Ogni utente dovrà disporre di un profilo personale, con le informazioni base (nome, cognome, matricola) e le attività svolte
 
@@ -35,7 +35,7 @@ Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creaz
 Gli elementi principali del dominio sono:
 - Utente: rappresenta uno studente iscritto all'Università di Bologna.
 - BoxTutoraggio: rappresenta un'offerta o una richiesta di tutoraggio. Contiene informazioni sulla materia e una breve descrizione.
-- Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa)
+- Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa o cancellata)
 - Chat: rappresenta il canale di comunicazione tra gli utenti che partecipano a una sessione.
 - Credito: rappresenta il numero di ore e CFU accumulati dal tutor per le attività svolte.
 
@@ -76,7 +76,7 @@ classDiagram
         +data
         +ora
         +durataOre
-        +stato  // proposta, confermata, sospesa
+        +stato  // proposta, confermata, conclusa, cancellata
     }
 
 
@@ -161,7 +161,7 @@ classDiagram
 ```
 
 ## Design dettagliato- Gestione fasi Login e Registrazione
-Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola e password.
+Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola oppure l'indirizzo email universitario e la password.
 Il sistema è organizzato secondo una separazione tra interfaccia utente, logica applicativa e gestione dei dati.
 
 ```mermaid
@@ -172,20 +172,20 @@ classDiagram
         -cognome: String
         -email: String
         -password: String
-        +login(matricola, password): Boolean
+        +login(identifier, password): Boolean
         +register(nome, cognome, email, matricola, password): Boolean
         +validateMatricola(): Boolean
         +validateEmail(): Boolean
     }
     class AuthenticationService {
         -users: List~User~
-        +authenticateUser(matricola, password): User
+        +authenticateUser(identifier, password): User
         +registerNewUser(userData): User
         +checkMatricolaExists(matricola): Boolean
         +hashPassword(password): String
     }
     class LoginView {
-        -matricolaInput: String
+        -identifierInput: String
         -passwordInput: String
         +displayLoginForm(): void
         +onLoginClick(): void
@@ -204,8 +204,8 @@ classDiagram
     class Database {
         -users: List~User~
         +saveUser(user): Boolean
-        +findUserByMatricola(matricola): User
-        +getUserByCredentials(matricola, password): User
+        +findUserByIdentifier(identifier): User
+        +getUserByCredentials(identifier, password): User
     }
     LoginView --> AuthenticationService: usa
     RegistrationView --> AuthenticationService: usa
@@ -236,14 +236,14 @@ Essa funge da livello intermedio tra l'interfaccia utente e il database.
 Gli attributi includono una lista di utenti registrati: users: List<User>
 
 I metodi principali sono:
-- authenticateUser(): verifica se la matricola e la password inserite corrispondono a un utente registrato
+- authenticateUser(): verifica che l’identificativo inserito (matricola o e-mail) e la password inserite corrispondono a un utente registrato
 - registerNewUser(): gestisce il processo di registrazione di un nuovo utente
 - checkMatricolaExists(): controlla se una matricola è già presente nel sistema
 - hashPassword(): converte la password in formato cifrato per garantire maggiore sicurezza
 
 ## Classe LoginView
 La classe LoginView rappresenta l'interfaccia grafica utilizzata dall'utente per effettuare l'accesso al sistema.
-Gli attributi rappresentano i campi inseriti dall'utente ovvero matricolaInput e passwordInput.
+Gli attributi rappresentano i campi inseriti dall'utente ovvero `identifierInput` (matricola o e-mail) e `passwordInput`.
 
 I metodi gestiscono l'interazione con l'interfaccia:
 - displayLoginForm(): mostra il modulo di login
@@ -364,28 +364,37 @@ classDiagram
 ```
 ## GESTIONE SESSIONI E CHAT
 
-Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messaggi fra di loro. Oltre ai messaggi ci deve essere la possibilità di poter offrire o richiedere un'offerta di tutoraggio la quale può essere proposta, confermata, o conclusa.
+Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richiesta di tutoraggio e comunicare tramite una chat privata associata alla sessione. La sessione attraversa gli stati proposta, confermata, completata o cancellata; le sessioni future confermate vengono inoltre mostrate nel calendario personale dei partecipanti.
 
 
 ```mermaid
   %% ============================================================
     %% DESIGN DETTAGLIATO - SESSIONI E CHAT (ANDREA)
-    %% Pattern: Observer + Strategy
+    %% Pattern: State + Observer + Facade
     %% ============================================================
 
     classDiagram
 
     class TutoringSession {
-        -int id
-        -Date dataOra
-        -Duration durata
-        -String materia
-        -StatoSessione statoCorrente
+        <<interface>>
+        +getId() UUID
+        +getDataOra() LocalDateTime
+        +getDurata() Duration
+        +getMateria() String
+        +getStatoCorrente() SessionState
+        +getTutorMatricola() String
         +conferma()
         +annulla()
         +completa()
         +inviaMessaggio(testo, mittente)
+        +addChatObserver(observer)
         +getStoricoChat() : List~Message~
+    }
+
+    class TutoringSessionImpl {
+        -SessionState statoCorrente
+        -Chat chat
+        +setStatoCorrente(nuovoStato)
     }
 
     %% PATTERN STATE: Gestione degli stati
@@ -409,45 +418,77 @@ Gli utenti di unibo_tutoring hanno la possibilità di poter scambiare dei messag
     }
 
     class CompletedState {
-
     }
 
-    TutoringSession --> SessionState : ha uno stato 
+    class CancelledState {
+    }
+
+    TutoringSession <|.. TutoringSessionImpl
+    TutoringSessionImpl --> SessionState : ha uno stato
     SessionState <|.. ProposedState
     SessionState <|.. ConfirmedState
     SessionState <|.. CompletedState
+    SessionState <|.. CancelledState
 
     class Chat {
-        -int idSessione
+        <<interface>>
         +aggiungiMessaggio(messaggio)
-        +getMessaggi() messaggi<>
+        +getStoricoMessaggi() : List~Message~
+        +addObserver(observer)
+    }
+
+    class ChatImpl {
+        -List~Message~ storicoMessaggi
+        -List~ChatObserver~ observers
+    }
+
+    class ChatObserver {
+        <<interface>>
+        +onNewMessage(message)
     }
 
     class Message {
-        -String testo
-        -Date timestamp
-        -String idMittente
+        <<interface>>
         +getTesto()
+        +getIdMittente()
+        +getTimestamp() 
     }
 
-    
-    TutoringSession "1" *-- "1" Chat : possiede 
-    Chat "1" o-- "*" Message : contiene 
+    class MessageImpl
+    class TutoringSessionViewApp
+
+    Chat <|.. ChatImpl
+    Message <|.. MessageImpl
+    TutoringSessionImpl "1" *-- "1" Chat : possiede
+    ChatImpl "1" o-- "*" Message : contiene
+    ChatImpl --> ChatObserver : notifica
+    ChatObserver <|.. TutoringSessionViewApp
 ```
 ### Scelte Progettuali: Gestione Sessioni e Chat (Andrea)
 
 Il modulo relativo alla gestione delle sessioni di tutoraggio e della messaggistica privata è stato progettato per massimizzare la flessibilità e separare chiaramente le responsabilità.
 
 #### 1. Gestione del ciclo di vita della Sessione (State Pattern)
-Una `TutoringSession` attraversa diverse fasi durante il suo ciclo di vita (Proposta, Confermata, Conclusa). Invece di gestire queste transizioni tramite complessi e fragili blocchi `if/switch` all'interno della classe principale, si è optato per l'utilizzo del **Pattern State**.
+
+Una `TutoringSession` attraversa le fasi Proposta, Confermata, Completata e Cancellata. Invece di gestire le transizioni con blocchi `if/switch` nella classe principale, si è scelto il **Pattern State**.
+
 * **`SessionState` (Interfaccia):** Definisce le azioni possibili su una sessione (`conferma()`, `annulla()`, `completa()`).
-* **Stati Concreti (`ProposedState`, `ConfirmedState`, `CompletedState`):** Implementano le transizioni consentite. Ad esempio, chiamare `conferma()` su uno stato `ProposedState` sposterà la sessione in `ConfirmedState`, mentre chiamare la stessa operazione su una sessione già in `CompletedState` solleverà un'eccezione, garantendo la coerenza del dominio.
-* **Vantaggi:** Questo approccio rispetta l'*Open/Closed Principle*. Qualora in futuro si decidesse di aggiungere un nuovo stato (es. `SuspendedState`), basterà creare una nuova classe senza dover modificare la logica preesistente della `TutoringSession`.
+* **Stati concreti (`ProposedState`, `ConfirmedState`, `CompletedState`, `CancelledState`):** Implementano le transizioni consentite. `CompletedState` e `CancelledState` sono terminali e rifiutano ulteriori transizioni tramite eccezioni.
+* **Regole coordinate dal Controller:** `TutoringSessionController` persiste proposta e conferma, consente il completamento solo dopo la fine prevista e impone che il tutor confermi per primo; la transizione a `CompletedState` avviene soltanto dopo la conferma di entrambi. La pubblicazione del `SessionCompletedEvent` e il cambio di stato sono concentrati in `ConfirmedState.completa()`.
+* **Controllo della disponibilità:** prima della conferma, il controller verifica tramite `SessionRepository` che né il tutor né lo studente abbiano un'altra sessione `Confirmed` sovrapposta. Il confronto considera l'intero intervallo data/ora-durata e consente sessioni consecutive, quando la seconda inizia esattamente alla fine della prima.
+* **Modifica della programmazione:** l'autore può modificare data, ora e durata finché non è presente una candidatura attiva o un candidato confermato. Modello e View applicano lo stesso controllo.
+* **Cancellazione e persistenza:** una sessione confermata può essere cancellata prima della fine prevista. Autore, data, motivo e lettura della notifica vengono salvati; la sessione cancellata rimane consultabile per 24 ore e lo stato `Cancelled` viene ripristinato dal file. `SessionLinkUtil` genera inoltre un identificativo di conversazione a partire dall'annuncio e dalla controparte, evitando collisioni fra sessioni diverse.
+* **Vantaggi:** ogni stato mantiene isolate le proprie regole e l'aggiunta di un nuovo stato richiede una nuova implementazione di `SessionState` e l'aggiornamento delle sole transizioni che devono raggiungerlo.
 
 #### 2. Architettura della Chat Privata (Composizione e Observer)
 La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
 * La classe `TutoringSession` fa da facciata (Façade pattern) verso l'esterno: espone il metodo `inviaMessaggio(...)` facendo in realtà eseguire all'oggetto `Chat` interno.
-* Questa separazione prepara il terreno per l'implementazione del pattern **Observer** lato GUI (Model-View-Controller). La View della Chat in JavaFX potrà "osservare" la lista dei messaggi nel Modello; ogni volta che un nuovo `Message` verrà aggiunto alla `Chat`, la View verrà notificata e si aggiornerà in modo reattivo, senza accoppiamento stretto tra logica di business e interfaccia grafica.
+* Il pattern **Observer** è implementato dal modello alla GUI: `ChatImpl` notifica i `ChatObserver` registrati, mentre `TutoringSessionViewApp` implementa l'interfaccia e aggiorna i messaggi sul thread JavaFX quando il proprio modello riceve un nuovo `Message`.
+* I messaggi e i relativi timestamp vengono persistiti nel file condiviso della sessione. Il controller conserva anche lo stato di lettura della chat, usato dalla Dashboard per mostrare il simbolo di notifica alla controparte.
+
+#### 3. Calendario personale
+
+`SessionRepository` legge i file delle sessioni e restituisce, in ordine cronologico, soltanto quelle future in stato `Confirmed` alle quali partecipa l'utente. `UniBoTutoringProfileApp` usa il repository per popolare la sezione **I Tuoi Prossimi Impegni**, distinguendo le sessioni svolte come tutor da quelle ricevute come studente.
 
 
 ## GESTIONE FEEDBACK E RECENSIONI
@@ -636,4 +677,215 @@ Per garantire caricamenti rapidi, il sistema non ricalcola la media dei voti leg
 Lato interfaccia (UniBoTutoringStatisticApp), l'integrazione del sistema di feedback sfrutta le API funzionali di Java (Streams).
 Le recensioni recuperate dal repository vengono processate dinamicamente, ordinate in ordine cronologico inverso (mostrando sempre in cima le più recenti valutando in modo safe le stringhe delle date) e renderizzate in schede grafiche iniettate in uno ScrollPane. 
 
+# Sviluppo
 
+## Testing automatizzato
+
+Il progetto usa test automatici JUnit eseguibili con:
+
+```bash
+./gradlew test
+```
+
+Il progetto contiene 45 metodi annotati con `@Test` distribuiti in undici classi. I test coprono disponibilità del runtime JavaFX, autenticazione, annunci, componenti condivisi dell'interfaccia, navigazione, sessioni, chat e persistenza.
+
+### Andrea
+
+- `TutoringSessionTest`: stato iniziale, transizioni lecite e illecite, Façade della chat e inoltro delle notifiche Observer.
+- `TutoringSessionControllerTest`: persistenza di messaggi e recensioni, separazione delle chat, confini temporali del completamento e della cancellazione, doppia conferma, evento pubblicato una sola volta, messaggi non letti, cancellazione persistente e riparazione di file privi di newline finale.
+- `SessionOverlapTest`: sovrapposizioni parziali e contenitive, intervalli adiacenti, sessioni irrilevanti, appuntamenti già iniziati e ancora attivi ed esclusione del file corrente.
+- `SessionRepositoryTest`: selezione delle sole sessioni confermate e future per il calendario.
+- `ChatTest`: memorizzazione del messaggio e notifica dell'observer.
+
+Le regole che dipendono dal tempo espongono varianti testabili con un `LocalDateTime` esplicito, così da verificare esattamente gli istanti di confine.
+
+## Note di sviluppo
+
+### Andrea 
+
+#### Stream, Optional e record per il controllo degli intervalli
+
+**Dove:** [`it.unibo.tutoring.model.session.SessionRepository`](https://github.com/Sil2564/unibo_tutoring/blob/main/src/main/java/it/unibo/tutoring/model/session/SessionRepository.java)
+
+```java
+try (Stream<Path> paths = Files.list(SESSION_FOLDER)) {
+    return paths.filter(SessionRepository::isSessionFile)
+            .filter(path -> !samePath(path, sessioneDaEscludere))
+            .map(this::parseSessionFile)
+            .filter(Objects::nonNull)
+            .filter(SessionFileData::isConfirmed)
+            .filter(session -> session.involves(matricola))
+            .filter(session -> overlaps(
+                    nuovoInizio,
+                    nuovaFine,
+                    session.dataOra(),
+                    session.fine()))
+            .sorted(Comparator.comparing(SessionFileData::dataOra))
+            .map(session -> new SessionConflict(
+                    session.materia(),
+                    session.dataOra(),
+                    session.fine()))
+            .findFirst();
+}
+```
+
+La pipeline usa `Stream<Path>` con chiusura automatica, method reference, lambda, `Comparator`, `Optional` e un `record` immutabile per restituire il conflitto. La sequenza esprime in modo dichiarativo tutte le condizioni che rendono una sessione rilevante.
+
+#### Parsing compatibile e gestione mirata delle righe non valide
+
+**Dove:** [`it.unibo.tutoring.controller.session.TutoringSessionController`](https://github.com/Sil2564/unibo_tutoring/blob/main/src/main/java/it/unibo/tutoring/controller/session/TutoringSessionController.java)
+
+```java
+if (line.startsWith("STATO;")) {
+    ripristinaStato(line.substring("STATO;".length()));
+} else if (line.startsWith("MSG2;")) {
+    ripristinaMessaggioConTimestamp(line.substring("MSG2;".length()));
+} else if (line.startsWith("MSG;")) {
+    ripristinaMessaggioLegacy(line.substring("MSG;".length()));
+} else if (line.startsWith("COMPLETO_TUTOR;")) {
+    this.completatoTutor = Boolean.parseBoolean(
+            line.substring("COMPLETO_TUTOR;".length()).trim());
+} else if (line.startsWith("COMPLETO_STUDENTE;")) {
+    this.completatoStudente = Boolean.parseBoolean(
+            line.substring("COMPLETO_STUDENTE;".length()).trim());
+}
+```
+
+Il caricamento riconosce sia `MSG2`, che include il timestamp, sia il formato legacy `MSG`. Una singola riga con timestamp non valido viene ignorata senza perdere il resto della sessione. L'approccio consente di evolvere il formato persistente preservando i dati già creati.
+
+#### Collezioni ordinate per ricevute di lettura e notifiche
+
+**Dove:** [`it.unibo.tutoring.controller.session.TutoringSessionController`](https://github.com/Sil2564/unibo_tutoring/blob/main/src/main/java/it/unibo/tutoring/controller/session/TutoringSessionController.java)
+
+```java
+private final Set<String> cancellazioneVistaDa = new LinkedHashSet<>();
+private final Set<String> chatVistaDa = new LinkedHashSet<>();
+
+public boolean haMessaggiChatNonLetti() {
+    if (!this.statoLetturaChatPresente
+            || this.chatVistaDa.contains(this.userMatricola)) {
+        return false;
+    }
+    return this.model.getStoricoChat().stream()
+            .anyMatch(message -> !SYSTEM_SENDER_ID.equals(message.getIdMittente())
+                    && !this.userMatricola.equals(message.getIdMittente()));
+}
+```
+
+`LinkedHashSet` impedisce duplicati e produce una serializzazione deterministica. `Stream.anyMatch` termina appena trova un messaggio effettivamente ricevuto, escludendo messaggi di sistema e messaggi inviati dall'utente stesso.
+
+#### Aggiornamento sicuro della vista sul JavaFX Application Thread
+
+**Dove:** [`it.unibo.tutoring.view.session.TutoringSessionViewApp`](https://github.com/Sil2564/unibo_tutoring/blob/main/src/main/java/it/unibo/tutoring/view/session/TutoringSessionViewApp.java)
+
+```java
+@Override
+public void onNewMessage(final Message message) {
+    if (this.messageArea == null) {
+        return;
+    }
+
+    final Runnable update = () -> aggiornaMessaggi(this.messageArea);
+    if (Platform.isFxApplicationThread()) {
+        update.run();
+    } else {
+        Platform.runLater(update);
+    }
+}
+```
+
+La callback Observer può essere invocata da un thread diverso da quello grafico. Il controllo su `Platform.isFxApplicationThread()` evita aggiornamenti JavaFX non sicuri e usa `Platform.runLater` soltanto quando necessario.
+
+# Commenti finali
+
+## Autovalutazione e lavori futuri
+
+### Andrea 
+
+Lo sviluppo di questo progetto è stato molto interessante e formativo, mi ha permesso di scoprire in maniera più approfondita e realistica le varie dinamiche e fasi di gestione di un software di piccole-medie dimensioni, con particolare attenzione al lavoro di gruppo e come gestire imprevisti disaccordi e problematiche che si possono verificare durante quest’ultimo.
+Aver visto la programmazione a oggetti con un linguaggio differente da quello imparato durante il mio percorso di studi precedente e nel mondo del lavoro (C# e PHP) mi ha permesso di cogliere nuove sfumature dell'architettura software. Il risultato finale mi ha soddisfatto molto, nonostante sia ancora possibile effettuare migliorie al codice e implementare o migliorare funzionalità. 
+Lavorare in un gruppo di 4 persone trovo che sia stato estremamente formativo dato che spero in futuro di lavorare in un team composto da un numero anche più grande di questo. Ciò mi ha permesso di approfondire l'uso di Git e gestire casi di merge quando si opera su stessi file in più persone e soprattutto ho imparato a collaborare con persone che programmano e ragionano in modo diverso rispetto al mio.
+
+
+
+## Difficoltà incontrate e commenti per i docenti
+
+La difficoltà più importante durante lo sviluppo è stata la coordinazione di tutti i membri del gruppo, considerando anche che 3 membri su 4 hanno svolto o stanno tutt'ora svolgendo i tirocini, motivo per cui la realizzazione è durata oltre 10 mesi partendo dalla creazione dell'idea e della repository, in modo però discontinuo un po' per tutti.
+Inoltre reperire le registrazioni di alcune lezioni potrebbe risultare difficile dato che sono presenti solamente su teams con una scadenza.
+
+# Guida utente
+
+## Requisiti di esecuzione
+
+La configurazione corrente richiede un JDK 25. 
+
+Avvio su Linux o macOS:
+
+```bash
+./gradlew run
+```
+
+Avvio su Windows:
+
+```powershell
+./gradlew.bat run
+```
+
+Esecuzione dei test:
+
+```bash
+./gradlew test
+```
+
+Creazione del fat JAR:
+
+```bash
+./gradlew shadowJar
+```
+
+Il file generato si trova nella cartella `build/libs`. 
+
+## Registrazione e accesso
+
+1. Dalla home selezionare **Registrati**.
+2. Inserire nome, cognome, data di nascita, corso di studi, matricola di dieci cifre, e-mail e password.
+3. La password deve contenere almeno sei caratteri, una maiuscola, una minuscola, un numero e un carattere speciale.
+4. Dopo la registrazione selezionare **Accedi** e usare la matricola oppure l'e-mail insieme alla password.
+
+## Consultazione e creazione degli annunci
+
+1. Dopo l'accesso viene mostrata la dashboard.
+2. Usare la ricerca e i filtri per limitare gli annunci visualizzati.
+3. Aprire un annuncio per consultarne autore, materia, argomento, programmazione e nota.
+4. Per pubblicare un nuovo annuncio selezionare **+ Crea Annuncio**, scegliere se si tratta di un'offerta o di una richiesta e compilare tutti i dati richiesti.
+5. L'autore può usare **Modifica data e orario** finché l'annuncio non possiede candidature attive o un candidato confermato.
+6. Con **Elimina annuncio** l'autore rimuove l'annuncio. Se esiste già una sessione confermata, la cancellazione rimane temporaneamente visibile alle persone coinvolte.
+
+## Contatto, candidatura e conferma
+
+1. Selezionare **Contatta** per aprire una conversazione con l'autore senza candidarsi automaticamente.
+2. Selezionare **Candidati** per proporre la propria partecipazione. Finché la candidatura è pendente è possibile scegliere **Ritira candidatura**.
+3. L'autore vede i candidati nel dettaglio dell'annuncio e può usare **Conferma** o **Rifiuta**.
+4. Al momento della conferma il sistema controlla gli impegni di entrambi. Se esiste una sessione confermata sovrapposta, la conferma viene rifiutata e viene mostrato l'intervallo in conflitto.
+
+## Chat e gestione della sessione
+
+1. Dal dettaglio dell'annuncio selezionare **Apri chat**.
+2. Scrivere il testo nel campo dedicato e premere **Invia**. I messaggi mostrano mittente e orario e rimangono disponibili dopo il riavvio.
+3. Una notifica segnala alla controparte i nuovi messaggi; l'apertura della chat li marca come letti.
+4. Prima della fine prevista, ciascun partecipante può usare **Annulla sessione** e inserire un motivo facoltativo. La controparte riceve un messaggio di sistema e la sessione cancellata rimane consultabile per 24 ore.
+5. Dopo l'orario di fine il tutor può selezionare **Segna come completata**. Lo studente potrà fare lo stesso soltanto dopo la conferma del tutor.
+6. Quando entrambi hanno confermato, la sessione passa a completata e le ore vengono aggiunte al progresso del tutor.
+7. Lo studente può quindi selezionare da una a cinque stelle, aggiungere un commento facoltativo e inviare la recensione.
+
+## Profilo, calendario e statistiche
+
+- Dal profilo personale è possibile vedere i dati dell'account, modificare password, immagine e presentazione, e consultare ore, crediti, badge e recensioni.
+- La data di nascita viene visualizzata ma non è modificabile dal profilo.
+- La sezione **I Tuoi Prossimi Impegni** mostra soltanto le sessioni future confermate, ordinate cronologicamente, indicando se l'utente partecipa come tutor o come studente.
+- La pagina statistiche riassume progressi, valutazioni ricevute e sessioni recenti.
+- Visitando il profilo di un altro utente si visualizzano le sue informazioni pubbliche senza mostrare il comando di logout del visitatore all'interno di quel profilo.
+
+## Persistenza dei dati
+
+I dati applicativi sono salvati nella cartella `data`. Le sessioni e le chat usano file nella sottocartella `data/sessions`; gli altri repository mantengono utenti, annunci, crediti, sessioni concluse e recensioni nei rispettivi file CSV. Spostare o cancellare questi file modifica lo stato disponibile al successivo avvio.

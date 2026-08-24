@@ -4,6 +4,7 @@ import it.unibo.tutoring.model.chat.Chat;
 import it.unibo.tutoring.model.chat.ChatImpl;
 import it.unibo.tutoring.model.chat.Message;
 import it.unibo.tutoring.model.chat.MessageImpl;
+import it.unibo.tutoring.model.chat.ChatObserver;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -92,5 +93,10 @@ public class TutoringSessionImpl implements TutoringSession {
     @Override
     public List<Message> getStoricoChat() {
         return this.chat.getStoricoMessaggi();
+    }
+
+    @Override
+    public void addChatObserver(final ChatObserver observer) {
+        this.chat.addObserver(observer);
     }
 }
