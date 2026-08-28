@@ -1,44 +1,4 @@
 studentName;subject;date;hours;creditsGiven;tutorMatricola
-Giulia Torelli;Programmazione;01-06-2026;4;2;3636989
-Andrea Tonini;Programmazione;06-05-2026;4;2;3636989
-Laura Bianchi;Analisi Matematica I;10-12-2025;2;1;3636989
-Marco Rossi;Fisica;05-12-2025;2;1;3636989
-Niki Hammond;Programmazione;03-12-2025;4;2;3636989
-Niki Hammond;Programmazione;02-12-2025;4;2;3636989
-Niki Hammond;Programmazione;01-12-2025;4;2;3636989
-Niki Hammond;Programmazione;30-11-2025;4;2;3636989
-9999;Test Materia;05-06-2026;1;0;0001
-9999;Test Materia;05-06-2026;1;0;0001
-9999;Test Materia;05-06-2026;1;0;0001
-Andrea Tonini;Analisi Matematica I;11-07-2026;1;0;1111111
-Andrea Tonini;Programmazione ad Oggetti;11-07-2026;1;0;2323232
-Andrea Tonini;Basi di Dati;11-07-2026;1;0;2323232
-sss s;Algoritmi e Strutture dati;28-07-2026;1;0;1111111
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-9999;Test Materia;29-07-2026;1;0;0001
-s s;Sistemi mobili;31-07-2026;1;0;1111111111
-9999;Test Materia;31-07-2026;1;0;0001
-9999;Test Materia;02-08-2026;1;0;0001
-Anna Rossi;Programmazione ad oggetto;02-08-2026;1;0;0006478154
-9999;Test Materia;02-08-2026;1;0;0001
-Anna Rossi;Basi di dati;02-08-2026;1;0;0006478154
-niki hammond;OOP;03-08-2026;1;0;2222222222
-Marco Verdi;Basi di Dati;03-08-2026;1;0;0006478154
-Giulia Rossi;Programmazione web;03-08-2026;1;0;0006478154
-Sofia Ricci;Laboratorio di Sicurezza dei Sistemi e Privacy;05-08-2026;1;0;0003636989
-niki hammond;OOP;28-08-2026;2;1;2222222222
-Anna Rossi;Programmazione web;11-08-2026;2;1;0006478154
 Elena Santini;Progettazione Architettonica;20-02-2026;4;2;0011223344
 Chiara Villani;Storia dell'Architettura;14-03-2026;4;2;0011223344
 Sara Bellini;Disegno Tecnico;02-04-2026;4;1;0011223344
@@ -78,4 +38,3 @@ Beatrice Marchetti;Enologia;19-01-2026;4;2;0011224488
 Elena Santini;Chimica Enologica;02-02-2026;4;2;0011224488
 Giulia Neri;Degustazione e Analisi Sensoriale;16-02-2026;4;2;0011224488
 Martina Rinaldi;Viticoltura;02-03-2026;4;1;0011224488
-Andrea Tonini;aaaaaa;15-08-2026;2;1;1231231231
