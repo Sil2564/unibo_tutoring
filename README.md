@@ -707,8 +707,8 @@ Le regole che dipendono dal tempo espongono varianti testabili con un `LocalDate
 
 ### Sofia
 
-- 'AuthServiceTest': controlla la registrazione e le credenziali. Verifica che le password rispettino i requisiti e che non si possano creare due account con la stessa matricola o la stessa e-mail. Controlla anche che la registrazione venga effettivamente salvata nel file degli utenti.
-- 'TutoringSessionControllerTest': controlla il flusso delle recensioni. Verifica che, dopo una sessione completata correttamente, lo studente possa lasciare una recensione e che stelle e commento vengano salvati in 'reviews.csv'. Permette inoltre al tutor di ritrovare la recensione caricandola tramite la propria matricola. Controlla inoltre che il file resti ben formattato anche se non termina con un ritorno a capo.
+- `AuthServiceTest`: controlla la registrazione e le credenziali. Verifica che le password rispettino i requisiti e che non si possano creare due account con la stessa matricola o la stessa e-mail. Controlla anche che la registrazione venga effettivamente salvata nel file degli utenti.
+- `TutoringSessionControllerTest`: controlla il flusso delle recensioni. Verifica che, dopo una sessione completata correttamente, lo studente possa lasciare una recensione e che stelle e commento vengano salvati in 'reviews.csv'. Permette inoltre al tutor di ritrovare la recensione caricandola tramite la propria matricola. Controlla inoltre che il file resti ben formattato anche se non termina con un ritorno a capo.
 
 I seguenti file di test verificano che le funzionalità principali funzionino anche senza aprire l’interfaccia grafica.
 
