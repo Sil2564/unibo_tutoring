@@ -286,39 +286,58 @@ classDiagram
     %% Pattern: ECB (Entity-Control-Boundary)
     %% ============================================================
 
-    class ProfileView {
-        +mostraProfilo()
-        +richiediModifica()
-        +mostraCrediti(totale)
+    class UniBoTutoringProfileApp {
+        +createScene(matricola, isOwnProfile)
+        -createContent(user, controller, isOwnProfile)
+        -handleAvatarUpload()
     }
-    <<boundary>> ProfileView
+    <<boundary>> UniBoTutoringProfileApp
 
     class ProfileController {
-        +caricaProfilo(id)
-        +aggiornaProfilo(dati)
-        +ottieniCrediti(id)
+        -UserRepository userRepository
+        +getCurrentUser() UserAccount
+        +getCreditRecord(matricola) CreditRecord
     }
     <<control>> ProfileController
 
     class UserRepository {
-        +trovaUtente(id)
-        +salvaModifiche(utente)
+        +getCurrentUser() UserAccount
     }
     <<entity>> UserRepository
 
     class CreditService {
-        +calcolaTotale(id)
+        +getCreditRecord(matricola) CreditRecord
+        +addCompletedHours(matricola, hours)
     }
- class CreditRepository {
-        +caricaCrediti(id)
+    <<control>> CreditService
+
+    class CreditRepository {
+        +loadRecord(matricola) Optional~CreditRecord~
+        +saveRecord(matricola, record)
     }
+    <<entity>> CreditRepository
+
     %% RELAZIONI
-    ProfileView --> ProfileController : input dell'utente >
-    ProfileController --> UserRepository : lettura/scrittura dati >
-    ProfileController --> CreditService : recupero crediti >
-    CreditService --> CreditRepository : accesso dati >
+    UniBoTutoringProfileApp --> ProfileController : input dell'utente >
+    ProfileController --> UserRepository : lettura dati utente >
+    ProfileController --> CreditService : delega recupero crediti >
+    CreditService --> CreditRepository : accesso dati CSV >
 ```
+
+### Scelte Progettuali: Gestione Profilo Utente (Niki)
+
+Il modulo relativo alla gestione del Profilo Utente è stato ideato con un occhio di riguardo verso la separazione delle responsabilità (Separation of Concerns) e la manutenibilità del codice.
+
+1. **Pattern ECB (Entity-Control-Boundary):**
+   L'architettura del profilo segue fedelmente il pattern ECB. `UniBoTutoringProfileApp` funge da Boundary, occupandosi unicamente del rendering grafico in JavaFX e dell'acquisizione dell'input. Tutta la logica di smistamento dati è delegata al `ProfileController`, il quale funge da tramite esclusivo con i moduli `UserRepository` e `CreditService` (Entity). In questo modo, se un giorno volessimo cambiare la View (ad es. passando a una web app), il Controller e i Repository rimarrebbero intoccati.
+
+2. **Reattività dell'Interfaccia (Inline Editing):**
+   Invece di utilizzare finestre modali o pulsanti esterni per il salvataggio dei dati (data di nascita, corso, avatar), l'interfaccia intercetta i cambiamenti tramite `listener` reattivi posti direttamente sui campi JavaFX (come `DatePicker` o `ComboBox`). Il Boundary notifica immediatamente il Controller, che aggiorna il file sottostante in tempo reale.
+
+3. **Integrazione fluida dell'Avatar:**
+   La classe boundary `UniBoTutoringProfileApp` gestisce in autonomia l'esplorazione del file system per scegliere l'avatar (`FileChooser`), dopodiché effettua il salvataggio in maniera silente. L'utilizzo di *masks* circolari nativi di JavaFX permette di avere un layout uniforme senza appesantire la CPU.
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
+
 ```mermaid
 classDiagram
     %% ============================================================
@@ -326,16 +345,19 @@ classDiagram
     %% Pattern: Observer + Strategy
     %% ============================================================
 
-    class SessionManager {
-        +confermaSessione(id)
-        +pubblica(evento)
+    class TutoringSessionController {
+        +segnaComeCompletata()
+        -pubblicaEvento()
     }
 
-    class SessionConfirmedEvent {
-        +sessionId
-        +tutorId
-        +durataOre
+    class SessionCompletedEvent {
+        -String sessionId
+        -String tutorMatricola
+        -int completedHours
+        +getTutorMatricola()
+        +getCompletedHours()
     }
+    <<DomainEvent>> SessionCompletedEvent
 
     class DomainEventBus {
         +publish(event)
@@ -343,31 +365,48 @@ classDiagram
     }
 
     class CreditService {
-        +onSessionConfirmed(event)
-        +aggiungiCrediti(id, ore)
-        +aggiornaBadge(id)
+        -BadgePolicy badgePolicy
+        +onEvent(event)
+        +addCompletedHours(matricola, ore)
     }
+    <<EventSubscriber>> CreditService
 
     class CreditRepository {
-        +carica(id)
-        +salva(record)
+        +loadRecord(matricola)
+        +saveRecord(matricola, record)
     }
 
     class BadgePolicy {
-        +determinaBadge(crediti)
+        <<interface>>
+        +calculateBadge(totalHours) Badge
+        +getNextThreshold(totalHours) int
     }
-    <<interface>> BadgePolicy
 
-    class DefaultBadgePolicy {
-        +determinaBadge(crediti)
+    class StandardBadgePolicy {
+        +calculateBadge(totalHours) Badge
+        +getNextThreshold(totalHours) int
     }
+
     %% RELAZIONI
-    SessionManager --> DomainEventBus : publish >
-    DomainEventBus --> CreditService : notify >
-    CreditService --> CreditRepository : persistenza >
-    CreditService --> BadgePolicy : calcolo badge >
-    BadgePolicy <|.. DefaultBadgePolicy
+    TutoringSessionController --> DomainEventBus : pubblica evento >
+    DomainEventBus --> CreditService : notifica asincrona >
+    CreditService --> CreditRepository : persistenza (salvataggio) >
+    CreditService --> BadgePolicy : inietta calcolo badge >
+    BadgePolicy <|.. StandardBadgePolicy : implementa
 ```
+
+### Scelte Progettuali: Sistema Crediti e Badge (Niki)
+
+L'architettura per l'assegnazione delle ore, la trasformazione in crediti e la conseguente scalata di livello dei Badge è stata pensata come il fulcro della "gamification" dell'applicazione. È stata progettata massimizzando il disaccoppiamento (Loose Coupling) tra le classi.
+
+1. **Pattern Observer (EventBus):**
+   Quando una sessione termina positivamente, `TutoringSessionController` (che si occupa del networking della chat e dello stato della sessione) **non ha alcuna consapevolezza** dell'esistenza dei Crediti. Si limita semplicemente a lanciare un oggetto `SessionCompletedEvent` all'interno del `DomainEventBus`. Il `CreditService` (che è regolarmente iscritto in ascolto sull'EventBus) cattura l'evento in modo asincrono tramite `onEvent()` e aggiorna silenziosamente le statistiche del tutor. Questo approccio previene le dipendenze circolari e mantiene il codice altamente scalabile.
+
+2. **Pattern Strategy:**
+   Il calcolo di quando un tutor passa da `BEGINNER` a `INTERMEDIATE` (e via dicendo) o la logica di quanti crediti vale un'ora di lezione, non sono hard-coded direttamente nel Service. La responsabilità è delegata interamente all'interfaccia `BadgePolicy`. Allo stato attuale l'app inietta la `StandardBadgePolicy`, ma se in futuro l'Ateneo dovesse decidere di modificare i requisiti di ore per ottenere i badge, basterà implementare una nuova classe Policy senza intaccare minimamente l'architettura principale.
+   
+3. **Iniezione delle Dipendenze:**
+   La policy per i badge viene passata al costruttore del `CreditService` dall'alto (durante il bootstrap dell'applicazione), favorendo la Dependency Injection. Questo rende il sistema estremamente semplice da testare tramite mock objects (ad es. per simulare il raggiungimento di badge altissimi senza dover creare centinaia di sessioni fittizie).
 ## GESTIONE SESSIONI E CHAT
 
 Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richiesta di tutoraggio e comunicare tramite una chat privata associata alla sessione. La sessione attraversa gli stati proposta, confermata, completata o cancellata; le sessioni future confermate vengono inoltre mostrate nel calendario personale dei partecipanti.
