@@ -929,6 +929,28 @@ public static void runIfEmpty() {
 ```
 Per agevolare sia le fasi di test durante lo sviluppo che l'utilizzo da parte dei docenti in fase di valutazione, ho introdotto una classe di "seeding". Questo componente si assicura che, qualora l'applicazione venga avviata a database vuoto (ad esempio subito dopo il git clone), vengano generati automaticamente 16 utenti fittizi coerenti con i relativi annunci di richiesta e offerta. Questo approccio previene "l'effetto foglio bianco" e permette di sperimentare sin da subito tutte le funzionalità della dashboard.
 
+#### Gestione e persistenza dell'Avatar personalizzato
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringProfileApp`](src/main/java/it/unibo/tutoring/UniBoTutoringProfileApp.java)
+
+```java
+final FileChooser fileChooser = new FileChooser();
+fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg"));
+final File selectedFile = fileChooser.showOpenDialog(avatarContainer.getScene().getWindow());
+
+if (selectedFile != null) {
+    final Path avatarsDir = Path.of("data", "avatars");
+    if (!Files.exists(avatarsDir)) {
+        Files.createDirectories(avatarsDir);
+    }
+    final String extension = selectedFile.getName().substring(selectedFile.getName().lastIndexOf("."));
+    final Path targetPath = avatarsDir.resolve(user.getMatricola() + extension);
+    
+    Files.copy(selectedFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+}
+```
+L'integrazione di una foto profilo customizzata mi ha spinto a esplorare l'API NIO di Java per il file system. Utilizzando un `FileChooser` con filtri di estensione, l'utente è guidato a caricare solo formati validi. Subito dopo, il file viene copiato nella cartella sicura `data/avatars`. Ho deciso di rinominare forzatamente ogni immagine con la matricola univoca dell'utente (`user.getMatricola() + extension`): questo trucchetto previene collisioni di nomi (ad esempio se due persone caricano "foto.png") e fa in modo che l'API sovrascriva automaticamente le vecchie immagini risparmiando spazio su disco tramite il `REPLACE_EXISTING`.
+
 
 # Commenti finali
 
