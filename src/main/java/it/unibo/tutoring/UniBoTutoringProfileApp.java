@@ -449,32 +449,51 @@ switch (creditRecord.getBadge()) {
         infoBox.setAlignment(Pos.CENTER_LEFT);
         infoBox.setPadding(new Insets(20, 0, 0, 0));
 
-        final String birthDateStr = user.getBirthDate() != null && !user.getBirthDate().isBlank() ? user.getBirthDate() : "Non specificato";
+        final String birthDateStr = user.getBirthDate() != null ? user.getBirthDate() : "";
         
         final HBox annoNascitaRow = new HBox(10);
         annoNascitaRow.setAlignment(Pos.CENTER_LEFT);
         final Label annoNascitaPrefix = new Label("DATA DI NASCITA:");
-        annoNascitaPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        annoNascitaPrefix.setTextFill(Color.web("#535353"));
+        annoNascitaPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
+        annoNascitaPrefix.setTextFill(TEXT_DARK);
 
-        final Label annoNascitaVal = new Label(birthDateStr);
-        annoNascitaVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
-        annoNascitaVal.setTextFill(Color.web("#535353"));
-        annoNascitaRow.getChildren().addAll(annoNascitaPrefix, annoNascitaVal);
+        if (isOwnProfile) {
+            final javafx.scene.control.DatePicker datePicker = new javafx.scene.control.DatePicker();
+            datePicker.setStyle("-fx-font-size: 18px; -fx-pref-width: 220px;");
+            
+            if (!birthDateStr.isBlank()) {
+                try {
+                    datePicker.setValue(java.time.LocalDate.parse(birthDateStr, DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                } catch (Exception e) {}
+            }
+            
+            datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                    AuthService.getInstance().saveChanges();
+                }
+            });
+            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
+        } else {
+            final Label annoNascitaVal = new Label(birthDateStr);
+            annoNascitaVal.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
+            annoNascitaVal.setTextFill(TEXT_DARK);
+            annoNascitaRow.getChildren().addAll(annoNascitaPrefix, annoNascitaVal);
+        }
 
-        final String corsoStr = user.getCorso() != null && !user.getCorso().isBlank() ? user.getCorso() : "Studente UniBo";
+        final String corsoStr = user.getCorso() != null ? user.getCorso() : "";
         
         final HBox corsoRow = new HBox(10);
         corsoRow.setAlignment(Pos.CENTER_LEFT);
         final Label corsoPrefix = new Label("CORSO:");
-        corsoPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
-        corsoPrefix.setTextFill(Color.web("#535353"));
+        corsoPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
+        corsoPrefix.setTextFill(TEXT_DARK);
         
         if (isOwnProfile) {
             final ComboBox<String> corsoBox = new ComboBox<>();
             corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
-            corsoBox.setValue(user.getCorso() != null && !user.getCorso().isBlank() && !"Non specificato".equals(user.getCorso()) ? user.getCorso() : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
-            corsoBox.setStyle("-fx-font-size: 14px; -fx-pref-width: 320px;");
+            corsoBox.setValue(!corsoStr.isBlank() ? corsoStr : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
+            corsoBox.setStyle("-fx-font-size: 18px; -fx-pref-width: 320px;");
             
             corsoBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
@@ -485,8 +504,8 @@ switch (creditRecord.getBadge()) {
             corsoRow.getChildren().addAll(corsoPrefix, corsoBox);
         } else {
             final Label corsoVal = new Label(corsoStr);
-            corsoVal.setFont(Font.font("System", FontWeight.NORMAL, 14));
-            corsoVal.setTextFill(Color.web("#535353"));
+            corsoVal.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
+            corsoVal.setTextFill(TEXT_DARK);
             corsoRow.getChildren().addAll(corsoPrefix, corsoVal);
         }
         

@@ -279,6 +279,8 @@ I metodi principali sono:
 
 ## Design dettagliato- Gestione Profilo Utente
 
+Il diagramma delle classi UML sottostante illustra l'architettura utilizzata per la gestione e la visualizzazione del profilo utente. L'intero modulo è stato ingegnerizzato seguendo il pattern architetturale ECB (Entity-Control-Boundary), che garantisce una netta separazione tra l'interfaccia grafica (Boundary), la logica di controllo delle azioni dell'utente (Control) e l'accesso ai dati persistenti (Entity), assicurando così un codice pulito e altamente modulare.
+
 ```mermaid
 classDiagram
     %% ============================================================
@@ -286,39 +288,60 @@ classDiagram
     %% Pattern: ECB (Entity-Control-Boundary)
     %% ============================================================
 
-    class ProfileView {
-        +mostraProfilo()
-        +richiediModifica()
-        +mostraCrediti(totale)
+    class UniBoTutoringProfileApp {
+        +createScene(matricola, isOwnProfile)
+        -createContent(user, controller, isOwnProfile)
+        -handleAvatarUpload()
     }
-    <<boundary>> ProfileView
+    <<boundary>> UniBoTutoringProfileApp
 
     class ProfileController {
-        +caricaProfilo(id)
-        +aggiornaProfilo(dati)
-        +ottieniCrediti(id)
+        -UserRepository userRepository
+        +getCurrentUser() UserAccount
+        +getCreditRecord(matricola) CreditRecord
     }
     <<control>> ProfileController
 
     class UserRepository {
-        +trovaUtente(id)
-        +salvaModifiche(utente)
+        +getCurrentUser() UserAccount
     }
     <<entity>> UserRepository
 
     class CreditService {
-        +calcolaTotale(id)
+        +getCreditRecord(matricola) CreditRecord
+        +addCompletedHours(matricola, hours)
     }
- class CreditRepository {
-        +caricaCrediti(id)
+    <<control>> CreditService
+
+    class CreditRepository {
+        +loadRecord(matricola) Optional~CreditRecord~
+        +saveRecord(matricola, record)
     }
+    <<entity>> CreditRepository
+
     %% RELAZIONI
-    ProfileView --> ProfileController : input dell'utente >
-    ProfileController --> UserRepository : lettura/scrittura dati >
-    ProfileController --> CreditService : recupero crediti >
-    CreditService --> CreditRepository : accesso dati >
+    UniBoTutoringProfileApp --> ProfileController : input dell'utente >
+    ProfileController --> UserRepository : lettura dati utente >
+    ProfileController --> CreditService : delega recupero crediti >
+    CreditService --> CreditRepository : accesso dati CSV >
 ```
+
+### Scelte Progettuali: Gestione Profilo Utente (Niki)
+
+Il modulo relativo alla gestione del Profilo Utente è stato ideato con un occhio di riguardo verso la separazione delle responsabilità (Separation of Concerns) e la manutenibilità del codice.
+
+1. **Pattern ECB (Entity-Control-Boundary):**
+   L'architettura del profilo segue fedelmente il pattern ECB. `UniBoTutoringProfileApp` funge da Boundary, occupandosi unicamente del rendering grafico in JavaFX e dell'acquisizione dell'input. Tutta la logica di smistamento dati è delegata al `ProfileController`, il quale funge da tramite esclusivo con i moduli `UserRepository` e `CreditService` (Entity). In questo modo, se un giorno volessimo cambiare la View (ad es. passando a una web app), il Controller e i Repository rimarrebbero intoccati.
+
+2. **Reattività dell'Interfaccia (Inline Editing):**
+   Invece di utilizzare finestre modali o pulsanti esterni per il salvataggio dei dati (data di nascita, corso, avatar), l'interfaccia intercetta i cambiamenti tramite `listener` reattivi posti direttamente sui campi JavaFX (come `DatePicker` o `ComboBox`). Il Boundary notifica immediatamente il Controller, che aggiorna il file sottostante in tempo reale.
+
+3. **Integrazione fluida dell'Avatar:**
+   La classe boundary `UniBoTutoringProfileApp` gestisce in autonomia l'esplorazione del file system per scegliere l'avatar (`FileChooser`), dopodiché effettua il salvataggio in maniera silente. L'utilizzo di *masks* circolari nativi di JavaFX permette di avere un layout uniforme senza appesantire la CPU.
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
+
+Il seguente diagramma modella il sistema di calcolo e assegnazione dei crediti formativi e dei relativi Badge per i tutor. Per garantire la massima flessibilità e un forte disaccoppiamento tra le classi, l'architettura sfrutta il pattern Observer (tramite un Event Bus di dominio) per intercettare in modo asincrono il completamento delle sessioni. Questo è stato poi combinato con il pattern Strategy, il quale delega il calcolo dinamico dei badge a specifiche classi policy intercambiabili.
+
 ```mermaid
 classDiagram
     %% ============================================================
@@ -326,16 +349,19 @@ classDiagram
     %% Pattern: Observer + Strategy
     %% ============================================================
 
-    class SessionManager {
-        +confermaSessione(id)
-        +pubblica(evento)
+    class TutoringSessionController {
+        +segnaComeCompletata()
+        -pubblicaEvento()
     }
 
-    class SessionConfirmedEvent {
-        +sessionId
-        +tutorId
-        +durataOre
+    class SessionCompletedEvent {
+        -String sessionId
+        -String tutorMatricola
+        -int completedHours
+        +getTutorMatricola()
+        +getCompletedHours()
     }
+    <<DomainEvent>> SessionCompletedEvent
 
     class DomainEventBus {
         +publish(event)
@@ -343,31 +369,48 @@ classDiagram
     }
 
     class CreditService {
-        +onSessionConfirmed(event)
-        +aggiungiCrediti(id, ore)
-        +aggiornaBadge(id)
+        -BadgePolicy badgePolicy
+        +onEvent(event)
+        +addCompletedHours(matricola, ore)
     }
+    <<EventSubscriber>> CreditService
 
     class CreditRepository {
-        +carica(id)
-        +salva(record)
+        +loadRecord(matricola)
+        +saveRecord(matricola, record)
     }
 
     class BadgePolicy {
-        +determinaBadge(crediti)
+        <<interface>>
+        +calculateBadge(totalHours) Badge
+        +getNextThreshold(totalHours) int
     }
-    <<interface>> BadgePolicy
 
-    class DefaultBadgePolicy {
-        +determinaBadge(crediti)
+    class StandardBadgePolicy {
+        +calculateBadge(totalHours) Badge
+        +getNextThreshold(totalHours) int
     }
+
     %% RELAZIONI
-    SessionManager --> DomainEventBus : publish >
-    DomainEventBus --> CreditService : notify >
-    CreditService --> CreditRepository : persistenza >
-    CreditService --> BadgePolicy : calcolo badge >
-    BadgePolicy <|.. DefaultBadgePolicy
+    TutoringSessionController --> DomainEventBus : pubblica evento >
+    DomainEventBus --> CreditService : notifica asincrona >
+    CreditService --> CreditRepository : persistenza (salvataggio) >
+    CreditService --> BadgePolicy : inietta calcolo badge >
+    BadgePolicy <|.. StandardBadgePolicy : implementa
 ```
+
+### Scelte Progettuali: Sistema Crediti e Badge (Niki)
+
+L'architettura per l'assegnazione delle ore, la trasformazione in crediti e la conseguente scalata di livello dei Badge è stata pensata come il fulcro della "gamification" dell'applicazione. È stata progettata massimizzando il disaccoppiamento (Loose Coupling) tra le classi.
+
+1. **Pattern Observer (EventBus):**
+   Quando una sessione termina positivamente, `TutoringSessionController` (che si occupa del networking della chat e dello stato della sessione) **non ha alcuna consapevolezza** dell'esistenza dei Crediti. Si limita semplicemente a lanciare un oggetto `SessionCompletedEvent` all'interno del `DomainEventBus`. Il `CreditService` (che è regolarmente iscritto in ascolto sull'EventBus) cattura l'evento in modo asincrono tramite `onEvent()` e aggiorna silenziosamente le statistiche del tutor. Questo approccio previene le dipendenze circolari e mantiene il codice altamente scalabile.
+
+2. **Pattern Strategy:**
+   Il calcolo di quando un tutor passa da `BEGINNER` a `INTERMEDIATE` (e via dicendo) o la logica di quanti crediti vale un'ora di lezione, non sono hard-coded direttamente nel Service. La responsabilità è delegata interamente all'interfaccia `BadgePolicy`. Allo stato attuale l'app inietta la `StandardBadgePolicy`, ma se in futuro l'Ateneo dovesse decidere di modificare i requisiti di ore per ottenere i badge, basterà implementare una nuova classe Policy senza intaccare minimamente l'architettura principale.
+   
+3. **Iniezione delle Dipendenze:**
+   La policy per i badge viene passata al costruttore del `CreditService` dall'alto (durante il bootstrap dell'applicazione), favorendo la Dependency Injection. Questo rende il sistema estremamente semplice da testare tramite mock objects (ad es. per simulare il raggiungimento di badge altissimi senza dover creare centinaia di sessioni fittizie).
 ## GESTIONE SESSIONI E CHAT
 
 Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richiesta di tutoraggio e comunicare tramite una chat privata associata alla sessione. La sessione attraversa gli stati proposta, confermata, completata o cancellata; le sessioni future confermate vengono inoltre mostrate nel calendario personale dei partecipanti.
@@ -888,6 +931,69 @@ Metodo `createMonthlySessionsChart`
 ```
 Il seguente frammento di codice utilizza una pipeline di operazioni Stream (`map, filter, sorted e forEach`). Questi passaggi permettono di convertire le date delle sessioni, escludere quelle non valide, ordinarle cronologicamente e aggiornare il conteggio mensile all’interno di una `LinkedHashMap`, preservando l’ordine di inserimento necessario per il grafico.
 
+### Niki
+
+#### Modifica dati "inline" e UI reattiva tramite listener
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringProfileApp`](src/main/java/it/unibo/tutoring/UniBoTutoringProfileApp.java)
+
+```java
+final DatePicker datePicker = new DatePicker();
+datePicker.setStyle("-fx-font-size: 14px;");
+// ... parsing del valore attuale ...
+datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+    if (newVal != null) {
+        user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        AuthService.getInstance().saveChanges();
+    }
+});
+annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
+```
+Per migliorare la User Experience della pagina Profilo, ho evitato l'utilizzo di scomode finestre di pop-up per la modifica dei dati, preferendo un approccio "inline editing". Sfruttando un `DatePicker` e agganciando un listener direttamente alla `valueProperty()`, ogni volta che l'utente seleziona una nuova data (o un nuovo corso dalla relativa `ComboBox`), il dato viene aggiornato nel modello e salvato immediatamente su file. In questo modo si ottiene un'interfaccia molto più moderna e fluida, priva del classico pulsante "Salva".
+
+#### Auto-popolamento intelligente del database (DataSeeder)
+
+**Dove:** [`it.unibo.tutoring.DataSeeder`](src/main/java/it/unibo/tutoring/DataSeeder.java)
+
+```java
+public static void runIfEmpty() {
+    // Se ci sono già degli annunci nel sistema, evitiamo di duplicarli
+    if (!BoxRepository.getAllBoxes().isEmpty()) {
+        return;
+    }
+
+    System.out.println("Nessun annuncio presente: avvio seeding automatico della dashboard...");
+    // Creazione massiva di utenti fittizi tramite AuthService
+    registerUser("Marco", "Fabbri", "0011223344", "Architettura");
+    // Creazione massiva dei relativi annunci tramite BoxRepository
+    addBox(BoxType.OFFER, "Architettura", "Progettazione Architettonica", "...", "2026-07-03", "0011223344");
+    // ...
+}
+```
+Per agevolare sia le fasi di test durante lo sviluppo che l'utilizzo da parte dei docenti in fase di valutazione, ho introdotto una classe di "seeding". Questo componente si assicura che, qualora l'applicazione venga avviata a database vuoto (ad esempio subito dopo il git clone), vengano generati automaticamente 16 utenti fittizi coerenti con i relativi annunci di richiesta e offerta. Questo approccio previene "l'effetto foglio bianco" e permette di sperimentare sin da subito tutte le funzionalità della dashboard.
+
+#### Gestione e persistenza dell'Avatar personalizzato
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringProfileApp`](src/main/java/it/unibo/tutoring/UniBoTutoringProfileApp.java)
+
+```java
+final FileChooser fileChooser = new FileChooser();
+fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg"));
+final File selectedFile = fileChooser.showOpenDialog(avatarContainer.getScene().getWindow());
+
+if (selectedFile != null) {
+    final Path avatarsDir = Path.of("data", "avatars");
+    if (!Files.exists(avatarsDir)) {
+        Files.createDirectories(avatarsDir);
+    }
+    final String extension = selectedFile.getName().substring(selectedFile.getName().lastIndexOf("."));
+    final Path targetPath = avatarsDir.resolve(user.getMatricola() + extension);
+    
+    Files.copy(selectedFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+}
+```
+L'integrazione di una foto profilo customizzata mi ha spinto a esplorare l'API NIO di Java per il file system. Utilizzando un `FileChooser` con filtri di estensione, l'utente è guidato a caricare solo formati validi. Subito dopo, il file viene copiato nella cartella sicura `data/avatars`. Ho deciso di rinominare forzatamente ogni immagine con la matricola univoca dell'utente (`user.getMatricola() + extension`): questo trucchetto previene collisioni di nomi (ad esempio se due persone caricano "foto.png") e fa in modo che l'API sovrascriva automaticamente le vecchie immagini risparmiando spazio su disco tramite il `REPLACE_EXISTING`.
+
 
 # Commenti finali
 
@@ -902,6 +1008,11 @@ Lavorare in un gruppo di 4 persone trovo che sia stato estremamente formativo da
 ### Sofia 
 Prima d'ora non avevo mai sviluppato un'applicazione in Java, ma nonostante questo si è rivelata un'attività molto formativa. Negli ultimi mesi ho dedicato quanto più tempo possibile alla realizzazione del lavoro, pur dovendo conciliare la preparazione di altri esami e la stesura della tesi.
 In merito al mio contributo personale, sono molto soddisfatta del lavoro svolto sulla [progettazione del mockup](https://www.figma.com/design/3MEAg0FptniksMuH9Hc6E1/prova?node-id=2085-32&t=rp5Om2WcU6haJwdm-1), sull'implementazione dei moduli di login e registrazione e sullo sviluppo della pagina delle statistiche. Sebbene all'inizio la realizzazione del progetto mi intimorisse e il coordinamento delle disponibilità di ciascuno sia stato complesso, ritengo il risultato finale positivo. Lavorare in un team di quattro persone è stato senz'altro più impegnativo rispetto a un lavoro individuale, ma altrettanto prezioso per fare esperienza con dinamiche di cooperazione molto vicine a quelle del contesto lavorativo.
+
+### Niki
+Durante lo sviluppo di unibo_tutoring mi sono occupato principalmente dell'ecosistema dell'utente: dalla progettazione del profilo (compresa la gestione per l'upload di avatar personalizzati) fino all'architettura per l'assegnazione dei crediti e l'ottenimento dei Badge. 
+Una sfida e soddisfazione particolare è stata quella di rielaborare la User Experience del profilo studente, rimuovendo scomode logiche a "finestre" e implementando un "inline-editing" istantaneo dei dati. 
+Inoltre, per migliorare la cosiddetta *Quality of Life* dell'applicazione, ho ideato e sviluppato il `DataSeeder`, uno strumento che popola magicamente un ambiente di test la prima volta che si apre l'applicazione a database vuoto: una manna dal cielo per i nostri test di gruppo! Partecipare a questo progetto è stata un'ottima opportunità non solo per padroneggiare Java e JavaFX, ma anche per imparare a collaborare, a risolvere conflitti su Git e a ragionare sulle scelte architetturali lavorando in gruppo.
 
 ## Difficoltà incontrate e commenti per i docenti
 
@@ -975,8 +1086,9 @@ Il file generato si trova nella cartella `build/libs`.
 
 ## Profilo, calendario e statistiche
 
-- Dal profilo personale è possibile vedere i dati dell'account, modificare password, immagine e presentazione, e consultare ore, crediti, badge e recensioni.
-- La data di nascita viene visualizzata ma non è modificabile dal profilo.
+- Dal profilo personale è possibile vedere i dati dell'account, modificare la password e aggiornare la foto profilo con un semplice click sull'avatar (che possiede un comodo overlay grafico al passaggio del mouse).
+- I campi relativi a "Data di nascita" e "Corso" possono essere modificati istantaneamente (*inline editing*) senza dover premere alcun tasto "Salva".
+- Oltre alle modifiche, dal profilo è possibile consultare i propri progressi: ore svolte, crediti ottenuti, il Badge attuale e l'e-mail.
 - La sezione **I Tuoi Prossimi Impegni** mostra soltanto le sessioni future confermate, ordinate cronologicamente, indicando se l'utente partecipa come tutor o come studente.
 - La pagina statistiche riassume progressi, valutazioni ricevute e sessioni recenti.
 - Visitando il profilo di un altro utente si visualizzano le sue informazioni pubbliche senza mostrare il comando di logout del visitatore all'interno di quel profilo.
