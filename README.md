@@ -888,6 +888,47 @@ Metodo `createMonthlySessionsChart`
 ```
 Il seguente frammento di codice utilizza una pipeline di operazioni Stream (`map, filter, sorted e forEach`). Questi passaggi permettono di convertire le date delle sessioni, escludere quelle non valide, ordinarle cronologicamente e aggiornare il conteggio mensile all’interno di una `LinkedHashMap`, preservando l’ordine di inserimento necessario per il grafico.
 
+### Niki
+
+#### Modifica dati "inline" e UI reattiva tramite listener
+
+**Dove:** [`it.unibo.tutoring.UniBoTutoringProfileApp`](src/main/java/it/unibo/tutoring/UniBoTutoringProfileApp.java)
+
+```java
+final DatePicker datePicker = new DatePicker();
+datePicker.setStyle("-fx-font-size: 14px;");
+// ... parsing del valore attuale ...
+datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+    if (newVal != null) {
+        user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        AuthService.getInstance().saveChanges();
+    }
+});
+annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
+```
+Per migliorare la User Experience della pagina Profilo, ho evitato l'utilizzo di scomode finestre di pop-up per la modifica dei dati, preferendo un approccio "inline editing". Sfruttando un `DatePicker` e agganciando un listener direttamente alla `valueProperty()`, ogni volta che l'utente seleziona una nuova data (o un nuovo corso dalla relativa `ComboBox`), il dato viene aggiornato nel modello e salvato immediatamente su file. In questo modo si ottiene un'interfaccia molto più moderna e fluida, priva del classico pulsante "Salva".
+
+#### Auto-popolamento intelligente del database (DataSeeder)
+
+**Dove:** [`it.unibo.tutoring.DataSeeder`](src/main/java/it/unibo/tutoring/DataSeeder.java)
+
+```java
+public static void runIfEmpty() {
+    // Se ci sono già degli annunci nel sistema, evitiamo di duplicarli
+    if (!BoxRepository.getAllBoxes().isEmpty()) {
+        return;
+    }
+
+    System.out.println("Nessun annuncio presente: avvio seeding automatico della dashboard...");
+    // Creazione massiva di utenti fittizi tramite AuthService
+    registerUser("Marco", "Fabbri", "0011223344", "Architettura");
+    // Creazione massiva dei relativi annunci tramite BoxRepository
+    addBox(BoxType.OFFER, "Architettura", "Progettazione Architettonica", "...", "2026-07-03", "0011223344");
+    // ...
+}
+```
+Per agevolare sia le fasi di test durante lo sviluppo che l'utilizzo da parte dei docenti in fase di valutazione, ho introdotto una classe di "seeding". Questo componente si assicura che, qualora l'applicazione venga avviata a database vuoto (ad esempio subito dopo il git clone), vengano generati automaticamente 16 utenti fittizi coerenti con i relativi annunci di richiesta e offerta. Questo approccio previene "l'effetto foglio bianco" e permette di sperimentare sin da subito tutte le funzionalità della dashboard.
+
 
 # Commenti finali
 
@@ -902,6 +943,11 @@ Lavorare in un gruppo di 4 persone trovo che sia stato estremamente formativo da
 ### Sofia 
 Prima d'ora non avevo mai sviluppato un'applicazione in Java, ma nonostante questo si è rivelata un'attività molto formativa. Negli ultimi mesi ho dedicato quanto più tempo possibile alla realizzazione del lavoro, pur dovendo conciliare la preparazione di altri esami e la stesura della tesi.
 In merito al mio contributo personale, sono molto soddisfatta del lavoro svolto sulla [progettazione del mockup](https://www.figma.com/design/3MEAg0FptniksMuH9Hc6E1/prova?node-id=2085-32&t=rp5Om2WcU6haJwdm-1), sull'implementazione dei moduli di login e registrazione e sullo sviluppo della pagina delle statistiche. Sebbene all'inizio la realizzazione del progetto mi intimorisse e il coordinamento delle disponibilità di ciascuno sia stato complesso, ritengo il risultato finale positivo. Lavorare in un team di quattro persone è stato senz'altro più impegnativo rispetto a un lavoro individuale, ma altrettanto prezioso per fare esperienza con dinamiche di cooperazione molto vicine a quelle del contesto lavorativo.
+
+### Niki
+Durante lo sviluppo di unibo_tutoring mi sono occupato principalmente dell'ecosistema dell'utente: dalla progettazione del profilo (compresa la gestione per l'upload di avatar personalizzati) fino all'architettura per l'assegnazione dei crediti e l'ottenimento dei Badge. 
+Una sfida e soddisfazione particolare è stata quella di rielaborare la User Experience del profilo studente, rimuovendo scomode logiche a "finestre" e implementando un "inline-editing" istantaneo dei dati. 
+Inoltre, per migliorare la cosiddetta *Quality of Life* dell'applicazione, ho ideato e sviluppato il `DataSeeder`, uno strumento che popola magicamente un ambiente di test la prima volta che si apre l'applicazione a database vuoto: una manna dal cielo per i nostri test di gruppo! Partecipare a questo progetto è stata un'ottima opportunità non solo per padroneggiare Java e JavaFX, ma anche per imparare a collaborare, a risolvere conflitti su Git e a ragionare sulle scelte architetturali lavorando in gruppo.
 
 ## Difficoltà incontrate e commenti per i docenti
 
@@ -975,8 +1021,9 @@ Il file generato si trova nella cartella `build/libs`.
 
 ## Profilo, calendario e statistiche
 
-- Dal profilo personale è possibile vedere i dati dell'account, modificare password, immagine e presentazione, e consultare ore, crediti, badge e recensioni.
-- La data di nascita viene visualizzata ma non è modificabile dal profilo.
+- Dal profilo personale è possibile vedere i dati dell'account, modificare la password e aggiornare la foto profilo con un semplice click sull'avatar (che possiede un comodo overlay grafico al passaggio del mouse).
+- I campi relativi a "Data di nascita" e "Corso" possono essere modificati istantaneamente (*inline editing*) senza dover premere alcun tasto "Salva".
+- Oltre alle modifiche, dal profilo è possibile consultare i propri progressi: ore svolte, crediti ottenuti, il Badge attuale e l'e-mail.
 - La sezione **I Tuoi Prossimi Impegni** mostra soltanto le sessioni future confermate, ordinate cronologicamente, indicando se l'utente partecipa come tutor o come studente.
 - La pagina statistiche riassume progressi, valutazioni ricevute e sessioni recenti.
 - Visitando il profilo di un altro utente si visualizzano le sue informazioni pubbliche senza mostrare il comando di logout del visitatore all'interno di quel profilo.
