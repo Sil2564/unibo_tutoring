@@ -504,25 +504,7 @@ exclCards.setPadding(new Insets(10, 0, 0, 0));
         return box;
     }
 
-    private Button primaryWhiteButton(final String text) {
-        final Button button = new Button(text);
-        button.setFont(Font.font("System", FontWeight.BOLD, 13));
-        button.setTextFill(PRIMARY_RED);
-        button.setPadding(new Insets(8, 16, 8, 16));
-        button.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(8), Insets.EMPTY)));
-        return button;
-    }
-
-    private Button secondaryButton(final String text) {
-        final Button button = new Button(text);
-        button.setFont(Font.font("System", FontWeight.BOLD, 13));
-        button.setTextFill(Color.WHITE);
-        button.setPadding(new Insets(8, 16, 8, 16));
-        button.setStyle("-fx-background-color: #FF536A;");
-        button.setBorder(Border.EMPTY);
-        return button;
-    }
-
+    
     public static void run(final String[] args) {
         launch(args);
     }

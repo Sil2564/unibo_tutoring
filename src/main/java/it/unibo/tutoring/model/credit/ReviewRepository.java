@@ -44,35 +44,41 @@ public final class ReviewRepository {
                 return reviews;
             }
 
+            // legge tutte le linee e filtra quelle che hanno la matricola del tutor
             final List<String> lines = Files.readAllLines(DB);
             for (final String line : lines) {
                 if (line == null || line.trim().isEmpty() || line.startsWith("reviewerName")) {
                     continue; // header
                 }
 
+                //separa i campi e verifica la matricola del destinatario
+                //usa -1 per includere eventuali campi vuoti alla fine
                 final String[] parts = line.split(SEP, -1);
-                if (parts.length < 5) {
+                if (parts.length < 5) { //meno di 5 campi = riga corrotta
                     continue;
                 }
 
+                //estrae la matricola del destinatario (ultimo campo)
                 final String recipientMatricola = parts[parts.length - 1].trim();
                 if (!recipientMatricola.equals(matricola)) {
                     continue;
                 }
-
+                //estrae i campi della recensione
                 final String reviewerName = parts[0].trim();
                 final String subject = parts.length > 1 ? parts[1].trim() : "";
                 final String date = parts.length > 2 ? parts[2].trim() : "";
+                //converte le stelle in intero, default a 0 se non presente o non valido
                 final int stars = parts.length > 3 && !parts[3].trim().isEmpty()
-                    ? Integer.parseInt(parts[3].trim())
+                    ? Integer.parseInt(parts[3].trim()) //integer serve a tasformare la stringa del vaolore 'stelle' in int
                     : 0;
                 final String comment;
-                if (parts.length <= 5) {
+                if (parts.length <= 5) {    //se si estraggono 5 campi, il commento e' vuoto
                     comment = "";
                 } else {
+                    // unisce i campi rimanenti (tranne l'ultimo, che e' la matricola)
                     comment = String.join(SEP, java.util.Arrays.copyOfRange(parts, 4, parts.length - 1)).trim();
                 }
-
+                //crea un oggetto Review e lo aggiunge alla lista
                 reviews.add(new Review(reviewerName, subject, date, stars, comment));
             }
         } catch (final IOException e) {

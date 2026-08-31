@@ -97,8 +97,10 @@ public class TutoringSessionViewApp extends Application implements ChatObserver{
         VBox.setMargin(btnBack, new Insets(10, 0, 0, 15));
 
         root.getChildren().addAll(header, btnBack, createMainArea());
+        // overlay per la recensione e label per le notifiche
         this.reviewOverlay = createReviewOverlay();
         this.notificationLabel = createNotificationLabel();
+        
 
         final ScrollPane pageScroll = new ScrollPane(root);
         it.unibo.tutoring.view.components.WindowUtil.applyStandardScrollPolicy(pageScroll);
@@ -249,7 +251,7 @@ public class TutoringSessionViewApp extends Application implements ChatObserver{
 
         return card;
     }
-
+//inizio
     private StackPane createReviewOverlay() {
         final StackPane overlay = new StackPane();
         overlay.setVisible(false);
@@ -291,12 +293,13 @@ public class TutoringSessionViewApp extends Application implements ChatObserver{
         subtitle.setFont(Font.font("System", FontWeight.NORMAL, 13));
         subtitle.setTextFill(TEXT_MEDIUM);
 
-        final HBox starBar = new HBox(8);
+        final HBox starBar = new HBox(8);   //elementi in riga 
         starBar.setAlignment(Pos.CENTER_LEFT);
-        final List<Label> stars = new ArrayList<>();
-        // Inizializza il valore delle stelle con la recensione già presente se caricata da file.
+        final List<Label> stars = new ArrayList<>();    //lista che tiene traccia delle stelle selezionate
+        // Inizializza il valore delle stelle con la recensione già presente se caricata da file
         final int[] selectedStars = { controller.getReviewStars() >= 0 ? controller.getReviewStars() : 0 };
 
+        //cicla da 1 a 5 per creare le stelle e aggiungerle alla barra delle stelle
         for (int i = 1; i <= 5; i++) {
             final int starValue = i;
             final Label starLabel = new Label("☆");

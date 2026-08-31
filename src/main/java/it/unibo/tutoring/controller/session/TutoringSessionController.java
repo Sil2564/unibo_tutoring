@@ -514,10 +514,11 @@ public class TutoringSessionController {
             throw new IllegalArgumentException("Il valore delle stelle deve essere tra 0 e 5.");
         }
         this.reviewStars = stelle;
-        this.reviewComment = commento != null ? commento.trim() : "";
+        this.reviewComment = commento != null ? commento.trim() : "";   //rimozione spazi bianchi iniziali e finali
         this.reviewAuthor = autoreRecensione != null ? autoreRecensione.trim() : "";
-        this.reviewSaved = true;
+        this.reviewSaved = true;    //recensione salvata, anche se commento vuoto
 
+        //registra la recensione con tutti i dati necessari nel repository delle recensioni
         it.unibo.tutoring.model.credit.ReviewRepository.saveReview(
             this.reviewAuthor,
             this.materia,
@@ -526,7 +527,7 @@ public class TutoringSessionController {
             this.reviewComment,
             this.tutorMatricola
         );
-
+        // persiste la recensione nel file condiviso della sessione
         salvaSuFile();
     }
 
@@ -541,7 +542,9 @@ public class TutoringSessionController {
     public boolean isReviewSaved() {
         return this.reviewSaved;
     }
-
+    //regole per determinare se mostarre il form di recensione: 
+    // la sessione deve essere completata da entrambi, 
+    // l'utente corrente deve essere lo studente e non deve aver già salvato la recensione
     public boolean shouldAskForReview() {
         return isCompletataDaEntrambi() && isReviewer() && !this.reviewSaved;
     }
@@ -662,21 +665,26 @@ public class TutoringSessionController {
     }
 
     // Ripristina i valori salvati della recensione da disco.
+    //suddivide la stringa in campi separati da |, dove il primo campo è il numero di stelle, il secondo è il commento e il terzo è l'autore della recensione
+    /**
+     * @param payload
+     */
     private void ripristinaRecensione(final String payload) {
         final String[] campi = payload.split("\\|", 3);
-        if (campi.length < 2) {
+        if (campi.length < 2) { //minimo 2 campi 
             return;
         }
-
+        // Il primo campo deve essere un numero intero valido per le stelle della recensione
         try {
+            //accede al numero di stelle della recensione, rimuovendo eventuali spazi bianchi iniziali e finali, e lo converte in un intero
             this.reviewStars = Integer.parseInt(campi[0].trim());
+            // verifica che il numero di stelle sia valido, altrimenti ignora la recensione
         } catch (NumberFormatException ignored) {
-            return;
+            return; //interrompe l'esecuzione del metodo se il primo campo non è un numero intero valido
         }
-
-        this.reviewComment = campi[1].trim();
-        this.reviewAuthor = campi.length == 3 ? campi[2].trim() : "";
-        this.reviewSaved = true;
+        this.reviewComment = campi[1].trim(); //accede al commento della recensione, rimuovendo eventuali spazi bianchi iniziali e finali
+        this.reviewAuthor = campi.length == 3 ? campi[2].trim() : "";   //accede all'autore della recensione se presente, altrimenti imposta una stringa vuota
+        this.reviewSaved = true;    // imposta il flag booleano a true per indicare che la recensione è stata ripristinata e caricata correttamente
     }
 
     private void salvaSuFile() {
@@ -739,7 +747,7 @@ public class TutoringSessionController {
                 if (this.reviewSaved) {
                     // Salva la recensione in fondo al file con formato REVIEW;stelle|commento
                     writer.write("REVIEW;" + this.reviewStars + "|" + sanitizeReviewComment(this.reviewComment));
-                    writer.newLine();
+                    writer.newLine();   //scrive una nuova riga per separare la recensione dagli altri dati della sessione
                 }
             }
         } catch (IOException e) {
@@ -777,10 +785,16 @@ public class TutoringSessionController {
         return value.replaceAll("[^A-Za-z0-9_-]", "_");
     }
 
+    // Metodi helper per la sanitizzazione dei campi di testo che possono contenere caratteri speciali o di nuova riga, in modo da evitare problemi di formattazione o di sicurezza
+    /**
+     * @param comment
+     * @return
+     */
     private static String sanitizeReviewComment(final String comment) {
-        if (comment == null) {
+        if (comment == null) {  //se paramentro null restituisci stringa vuota
             return "";
         }
+        //sostituisce i caratteri di nuova riga e ritorno a capo con spazi, e sostituisce il carattere pipe con una barra per evitare conflitti con il formato di salvataggio della recensione
         return comment.replace("\n", " ").replace("\r", " ").replace("|", "/");
     }
 
