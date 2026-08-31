@@ -279,6 +279,8 @@ I metodi principali sono:
 
 ## Design dettagliato- Gestione Profilo Utente
 
+Il diagramma delle classi UML sottostante illustra l'architettura utilizzata per la gestione e la visualizzazione del profilo utente. L'intero modulo è stato ingegnerizzato seguendo il pattern architetturale ECB (Entity-Control-Boundary), che garantisce una netta separazione tra l'interfaccia grafica (Boundary), la logica di controllo delle azioni dell'utente (Control) e l'accesso ai dati persistenti (Entity), assicurando così un codice pulito e altamente modulare.
+
 ```mermaid
 classDiagram
     %% ============================================================
@@ -337,6 +339,8 @@ Il modulo relativo alla gestione del Profilo Utente è stato ideato con un occhi
 3. **Integrazione fluida dell'Avatar:**
    La classe boundary `UniBoTutoringProfileApp` gestisce in autonomia l'esplorazione del file system per scegliere l'avatar (`FileChooser`), dopodiché effettua il salvataggio in maniera silente. L'utilizzo di *masks* circolari nativi di JavaFX permette di avere un layout uniforme senza appesantire la CPU.
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
+
+Il seguente diagramma modella il sistema di calcolo e assegnazione dei crediti formativi e dei relativi Badge per i tutor. Per garantire la massima flessibilità e un forte disaccoppiamento tra le classi, l'architettura sfrutta il pattern Observer (tramite un Event Bus di dominio) per intercettare in modo asincrono il completamento delle sessioni. Questo è stato poi combinato con il pattern Strategy, il quale delega il calcolo dinamico dei badge a specifiche classi policy intercambiabili.
 
 ```mermaid
 classDiagram
