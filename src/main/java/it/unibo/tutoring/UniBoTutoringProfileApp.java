@@ -340,11 +340,15 @@ switch (creditRecord.getBadge()) {
         mainProfileCard.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(16), Insets.EMPTY)));
         mainProfileCard.setBorder(new Border(new BorderStroke(Color.web("#DADADA"), BorderStrokeStyle.SOLID, new CornerRadii(16), BorderWidths.DEFAULT)));
 
-        // Aggiunto da Niki: Gestione dell'immagine del profilo con file chooser
+        /**
+         * Aggiunto da Niki: Gestione dell'immagine del profilo tramite FileChooser
+         * Viene creato un contenitore StackPane che conterrà o le iniziali o l'immagine caricata
+         */
         final StackPane avatarContainer = new StackPane();
         avatarContainer.setMinSize(120, 120);
         avatarContainer.setMaxSize(120, 120);
 
+        // Fallback predefinito: mostra l'iniziale del nome in bianco su sfondo rosso
         final Label avatarInitials = new Label(user.getName().substring(0, 1).toUpperCase());
         avatarInitials.setMinSize(120, 120);
         avatarInitials.setMaxSize(120, 120);
@@ -355,10 +359,15 @@ switch (creditRecord.getBadge()) {
         
         avatarContainer.getChildren().add(avatarInitials);
         
+        // Verifica se l'utente ha salvato un percorso personalizzato per l'avatar
         if (user.getAvatarPath() != null && !user.getAvatarPath().isBlank()) {
             try {
                 final File avatarFile = new File(user.getAvatarPath());
                 if (avatarFile.exists()) {
+                    /*
+                     * Carica l'immagine dal file system locale e applica 
+                     * una maschera circolare (Circle clip) per renderla rotonda
+                     */
                     final Image img = new Image(avatarFile.toURI().toString());
                     final ImageView imageView = new ImageView(img);
                     imageView.setFitWidth(120);
@@ -368,18 +377,23 @@ switch (creditRecord.getBadge()) {
                     final Circle clip = new Circle(60, 60, 60);
                     imageView.setClip(clip);
                     
+                    // Rimuove l'iniziale predefinita e imposta la foto
                     avatarContainer.getChildren().clear();
                     avatarContainer.getChildren().add(imageView);
                 }
             } catch (Exception e) {
-                // Fallback alle iniziali se c'è un errore
+                // In caso di errore (es. file cancellato dal disco), viene mostrata l'iniziale
             }
         }
         
+        // Se si sta visitando il proprio profilo, abilita la modifica dell'avatar al click
         if (isOwnProfile) {
             avatarContainer.setCursor(Cursor.HAND);
             
-            // Aggiungiamo un overlay visibile al passaggio del mouse
+            /*
+             * Crea un overlay scuro (opacità 50%) con la scritta "CAMBIA FOTO"
+             * che diventerà visibile esclusivamente al passaggio del mouse (hover)
+             */
             final StackPane overlay = new StackPane();
             overlay.setMinSize(120, 120);
             overlay.setMaxSize(120, 120);
@@ -393,13 +407,19 @@ switch (creditRecord.getBadge()) {
             
             avatarContainer.getChildren().add(overlay);
             
+            // Listener reattivi per mostrare/nascondere l'overlay
             avatarContainer.setOnMouseEntered(e -> overlay.setOpacity(1));
             avatarContainer.setOnMouseExited(e -> overlay.setOpacity(0));
             
-            // Hint per far capire che si può cliccare
+            // Hint per far capire che l'avatar è cliccabile per la modifica
             final javafx.scene.control.Tooltip t = new javafx.scene.control.Tooltip("Clicca per cambiare l'immagine di profilo");
             javafx.scene.control.Tooltip.install(avatarContainer, t);
             
+            /*
+             * Listener sul click dell'avatar: apre un FileChooser nativo 
+             * e salva la nuova immagine scelta sovrascrivendo quella vecchia 
+             * (o creandola se non presente) tramite Java NIO
+             */
             avatarContainer.setOnMouseClicked(event -> {
                 final FileChooser fileChooser = new FileChooser();
                 fileChooser.setTitle("Scegli Immagine di Profilo");
@@ -415,16 +435,18 @@ switch (creditRecord.getBadge()) {
                             avatarsDir.mkdirs();
                         }
                         
+                        // Estrae l'estensione originale e salva il file usando la matricola come nome
                         final String ext = selectedFile.getName().substring(selectedFile.getName().lastIndexOf('.'));
                         final File destFile = new File(avatarsDir, user.getMatricola() + ext);
                         
+                        // StandardCopyOption.REPLACE_EXISTING assicura che le vecchie foto vengano sovrascritte
                         Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         
-                        // Aggiorniamo il modello
+                        // Aggiorniamo il path nel modello e salviamo su file
                         user.setAvatarPath(destFile.getPath());
                         AuthService.getInstance().saveChanges();
                         
-                        // Ricarica la vista
+                        // Ricarica la vista istantaneamente per mostrare il nuovo avatar
                         stage.setScene(UniBoTutoringProfileApp.createScene(user.getMatricola(), null));
                         it.unibo.tutoring.view.components.WindowUtil.maximize(stage);
                         
@@ -457,16 +479,27 @@ switch (creditRecord.getBadge()) {
         annoNascitaPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
         annoNascitaPrefix.setTextFill(TEXT_DARK);
 
+        /*
+         * Inline Editing - Data di Nascita (Aggiunto da Niki)
+         * Se l'utente visita il suo stesso profilo, viene generato un DatePicker interattivo
+         * In caso contrario, viene visualizzata una Label statica non modificabile.
+         */
         if (isOwnProfile) {
             final javafx.scene.control.DatePicker datePicker = new javafx.scene.control.DatePicker();
             datePicker.setStyle("-fx-font-size: 18px; -fx-pref-width: 220px;");
             
+            // Popola il calendario se la data è già presente nel DB
             if (!birthDateStr.isBlank()) {
                 try {
                     datePicker.setValue(java.time.LocalDate.parse(birthDateStr, DateTimeFormatter.ofPattern("dd/MM/yyyy")));
                 } catch (Exception e) {}
             }
             
+            /**
+             * @addListener cattura la modifica del calendario in tempo reale
+             * formatta la LocalDate e chiama saveChanges per scrivere sul file CSV.
+             * Permette il salvataggio immediato (Inline Editing) senza l'uso di pulsanti 'Salva'.
+             */
             datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     user.setBirthDate(newVal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -475,6 +508,7 @@ switch (creditRecord.getBadge()) {
             });
             annoNascitaRow.getChildren().addAll(annoNascitaPrefix, datePicker);
         } else {
+            // Visualizzazione passiva in caso di profilo appartenente a terzi
             final Label annoNascitaVal = new Label(birthDateStr);
             annoNascitaVal.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
             annoNascitaVal.setTextFill(TEXT_DARK);
@@ -489,12 +523,19 @@ switch (creditRecord.getBadge()) {
         corsoPrefix.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
         corsoPrefix.setTextFill(TEXT_DARK);
         
+        /*
+         * Inline Editing - Corso di Studi (Aggiunto da Niki)
+         * Se l'utente visita il suo stesso profilo, viene generato un ComboBox interattivo.
+         * Altrimenti viene mostrato in sola lettura.
+         */
         if (isOwnProfile) {
             final ComboBox<String> corsoBox = new ComboBox<>();
+            // Carica tutte le materie da CorsiDiStudio in modo che coincidano con la Dashboard
             corsoBox.getItems().addAll(it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI);
             corsoBox.setValue(!corsoStr.isBlank() ? corsoStr : it.unibo.tutoring.model.box.CorsiDiStudio.TUTTI.get(0));
             corsoBox.setStyle("-fx-font-size: 18px; -fx-pref-width: 320px;");
             
+            // Salva la scelta dell'utente direttamente su file ad ogni cambio
             corsoBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     user.setCorso(newVal);
