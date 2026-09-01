@@ -1,6 +1,6 @@
 id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti;note;cancellato;cancellatoAt;daRiconfermare;cancellazioneVistaDa
 32e795a4-f5d1-4f9a-8062-8fa10ecddf0f;Ripetizioni di Progettazione Architettonica (Tutor);Architettura;Progettazione Architettonica;;2026-09-01;14:00;1;0011223344;OFFER;;;;;false;;;
-b38b11bd-3679-4be6-8fdd-e4bf0eb6659a;Ripetizioni di Storia dell'Architettura (Tutor);Architettura;Storia dell'Architettura;;2026-09-02;11:00;2;0011223344;OFFER;;;;Preferisco sessioni pomeridiane, ma sono flessibile.;false;;;
+b38b11bd-3679-4be6-8fdd-e4bf0eb6659a;Ripetizioni di Storia dell'Architettura (Tutor);Architettura;Storia dell'Architettura;;2026-09-02;11:00;2;0011223344;OFFER;;;2020202020;Preferisco sessioni pomeridiane, ma sono flessibile.;false;;;
 f1b58029-0528-4b95-87cc-17be0e6d7aa6;Aiuto con Disegno Tecnico (Studente);Architettura;Disegno Tecnico;;2026-09-03;15:00;2;0011223344;REQUEST;;;;;false;;;
 86b6f5b8-9f1f-4d0e-b8df-51179add1986;Aiuto con Biomeccanica (Studente);Biomedical Engineering;Biomeccanica;;2026-09-04;11:00;2;0011223355;REQUEST;;;;Disponibile anche online se piu' comodo per il tutor.;false;;;
 0877af28-20a0-45fd-b9ab-912544d62ee2;Aiuto con Strumentazione Biomedica (Studente);Biomedical Engineering;Strumentazione Biomedica;;2026-09-05;16:00;1;0011223355;REQUEST;;;;Ho gia' seguito le lezioni, mi serve solo un ripasso mirato.;false;;;

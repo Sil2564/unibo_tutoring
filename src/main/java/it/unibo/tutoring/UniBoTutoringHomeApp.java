@@ -1,3 +1,4 @@
+
 package it.unibo.tutoring;
 import it.unibo.tutoring.view.components.AppFooter;
 import it.unibo.tutoring.view.components.AppIcon;
