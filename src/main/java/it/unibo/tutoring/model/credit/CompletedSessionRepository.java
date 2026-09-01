@@ -38,42 +38,47 @@ public final class CompletedSessionRepository {
      * @return lista di CompletedSession per quel tutor
      */
     public static List<CompletedSession> loadCompletedSessionsForTutor(final String tutorMatricola) {
-        final List<CompletedSession> sessions = new ArrayList<>();
+        final List<CompletedSession> sessions = new ArrayList<>();  //inizializza la lista vuota
 
         try {
-            if (!Files.exists(DB)) {
+            if (!Files.exists(DB)) {    //se il file non esiste, restituisce la lista vuota
                 return sessions;
             }
-
+            // legge tutte le righe del file CSV e le memorizza in una lista di stringhe
             final List<String> lines = Files.readAllLines(DB);
-            for (final String line : lines) {
+            for (final String line : lines) {   //itera su ogni riga del file CSV
+                // ignora righe vuote o intestazioni
                 if (line == null || line.trim().isEmpty() || line.startsWith("studentName")) {
                     continue; // header
                 }
-
+                // divide la riga in parti usando il separatore SEP
                 final String[] parts = line.split(SEP, -1);
                 if (parts.length < 5) {
                     continue;
                 }
 
-                // last column is tutor matricola
+                // verifica se la matricola del tutor corrisponde a quella fornita come parametro
                 final String tutor = parts[parts.length - 1].trim();
-                if (!tutor.equals(tutorMatricola)) {
+                if (!tutor.equals(tutorMatricola)) {    //se non corrisponde, passa alla riga successiva
                     continue;
                 }
 
-                // determine if creditsGiven is present
+                // determina se la riga contiene informazioni sui crediti (almeno 6 parti)
                 final boolean hasCredits = parts.length >= 6;
-                final int hoursIndex = parts.length - (hasCredits ? 3 : 2);
-                final int dateIndex = hoursIndex - 1;
-
+                // Calcola dinamicamente l'indice della colonna "ore" procedendo a ritroso dalla fine:
+                // se i crediti sono presenti è a terzultima posizione (length - 3), altrimenti a penultima (length - 2).
+                final int hoursIndex = parts.length - (hasCredits ? 3 : 2); //
+                final int dateIndex = hoursIndex - 1;   // L'indice della data si trova immediatamente a sinistra rispetto a quello delle ore
                 final String studentName = parts[0].trim();
                 final String date = parts[dateIndex].trim();
                 final int hours = Integer.parseInt(parts[hoursIndex].trim());
+                //se i crediti sono presenti e la penultima parte non è vuota, li converte in intero, altrimenti li imposta a 0
                 final int creditsGiven = hasCredits && !parts[parts.length - 2].trim().isEmpty()
                     ? Integer.parseInt(parts[parts.length - 2].trim())
                     : 0;
 
+                //crea un oggetto StringBuilder per il nome della materia se al suo interno ci sono più parti, 
+                // le unisce con il separatore SEP e le aggiunge alla lista delle sessioni completate
                 final StringBuilder subjectBuilder = new StringBuilder();
                 for (int i = 1; i < dateIndex; i++) {
                     if (subjectBuilder.length() > 0) {
@@ -110,6 +115,7 @@ public final class CompletedSessionRepository {
                 Files.writeString(DB, header + System.lineSeparator(), StandardOpenOption.CREATE_NEW);
             }
 
+            // crea la riga da aggiungere al file CSV, unendo i valori con il separatore SEP e sanitizzando eventuali valori problematici
             final String line = String.join(";",
                 sanitizeCsvValue(studentName),
                 sanitizeCsvValue(subject),
@@ -151,6 +157,7 @@ public final class CompletedSessionRepository {
         }
     }
 
+    //sanitizza i valori CSV sostituendo eventuali punti e virgola con virgole e rimuovendo spazi bianchi iniziali e finali
     private static String sanitizeCsvValue(final String input) {
         return input == null ? "" : input.replace(";", ",").trim();
     }

@@ -1,7 +1,5 @@
 package it.unibo.tutoring;
 
-import it.unibo.tutoring.AuthService;
-import it.unibo.tutoring.CurrentSession;
 import it.unibo.tutoring.view.components.AppIcon;
 import it.unibo.tutoring.view.components.AppCard;
 import it.unibo.tutoring.view.components.AppButton;
