@@ -86,10 +86,12 @@ public final class CompletedSessionRepository {
                     }
                     subjectBuilder.append(parts[i].trim());
                 }
+                // converte il StringBuilder in una stringa finale per il nome della materia
                 final String subject = subjectBuilder.toString();
-
+                // aggiunge la sessione completata alla lista
                 sessions.add(new CompletedSession(studentName, subject, date, hours, creditsGiven));
             }
+            // ordina le sessioni completate per data in ordine decrescente (dalla più recente alla più vecchia)
         } catch (final IOException | RuntimeException e) {
             
         }
@@ -106,12 +108,15 @@ public final class CompletedSessionRepository {
         final String tutorMatricola
     ) {
         try {
+            //se la directory padre del file DB non esiste, la crea prima di scrivere il file
             if (DB.getParent() != null) {
                 Files.createDirectories(DB.getParent());
             }
-
+            //se il file non esiste, scrive l'header prima di aggiungere la riga della sessione completata
             final String header = "studentName;subject;date;hours;creditsGiven;tutorMatricola";
+            //se il file non esiste, lo crea e scrive l'header
             if (!Files.exists(DB)) {
+                //scrive l'header nel file CSV, seguito da una nuova riga
                 Files.writeString(DB, header + System.lineSeparator(), StandardOpenOption.CREATE_NEW);
             }
 
@@ -136,10 +141,14 @@ public final class CompletedSessionRepository {
      * essere concatenati accidentalmente.
      */
     private static void appendLine(final String line) throws IOException {
+        // Controlla se il file esiste, se ha dimensione maggiore di 0 e se non termina con un carattere di nuova riga
         final boolean needsLeadingNewLine = Files.exists(DB)
                 && Files.size(DB) > 0
                 && !endsWithNewLine(DB);
+        /* se serve un a-capo, prefix contiene System.lineSeparator();
+            altrimenti prefix è una stringa vuota.*/
         final String prefix = needsLeadingNewLine ? System.lineSeparator() : "";
+        // Aggiunge la riga al file CSV, con eventuale a-capo iniziale
         Files.writeString(
                 DB,
                 prefix + line + System.lineSeparator(),
@@ -147,11 +156,16 @@ public final class CompletedSessionRepository {
                 StandardOpenOption.APPEND);
     }
 
+    // Verifica se il file termina con un carattere di nuova riga
     private static boolean endsWithNewLine(final Path path) throws IOException {
+        //apre il file in modalità lettura e posiziona il canale alla fine del file per leggere l'ultimo byte
         try (var channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            // crea un buffer di 1 byte per leggere l'ultimo byte del file
             final var lastByte = java.nio.ByteBuffer.allocate(1);
+            //posiziona il canale alla fine del file meno 1 byte e legge l'ultimo byte nel buffer
             channel.position(channel.size() - 1);
             channel.read(lastByte);
+            //estrae il valore del byte letto e lo confronta con i caratteri di nuova riga '\n' o '\r'
             final byte value = lastByte.array()[0];
             return value == '\n' || value == '\r';
         }

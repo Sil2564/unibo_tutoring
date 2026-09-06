@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class TutoringSessionControllerTest {
@@ -60,8 +59,10 @@ class TutoringSessionControllerTest {
     }
 
     @Test
+    //shouldPersistReviewWhenSaved dovrebbe salvare la recensione quando viene registrata e ricaricarla correttamente dal controller
     void shouldPersistReviewWhenSaved() throws IOException {
         // Verifica che la recensione venga salvata su file e ricaricata dal controller.
+        //crea un controller di sessione di tutoring con dati di test
         TutoringSessionController controller = new TutoringSessionController(
                 "Test Materia",
                 "Test Tutor",
@@ -70,25 +71,33 @@ class TutoringSessionControllerTest {
                 "9999");
 
         controller.registraRecensione(4, "Esperienza positiva");
-
+        // Verifica che la recensione sia stata salvata correttamente nel file CSV
         assertTrue(Files.exists(filePath));
-
+        //legge le linee del file e verifica che contenga la recensione salvata
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+        //verifica che il file contenga la recensione salvata
+        
+        /*      lines.stream() permette di analizzare le righe una alla volta;
+                anyMatch(...) restituisce true se almeno una riga soddisfa la condizione;
+                line -> line.equals(...) verifica che la riga sia identica a "REVIEW;4|Esperienza positiva"      
+        */
         assertTrue(lines.stream().anyMatch(line -> line.equals("REVIEW;4|Esperienza positiva")));
 
+        // Verifica che la recensione sia stata salvata correttamente nel repository delle recensioni
         List<ReviewRepository.Review> savedReviews = ReviewRepository.loadReviewsForRecipient("0001");
-        assertFalse(savedReviews.isEmpty());
-        ReviewRepository.Review savedReview = savedReviews.get(savedReviews.size() - 1);
-        assertEquals("Esperienza positiva", savedReview.comment());
-        assertEquals(4, savedReview.stars());
+        assertFalse(savedReviews.isEmpty());    //verifica che la lista delle recensioni salvate non sia vuota
+        ReviewRepository.Review savedReview = savedReviews.get(savedReviews.size() - 1); //prende l'ultima recensione salvata
+        assertEquals("Esperienza positiva", savedReview.comment());     //verifica che il commento della recensione salvata sia corretto
+        assertEquals(4, savedReview.stars());   //verifica che il numero di stelle della recensione salvata sia corretto
 
+        //crea un nuovo controller di sessione di tutoring con gli stessi dati di test per verificare che la recensione sia stata ricaricata correttamente
         TutoringSessionController loadedController = new TutoringSessionController(
                 "Test Materia",
                 "Test Tutor",
                 true,
                 "0001",
                 "9999");
-
+        //verifica che la recensione sia stata ricaricata correttamente dal nuovo controller
         assertTrue(loadedController.isReviewSaved());
         assertEquals(4, loadedController.getReviewStars());
         assertEquals("Esperienza positiva", loadedController.getReviewComment());

@@ -48,7 +48,7 @@ public final class CreditRepository {
                 if (parts[0].equals(matricola)) {
                     final int totalHours = Integer.parseInt(parts[3]);
                     final int totalCredits = Integer.parseInt(parts[4]);
-                    final Badge badge = Badge.valueOf(parts[5]);    //coverte i valori in enum
+                    final Badge badge = Badge.valueOf(parts[5]);    //converte i valori in enum
                     final double rating = Double.parseDouble(parts[6]); //converte la stringa della valutazioni in valore decimale
                     //crea un nuovo CreditRecord con i valori letti dal file e lo restituisce
                     return Optional.of(new CreditRecord(
