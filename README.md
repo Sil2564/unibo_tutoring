@@ -411,6 +411,75 @@ L'architettura per l'assegnazione delle ore, la trasformazione in crediti e la c
    
 3. **Iniezione delle Dipendenze:**
    La policy per i badge viene passata al costruttore del `CreditService` dall'alto (durante il bootstrap dell'applicazione), favorendo la Dependency Injection. Questo rende il sistema estremamente semplice da testare tramite mock objects (ad es. per simulare il raggiungimento di badge altissimi senza dover creare centinaia di sessioni fittizie).
+
+## Design dettagliato- Gestione Dashboard e Box di Tutoraggio
+
+Il diagramma delle classi UML rappresenta la struttura usata per la pubblicazione, la consultazione e il filtraggio degli annunci di tutoraggio (offerte e richieste), che nel progetto prendono il nome di "box".
+
+```mermaid
+classDiagram
+    %% ============================================================
+    %% DESIGN DETTAGLIATO - DASHBOARD E BOX DI TUTORAGGIO (SILVIA)
+    %% ============================================================
+
+    class BoxTutoraggio {
+        +getId() UUID
+        +getTipo() BoxType
+        +getCandidati() List~String~
+        +getConfermato() String
+        +aggiungiCandidato(matricola)
+        +confermaCandidato(matricola)
+        +puoModificareProgrammazione() Boolean
+        +aggiornaProgrammazione(matricola, data, ora, durata)
+    }
+    <<interface>> BoxTutoraggio
+
+    class BoxTutoraggioImpl {
+        -List~String~ candidati
+        -String confermato
+        -Boolean cancellato
+    }
+    <<entity>> BoxTutoraggioImpl
+
+    class BoxRepository {
+        +addBox(BoxTutoraggio)
+        +removeBox(BoxTutoraggio)
+        +getAllBoxes() List~BoxTutoraggio~
+        -purgaAnnunciScaduti()
+        -saveAll()
+    }
+    <<entity>> BoxRepository
+
+    class UniBoTutoringDashboardApp {
+        +createScene()
+        -refreshCards()
+    }
+    <<boundary>> UniBoTutoringDashboardApp
+
+    class CreateAnnouncementViewApp {
+        +createScene()
+    }
+    <<boundary>> CreateAnnouncementViewApp
+
+    BoxTutoraggioImpl ..|> BoxTutoraggio
+    UniBoTutoringDashboardApp --> BoxRepository : legge e filtra >
+    CreateAnnouncementViewApp --> BoxRepository : crea >
+    BoxRepository --> BoxTutoraggio : gestisce >
+```
+
+### Scelte Progettuali: Gestione Dashboard e Box di Tutoraggio (Silvia)
+
+Il modulo relativo a dashboard e box è stato progettato tenendo conto che lo stato di un annuncio (candidature, conferma, possibilità o meno di modificare la programmazione) è complesso e cambia continuamente in base alle azioni di più utenti diversi.
+
+1. **Entità "ricca" invece di un Controller separato:**
+   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, cosa succede se l'autore cambia data dopo una conferma) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box e non richiedono di coordinare più entità, quindi introdurre un controller avrebbe solo spostato altrove metodi che appartengono naturalmente all'oggetto stesso.
+
+2. **`BoxRepository` come punto unico di accesso e persistenza:**
+   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view (`UniBoTutoringDashboardApp`, `CreateAnnouncementViewApp`) non sanno nulla del formato di persistenza: dipendono solo dall'interfaccia `BoxTutoraggio` e dai metodi statici del repository, il che permette di cambiare il meccanismo di storage senza toccare la UI.
+
+3. **Filtraggio dichiarativo lato Boundary:**
+   La logica di ricerca e filtro (tipo annuncio, corso, testo libero) resta interamente nella dashboard e viene espressa come pipeline di `Stream.filter` sulla lista restituita dal repository, invece di essere spinta dentro `BoxRepository`. Questo evita di trasformare il repository in una classe che conosce troppi criteri di interrogazione diversi, e permette di aggiungere nuovi filtri in futuro modificando solo la view.
+   
 ## GESTIONE SESSIONI E CHAT
 
 Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richiesta di tutoraggio e comunicare tramite una chat privata associata alla sessione. La sessione attraversa gli stati proposta, confermata, completata o cancellata; le sessioni future confermate vengono inoltre mostrate nel calendario personale dei partecipanti.
@@ -754,6 +823,11 @@ Le regole che dipendono dal tempo espongono varianti testabili con un `LocalDate
 - `TutoringSessionControllerTest`: controlla il flusso delle recensioni. Verifica che, dopo una sessione completata correttamente, lo studente possa lasciare una recensione e che stelle e commento vengano salvati in 'reviews.csv'. Permette inoltre al tutor di ritrovare la recensione caricandola tramite la propria matricola. Controlla inoltre che il file resti ben formattato anche se non termina con un ritorno a capo.
 
 I seguenti file di test verificano che le funzionalità principali funzionino anche senza aprire l’interfaccia grafica.
+
+### Silvia
+
+- `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, durata fuori dal range 1-8 ore) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio.
+- `CreateAnnouncementViewAppTest`: avvia il toolkit JavaFX e verifica che il modulo di creazione annuncio mostri correttamente le due opzioni "Offerta" e "Richiesta", entrambe con etichetta visibile.
 
 ## Note di sviluppo
 
