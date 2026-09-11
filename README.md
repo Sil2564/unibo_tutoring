@@ -994,6 +994,96 @@ if (selectedFile != null) {
 ```
 L'integrazione di una foto profilo customizzata mi ha spinto a esplorare l'API NIO di Java per il file system. Utilizzando un `FileChooser` con filtri di estensione, l'utente è guidato a caricare solo formati validi. Subito dopo, il file viene copiato nella cartella sicura `data/avatars`. Ho deciso di rinominare forzatamente ogni immagine con la matricola univoca dell'utente (`user.getMatricola() + extension`): questo trucchetto previene collisioni di nomi (ad esempio se due persone caricano "foto.png") e fa in modo che l'API sovrascriva automaticamente le vecchie immagini risparmiando spazio su disco tramite il `REPLACE_EXISTING`.
 
+### Silvia
+
+#### Dashboard per visualizzare offerte e richieste di tutoraggio
+
+La dashboard, implementata in `it.unibo.tutoring.UniBoTutoringDashboardApp`, rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste: **Tutte**, **Offerte**, **Richieste** e **Le mie sessioni**.
+
+I conteggi mostrati nelle tab vengono calcolati dinamicamente tramite `Stream`, filtrando gli annunci in base al loro stato e al tipo:
+
+```java
+final List<BoxTutoraggio> openBoxes = allBoxes.stream()
+    .filter(b -> b.getConfermato() == null)
+    .toList();
+final List<BoxTutoraggio> mySessionsBoxes = allBoxes.stream()
+    .filter(b -> isVisibleInMieSessioni(b, me))
+    .toList();
+
+final long offerCount = openBoxes.stream()
+    .filter(b -> b.getTipo() == BoxType.OFFER)
+    .count();
+final long requestCount = openBoxes.size() - offerCount;
+
+final Button tabAll = tab("Tutte (" + openBoxes.size() + ")", true);
+final Button tabOffers = tab("Offerte (" + offerCount + ")", false);
+final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
+final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
+```
+
+Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione **Le mie sessioni**. La generazione delle card è stata inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso. In questo modo si evita di duplicare la logica di popolamento del `FlowPane`.
+
+#### Creazione e gestione dei box di tutoraggio
+
+La gestione dei box è affidata a `it.unibo.tutoring.model.box.BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`:
+
+```java
+public static synchronized void addBox(final BoxTutoraggio box) {
+    BOXES.add(box);
+    saveAll();
+}
+
+public static synchronized void removeBox(final BoxTutoraggio box) {
+    if (box == null) {
+        return;
+    }
+    BOXES.removeIf(b -> b.getId().equals(box.getId()));
+    saveAll();
+}
+
+public static synchronized List<BoxTutoraggio> getAllBoxes() {
+    purgaAnnunciScaduti();
+    return new ArrayList<>(BOXES);
+}
+```
+
+Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa. Ogni aggiunta o rimozione viene immediatamente salvata su file, permettendo di mantenere i dati anche dopo il riavvio dell'applicazione.
+
+La chiamata a `purgaAnnunciScaduti()` durante la lettura permette inoltre di eliminare automaticamente gli annunci ormai scaduti. Gli annunci cancellati rimangono invece temporaneamente disponibili per il recupero secondo la logica prevista dall'applicazione, senza richiedere un processo schedulato separato.
+
+La creazione dei box avviene invece in `CreateAnnouncementViewApp`, che verifica la validità dei dati inseriti, tra cui corso, materia, argomento e data/ora futura, prima di creare l'istanza di `BoxTutoraggioImpl` e passarla al repository.
+
+#### Implementazione dei filtri di ricerca avanzati
+
+La dashboard combina diversi criteri di ricerca attraverso una pipeline di `Stream.filter` concatenati:
+
+```java
+final List<BoxTutoraggio> filtered = base.stream()
+    .filter(b -> mySessionsMode[0]
+        || selectedType[0] == null
+        || b.getTipo() == selectedType[0])
+    .filter(b -> allCourses
+        || selectedCourse.equalsIgnoreCase(b.getCorso()))
+    .filter(b -> {
+        if (query.isEmpty()) {
+            return true;
+        }
+        final String haystack = String.join(" ",
+            nullToEmpty(b.getMateria()),
+            nullToEmpty(b.getCorso()),
+            nullToEmpty(b.getArgomento()),
+            nullToEmpty(b.getTitolo())
+        ).toLowerCase(Locale.ITALIAN);
+        return haystack.contains(query);
+    })
+    .toList();
+```
+
+I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa contenente **materia, corso, argomento e titolo**, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole e più adatta anche alla gestione dei caratteri accentati.
+
+La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica. L'utente può quindi vedere immediatamente i risultati aggiornarsi senza dover premere un pulsante **Cerca**.
+
+
 
 # Commenti finali
 
@@ -1013,6 +1103,17 @@ In merito al mio contributo personale, sono molto soddisfatta del lavoro svolto 
 Durante lo sviluppo di unibo_tutoring mi sono occupato principalmente dell'ecosistema dell'utente: dalla progettazione del profilo (compresa la gestione per l'upload di avatar personalizzati) fino all'architettura per l'assegnazione dei crediti e l'ottenimento dei Badge. 
 Una sfida e soddisfazione particolare è stata quella di rielaborare la User Experience del profilo studente, rimuovendo scomode logiche a "finestre" e implementando un "inline-editing" istantaneo dei dati. 
 Inoltre, per migliorare la cosiddetta *Quality of Life* dell'applicazione, ho ideato e sviluppato il `DataSeeder`, uno strumento che popola magicamente un ambiente di test la prima volta che si apre l'applicazione a database vuoto: una manna dal cielo per i nostri test di gruppo! Partecipare a questo progetto è stata un'ottima opportunità non solo per padroneggiare Java e JavaFX, ma anche per imparare a collaborare, a risolvere conflitti su Git e a ragionare sulle scelte architetturali lavorando in gruppo.
+
+### Silvia
+
+Durante lo sviluppo di unibo_tutoring mi sono occupata principalmente della dashboard, cioè il punto di ingresso dell'applicazione dopo il login. Il mio contributo ha riguardato la suddivisione degli annunci nelle diverse sezioni, tra offerte, richieste e sessioni dell'utente, oltre alla realizzazione della logica di ricerca e filtraggio. Ho lavorato anche sulla gestione del ciclo di vita dei box di tutoraggio, dalla creazione tramite il modulo di pubblicazione fino alla loro rimozione, occupandomi della persistenza su file e della gestione di casi particolari come gli annunci scaduti o quelli cancellati dopo la conferma di una candidatura.
+
+Sono particolarmente soddisfatta del lavoro svolto sulla parte di ricerca e filtraggio. Inizialmente avevo pensato a una ricerca limitata alla materia, ma durante lo sviluppo e confrontandomi con gli altri membri del gruppo è emersa la necessità di rendere la ricerca più flessibile. Per questo motivo sono stati introdotti filtri combinabili per corso e tipologia di annuncio e una ricerca testuale che considera anche titolo, argomento e materia. In questo modo la dashboard risulta più semplice da utilizzare anche quando l'utente non conosce esattamente tutti i dati dell'annuncio che sta cercando.
+
+Un aspetto che migliorerei, con il senno di poi, riguarda la struttura della dashboard. Nel corso dello sviluppo la classe `UniBoTutoringDashboardApp` ha finito per accumulare una quantità considerevole di logica relativa al filtraggio e alla gestione dei dati. Avendo più tempo a disposizione, preferirei estrarre questa parte in un componente separato, così da renderla più facilmente testabile e mantenere la classe dell'interfaccia grafica più focalizzata sulla gestione della View.
+
+All'interno del gruppo mi sono trovata spesso a fare da collegamento tra la parte di backend, in particolare box e repository, e quella relativa all'interfaccia grafica. La dashboard infatti deve integrare informazioni provenienti da diverse parti dell'applicazione, come utenti, annunci e sessioni. Questo mi ha fatto capire quanto sia importante definire in anticipo interfacce e responsabilità dei diversi moduli: lavorando in quattro sullo stesso progetto, una modifica a una classe può infatti avere conseguenze su più componenti e richiedere coordinamento con gli altri membri del gruppo.
+
 
 ## Difficoltà incontrate e commenti per i docenti
 
