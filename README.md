@@ -1072,9 +1072,7 @@ L'integrazione di una foto profilo customizzata mi ha spinto a esplorare l'API N
 
 #### Dashboard per visualizzare offerte e richieste di tutoraggio
 
-La dashboard, implementata in `it.unibo.tutoring.UniBoTutoringDashboardApp`, rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste: **Tutte**, **Offerte**, **Richieste** e **Le mie sessioni**.
-
-I conteggi mostrati nelle tab vengono calcolati dinamicamente tramite `Stream`, filtrando gli annunci in base al loro stato e al tipo:
+**Dove:** [`it.unibo.tutoring.UniBoTutoringDashboardApp`](src/main/java/it/unibo/tutoring/UniBoTutoringDashboardApp.java)
 
 ```java
 final List<BoxTutoraggio> openBoxes = allBoxes.stream()
@@ -1095,11 +1093,11 @@ final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 ```
 
-Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione **Le mie sessioni**. La generazione delle card è stata inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso. In questo modo si evita di duplicare la logica di popolamento del `FlowPane`.
+La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati dinamicamente tramite `Stream`, filtrando gli annunci in base al loro stato e al tipo. Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni". La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
 
 #### Creazione e gestione dei box di tutoraggio
 
-La gestione dei box è affidata a `it.unibo.tutoring.model.box.BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`:
+**Dove:** [`it.unibo.tutoring.model.box.BoxRepository`](src/main/java/it/unibo/tutoring/model/box/BoxRepository.java)
 
 ```java
 public static synchronized void addBox(final BoxTutoraggio box) {
@@ -1121,15 +1119,11 @@ public static synchronized List<BoxTutoraggio> getAllBoxes() {
 }
 ```
 
-Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa. Ogni aggiunta o rimozione viene immediatamente salvata su file, permettendo di mantenere i dati anche dopo il riavvio dell'applicazione.
-
-La chiamata a `purgaAnnunciScaduti()` durante la lettura permette inoltre di eliminare automaticamente gli annunci ormai scaduti. Gli annunci cancellati rimangono invece temporaneamente disponibili per il recupero secondo la logica prevista dall'applicazione, senza richiedere un processo schedulato separato.
-
-La creazione dei box avviene invece in `CreateAnnouncementViewApp`, che verifica la validità dei dati inseriti, tra cui corso, materia, argomento e data/ora futura, prima di creare l'istanza di `BoxTutoraggioImpl` e passarla al repository.
+La gestione dei box è affidata al `BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`. Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa, e ogni aggiunta o rimozione viene salvata immediatamente su file, così da mantenere i dati anche dopo il riavvio dell'applicazione. La chiamata a `purgaAnnunciScaduti()` durante la lettura elimina automaticamente gli annunci ormai scaduti, mentre quelli cancellati restano temporaneamente disponibili per il recupero, senza bisogno di un processo schedulato separato. La creazione vera e propria avviene invece in `CreateAnnouncementViewApp`, che verifica la validità dei dati inseriti (corso, materia, argomento, data/ora futura) prima di istanziare un `BoxTutoraggioImpl` e passarlo al repository.
 
 #### Implementazione dei filtri di ricerca avanzati
 
-La dashboard combina diversi criteri di ricerca attraverso una pipeline di `Stream.filter` concatenati:
+**Dove:** [`it.unibo.tutoring.UniBoTutoringDashboardApp`](src/main/java/it/unibo/tutoring/UniBoTutoringDashboardApp.java)
 
 ```java
 final List<BoxTutoraggio> filtered = base.stream()
@@ -1153,9 +1147,7 @@ final List<BoxTutoraggio> filtered = base.stream()
     .toList();
 ```
 
-I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa contenente **materia, corso, argomento e titolo**, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole e più adatta anche alla gestione dei caratteri accentati.
-
-La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica. L'utente può quindi vedere immediatamente i risultati aggiornarsi senza dover premere un pulsante **Cerca**.
+I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa che unisce materia, corso, argomento e titolo, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole e più adatta alla gestione dei caratteri accentati. La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica, mostrando i risultati aggiornati senza dover premere un pulsante "Cerca".
 
 
 
