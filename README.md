@@ -34,7 +34,7 @@ Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creaz
 
 Gli elementi principali del dominio sono:
 - Utente: rappresenta uno studente iscritto all'Università di Bologna.
-- BoxTutoraggio: rappresenta un'offerta o una richiesta di tutoraggio. Contiene informazioni sulla materia e una breve descrizione.
+- BoxTutoraggio: rappresenta un'offerta (OFFER) o una richiesta (REQUEST) di tutoraggio pubblicata da un utente. Contiene corso, materia, argomento, data, ora e durata (da 1 a 8 ore), una nota facoltativa, l'elenco dei candidati e l'eventuale candidato confermato. Il titolo viene generato automaticamente dal tipo e dalla materia.
 - Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa o cancellata)
 - Chat: rappresenta il canale di comunicazione tra gli utenti che partecipano a una sessione.
 - Credito: rappresenta il numero di ore e CFU accumulati dal tutor per le attività svolte.
@@ -47,7 +47,7 @@ Infine, la gestione delle comunicazioni dirette e della prenotazione delle sessi
 
 Il sistema di tutoring gestisce studenti e tutor che possono proporre,
 accettare o confermare sessioni di tutoraggio.  
-Le entità principali del dominio sono `Utente`, `OffertaRichiesta`, `Sessione`,
+Le entità principali del dominio sono `Utente`, `BoxTutoraggio`, `Sessione`,
 `Feedback` e `Credito`.  
 Lo schema seguente rappresenta i rapporti concettuali tra queste entità.
 
@@ -63,12 +63,16 @@ classDiagram
         +email
     }
 
-    class OffertaRichiesta {
+    class BoxTutoraggio {
         +id
-        +tipo  // "offerta" o "richiesta"
+        +tipo  // OFFER o REQUEST
+        +corso
         +materia
-        +descrizione
-        +dataCreazione
+        +argomento
+        +data
+        +ora
+        +durataOre
+        +note
     }
 
     class Sessione {
@@ -88,8 +92,8 @@ classDiagram
     %% ============================
     %% RELAZIONI DEL DOMINIO
     %% ============================
-    Utente "1" --> "*" OffertaRichiesta : crea >
-    OffertaRichiesta "1" --> "*" Sessione : origina >
+        Utente "1" --> "*" BoxTutoraggio : crea >
+    BoxTutoraggio "1" --> "*" Sessione : origina >
     Sessione "1" --> "2" Utente : coinvolge >
     Sessione "1" --> "1" Feedback : genera >
     Utente "1" --> "1" Credito : possiede >
@@ -446,13 +450,13 @@ classDiagram
         +removeBox(BoxTutoraggio)
         +getAllBoxes() List~BoxTutoraggio~
         -purgaAnnunciScaduti()
-        -saveAll()
+        +saveAll()
     }
     <<entity>> BoxRepository
 
     class UniBoTutoringDashboardApp {
         +createScene()
-        -refreshCards()
+        -createContent()
     }
     <<boundary>> UniBoTutoringDashboardApp
 
@@ -461,10 +465,29 @@ classDiagram
     }
     <<boundary>> CreateAnnouncementViewApp
 
+        class AnnouncementDetailViewApp {
+        +createScene(stage, box)
+    }
+    <<boundary>> AnnouncementDetailViewApp
+
+    class TitoloAnnuncioGenerator {
+        +generaTitolo(tipo, materia) String
+    }
+
+    class CorsiDiStudio {
+        +TUTTI List~String~
+    }
+
     BoxTutoraggioImpl ..|> BoxTutoraggio
     UniBoTutoringDashboardApp --> BoxRepository : legge e filtra >
     CreateAnnouncementViewApp --> BoxRepository : crea >
     BoxRepository --> BoxTutoraggio : gestisce >
+    CreateAnnouncementViewApp --> BoxTutoraggioImpl : istanzia >
+    CreateAnnouncementViewApp --> TitoloAnnuncioGenerator : genera titolo >
+    CreateAnnouncementViewApp --> CorsiDiStudio : elenco corsi >
+    UniBoTutoringDashboardApp --> CorsiDiStudio : filtro corso >
+    UniBoTutoringDashboardApp --> AnnouncementDetailViewApp : apre dettaglio >
+    AnnouncementDetailViewApp --> BoxTutoraggio : candidature, conferma, modifica, eliminazione >
 ```
 
 ### Scelte Progettuali: Gestione Dashboard e Box di Tutoraggio (Silvia)
@@ -472,10 +495,10 @@ classDiagram
 Il modulo relativo a dashboard e box è stato progettato tenendo conto che lo stato di un annuncio (candidature, conferma, possibilità o meno di modificare la programmazione) è complesso e cambia continuamente in base alle azioni di più utenti diversi.
 
 1. **Entità "ricca" invece di un Controller separato:**
-   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, cosa succede se l'autore cambia data dopo una conferma) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box e non richiedono di coordinare più entità, quindi introdurre un controller avrebbe solo spostato altrove metodi che appartengono naturalmente all'oggetto stesso.
+   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, chi può eliminare l'annuncio) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box e non richiedono di coordinare più entità,quindi per le regole interne al singolo box non serve un controller. Il coordinamento tra box e sessione (per esempio la conferma di un candidato, che verifica prima le sovrapposizioni tramite TutoringSessionController e poi aggiorna il box) avviene invece in AnnouncementDetailViewApp.
 
 2. **`BoxRepository` come punto unico di accesso e persistenza:**
-   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view (`UniBoTutoringDashboardApp`, `CreateAnnouncementViewApp`) non sanno nulla del formato di persistenza: dipendono solo dall'interfaccia `BoxTutoraggio` e dai metodi statici del repository, il che permette di cambiare il meccanismo di storage senza toccare la UI.
+   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view non conoscono il formato CSV: usano l'interfaccia BoxTutoraggio e i metodi statici del repository. Le modifiche allo stato di un box già esistente (candidature, conferma, contatti, riconferma) non passano da un metodo del repository, quindi le view chiamano esplicitamente BoxRepository.saveAll() dopo ogni azione; CreateAnnouncementViewApp istanzia inoltre direttamente BoxTutoraggioImpl.
 
 3. **Filtraggio dichiarativo lato Boundary:**
    La logica di ricerca e filtro (tipo annuncio, corso, testo libero) resta interamente nella dashboard e viene espressa come pipeline di `Stream.filter` sulla lista restituita dal repository, invece di essere spinta dentro `BoxRepository`. Questo evita di trasformare il repository in una classe che conosce troppi criteri di interrogazione diversi, e permette di aggiungere nuovi filtri in futuro modificando solo la view.
@@ -826,7 +849,7 @@ I seguenti file di test verificano che le funzionalità principali funzionino an
 
 ### Silvia
 
-- `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, durata fuori dal range 1-8 ore) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio.
+- `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, ora nulla, durata fuori dal range 1-8 ore) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio.
 - `CreateAnnouncementViewAppTest`: avvia il toolkit JavaFX e verifica che il modulo di creazione annuncio mostri correttamente le due opzioni "Offerta" e "Richiesta", entrambe con etichetta visibile.
 
 ## Note di sviluppo
@@ -1093,7 +1116,7 @@ final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 ```
 
-La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati dinamicamente tramite `Stream`, filtrando gli annunci in base al loro stato e al tipo. Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni". La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
+La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati con Stream ogni volta che la dashboard viene costruita, sul totale degli annunci ancora aperti (quindi non cambiano con la ricerca o con il filtro per corso) Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni" solo per l'autore, il candidato e il candidato confermato. Una sessione completata da entrambe le parti sparisce da questa vista, e una sessione annullata resta consultabile per 24 ore. La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
 
 #### Creazione e gestione dei box di tutoraggio
 
@@ -1119,7 +1142,7 @@ public static synchronized List<BoxTutoraggio> getAllBoxes() {
 }
 ```
 
-La gestione dei box è affidata al `BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`. Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa, e ogni aggiunta o rimozione viene salvata immediatamente su file, così da mantenere i dati anche dopo il riavvio dell'applicazione. La chiamata a `purgaAnnunciScaduti()` durante la lettura elimina automaticamente gli annunci ormai scaduti, mentre quelli cancellati restano temporaneamente disponibili per il recupero, senza bisogno di un processo schedulato separato. La creazione vera e propria avviene invece in `CreateAnnouncementViewApp`, che verifica la validità dei dati inseriti (corso, materia, argomento, data/ora futura) prima di istanziare un `BoxTutoraggioImpl` e passarlo al repository.
+La gestione dei box è affidata al `BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`. Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa, e ogni aggiunta o rimozione viene salvata immediatamente su file, così da mantenere i dati anche dopo il riavvio dell'applicazione. La chiamata a purgaAnnunciScaduti(), eseguita al caricamento del repository e a ogni getAllBoxes(), elimina definitivamente gli annunci cancellati dopo una sessione confermata una volta trascorse 24 ore dalla cancellazione (ORE_GRAZIA_CANCELLAZIONE). Durante queste 24 ore l'autore e il candidato confermato continuano a vedere l'annuncio con una notifica; non esiste un meccanismo di recupero e non serve un processo schedulato separato. L'annuncio cancellato prima di una conferma viene invece rimosso subito (removeBox). La creazione vera e propria avviene invece in `CreateAnnouncementViewApp`, che verifica che corso, materia, argomento, data e ora siano compilati, che l'ora sia in formato HH:mm e che data e ora siano successive a quelle attuali; la durata è vincolata tra 1 e 8 ore dallo Spinner, e il titolo viene generato da TitoloAnnuncioGenerator ("Ripetizioni di ... (Tutor)" per le offerte, "Aiuto con ... (Studente)" per le richieste).
 
 #### Implementazione dei filtri di ricerca avanzati
 
@@ -1147,7 +1170,8 @@ final List<BoxTutoraggio> filtered = base.stream()
     .toList();
 ```
 
-I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa che unisce materia, corso, argomento e titolo, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole e più adatta alla gestione dei caratteri accentati. La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica, mostrando i risultati aggiornati senza dover premere un pulsante "Cerca".
+I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa che unisce materia, corso, argomento e titolo, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole usando la locale italiana. La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica, mostrando i risultati aggiornati senza dover premere un pulsante "Cerca".
+Il filtro del corso usa l'elenco condiviso CorsiDiStudio.TUTTI, lo stesso del modulo di creazione, così che le due liste non vadano fuori sincrono. La ricerca testuale non considera il campo note né il nome dell'autore.
 
 
 
