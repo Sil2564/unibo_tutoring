@@ -172,8 +172,6 @@ public final class AnnouncementDetailViewApp {
 
         if (box.isCancellato()) {
             card.getChildren().add(buildCancellatoBanner(box));
-        } else if (me != null && !isAutore && box.isInAttesaDiRiconferma(me)) {
-            card.getChildren().add(buildRiconfermaProgrammazioneSection(stage, box, me));
         }
 
         card.getChildren().addAll(
@@ -258,17 +256,15 @@ public final class AnnouncementDetailViewApp {
 
         if (!box.puoModificareProgrammazione()) {
             section.getChildren().add(infoLabel(
-                    "Questo annuncio e' stato eliminato e non puo' piu' essere modificato."));
+                    box.isCancellato()
+                            ? "Questo annuncio e' stato eliminato e non puo' piu' essere modificato."
+                            : "La programmazione non e' modificabile perche' ci sono candidature attive "
+                                    + "o un candidato confermato."));
             return section;
         }
 
-        final boolean coinvolgeAltriUtenti = !box.getCandidati().isEmpty() || box.getConfermato() != null;
         section.getChildren().add(infoLabel(
-                coinvolgeAltriUtenti
-                        ? "Puoi modificare data, ora e durata anche adesso: chi si e' gia' candidato o e' "
-                                + "gia' stato confermato ricevera' una notifica e dovra' riconfermare la propria "
-                                + "disponibilita' alla nuova programmazione."
-                        : "Puoi modificare data, ora e durata in qualsiasi momento."));
+                "Puoi modificare data, ora e durata finche' non arriva una candidatura."));
 
         final AppButton editButton = AppButton.secondary("Modifica data e orario");
 
@@ -427,41 +423,6 @@ public final class AnnouncementDetailViewApp {
         final VBox banner = new VBox(label);
         banner.setPadding(new Insets(10, 14, 10, 14));
         banner.setBackground(new Background(new BackgroundFill(PRIMARY_RED, new CornerRadii(8), Insets.EMPTY)));
-        VBox.setMargin(banner, new Insets(0, 0, 6, 0));
-        return banner;
-    }
-
-    /**
-     * Banner con pulsante di riconferma mostrato a chi era gia' candidato o
-     * gia' confermato quando l'autore ha cambiato data/ora dell'annuncio.
-     */
-    private static VBox buildRiconfermaProgrammazioneSection(
-            final Stage stage,
-            final BoxTutoraggio box,
-            final String me) {
-        final Label title = new Label("L'autore ha cambiato data o orario di questa sessione");
-        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 14));
-        title.setTextFill(TEXT_DARK);
-        title.setWrapText(true);
-
-        final Label info = infoLabel(
-                "Nuova programmazione: "
-                        + (box.getData() != null ? box.getData().format(DATE_FORMAT) : "N/D")
-                        + " alle " + (box.getOra() != null ? box.getOra().toString() : "N/D")
-                        + ". Conferma la tua disponibilita' per mantenere la candidatura/prenotazione, "
-                        + "oppure ritirala qui sotto se non ti va piu' bene.");
-
-        final AppButton confermaButton = AppButton.primary("Conferma nuova data e orario", GREEN);
-        confermaButton.setOnAction(event -> {
-            box.riconfermaProgrammazione(me);
-            refresh(stage, box);
-        });
-
-        final VBox banner = new VBox(8, title, info, buttonRow(confermaButton));
-        banner.setPadding(new Insets(14));
-        banner.setBackground(new Background(new BackgroundFill(Color.web("#FFF3CD"), new CornerRadii(8), Insets.EMPTY)));
-        banner.setBorder(new Border(new BorderStroke(
-                Color.web("#F0C419"), BorderStrokeStyle.SOLID, new CornerRadii(8), BorderWidths.DEFAULT)));
         VBox.setMargin(banner, new Insets(0, 0, 6, 0));
         return banner;
     }

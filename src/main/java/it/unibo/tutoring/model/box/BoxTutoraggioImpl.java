@@ -41,9 +41,6 @@ public class BoxTutoraggioImpl
 
     private String confermato;
 
-    /** Matricole di chi deve riconfermare la propria disponibilita' dopo un cambio data/ora. */
-    private final Set<String> daRiconfermare = new LinkedHashSet<>();
-
     private boolean cancellato;
 
     private LocalDateTime cancellatoAt;
@@ -125,12 +122,12 @@ public class BoxTutoraggioImpl
     ) {
         this(id, titolo, corso, materia, argomento, data, ora, durataOre, autoreMatricola, tipo,
                 candidatiIniziali, confermatoIniziale, contattiIniziali, note,
-                false, null, List.of(), List.of());
+                false, null, List.of());
     }
 
     /**
      * Costruttore "di ricostruzione" completo, usato da {@link BoxRepository}
-     * per ripristinare anche lo stato di eliminazione/riconferma da
+     * per ripristinare anche lo stato di eliminazione da
      * {@code data/boxes.csv}.
      */
     BoxTutoraggioImpl(
@@ -150,7 +147,6 @@ public class BoxTutoraggioImpl
         final String note,
         final boolean cancellato,
         final LocalDateTime cancellatoAt,
-        final List<String> daRiconfermareIniziali,
         final List<String> cancellazioneVistaDaIniziali
     ) {
         this.id = id;
@@ -173,9 +169,6 @@ public class BoxTutoraggioImpl
         }
         this.cancellato = cancellato;
         this.cancellatoAt = cancellatoAt;
-        if (daRiconfermareIniziali != null) {
-            this.daRiconfermare.addAll(daRiconfermareIniziali);
-        }
         if (cancellazioneVistaDaIniziali != null) {
             this.cancellazioneVistaDa.addAll(cancellazioneVistaDaIniziali);
         }
@@ -249,9 +242,8 @@ public class BoxTutoraggioImpl
     @Override
     public boolean puoModificareProgrammazione() {
         // La programmazione si blocca non solo se l'annuncio e' stato eliminato,
-        // ma anche appena esiste un candidato attivo o una conferma: in quei casi
-        // cambiare data/ora richiederebbe una riconferma esplicita, gestita da
-        // aggiornaProgrammazione() tramite daRiconfermare.
+        // ma anche appena esiste un candidato attivo o una conferma: in questo
+        // modo nessuno si trova davanti a una data/ora diversa da quella scelta.
         return !this.cancellato && this.candidati.isEmpty() && this.confermato == null;
     }
 
@@ -266,7 +258,7 @@ public class BoxTutoraggioImpl
         }
         if (!puoModificareProgrammazione()) {
             throw new IllegalStateException(
-                    "Un annuncio eliminato non puo' piu' essere modificato.");
+                    "La programmazione non e' modificabile (annuncio eliminato, con candidature o confermato).");
         }
         if (nuovaData == null || nuovaOra == null) {
             throw new IllegalArgumentException("Data e ora sono obbligatorie.");
@@ -278,34 +270,9 @@ public class BoxTutoraggioImpl
             throw new IllegalArgumentException("Data e ora devono essere successive a quelle attuali.");
         }
 
-        // Chi era gia' candidato o gia' confermato deve riconfermare la propria
-        // disponibilita' alla nuova programmazione: li segnamo prima di
-        // applicare il cambiamento, cosi' la UI puo' notificarli.
-        this.daRiconfermare.addAll(this.candidati);
-        if (this.confermato != null) {
-            this.daRiconfermare.add(this.confermato);
-        }
-
         this.data = nuovaData;
         this.ora = nuovaOra;
         this.durataOre = nuovaDurataOre;
-    }
-
-    @Override
-    public Set<String> getInAttesaDiRiconferma() {
-        return Collections.unmodifiableSet(this.daRiconfermare);
-    }
-
-    @Override
-    public boolean isInAttesaDiRiconferma(final String matricola) {
-        return matricola != null && this.daRiconfermare.contains(matricola);
-    }
-
-    @Override
-    public void riconfermaProgrammazione(final String matricola) {
-        if (matricola != null) {
-            this.daRiconfermare.remove(matricola);
-        }
     }
 
     @Override
@@ -345,8 +312,6 @@ public class BoxTutoraggioImpl
     @Override
     public void rimuoviCandidato(final String matricola) {
         this.candidati.remove(matricola);
-        // Chi ritira/viene rifiutato non e' piu' coinvolto nella programmazione.
-        this.daRiconfermare.remove(matricola);
     }
 
     @Override

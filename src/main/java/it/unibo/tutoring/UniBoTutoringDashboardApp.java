@@ -308,7 +308,7 @@ public class UniBoTutoringDashboardApp extends Application {
         final ImageView searchIcon = new AppIcon("lent.png", 15, 15);
         searchIcon.setOpacity(0.7);
         final TextField searchField = new TextField();
-        searchField.setPromptText("Cerca per materia, corso o descrizione...");
+        searchField.setPromptText("Cerca per materia, corso, argomento o titolo...");
         searchField.setFont(Font.font("System", FontWeight.NORMAL, 14));
         searchField.setBackground(Background.EMPTY);
         searchField.setBorder(Border.EMPTY);
@@ -534,7 +534,9 @@ public class UniBoTutoringDashboardApp extends Application {
 			statusChip.setPadding(new Insets(2, 7, 2, 7));
 			final Color statusColor = box.isCancellato() || sessionCancelled
 				? PRIMARY_RED
-				: box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9");
+				: "Scaduto".equals(statusText)
+					? Color.web("#8A8A8A")
+					: box.getConfermato() != null ? Color.web("#28A745") : Color.web("#3D7CC9");
 			statusChip.setBackground(new Background(new BackgroundFill(
 				statusColor, new CornerRadii(999), Insets.EMPTY)));
 			tagRow.getChildren().add(statusChip);
@@ -547,9 +549,7 @@ public class UniBoTutoringDashboardApp extends Application {
 					? "Annuncio eliminato dall'autore"
 					: hasUnreadSessionCancellation(box, me)
 						? "Sessione annullata dalla controparte"
-						: hasUnreadChatMessage(box, me)
-							? "Nuovo messaggio nella chat"
-							: "Data/orario cambiati: conferma la tua disponibilita'");
+						: "Nuovo messaggio nella chat");
 			javafx.scene.control.Tooltip.install(notifIcon, notifTip);
 			tagRow.getChildren().add(notifIcon);
 		}
@@ -627,8 +627,8 @@ public class UniBoTutoringDashboardApp extends Application {
 	 * Indica se mostrare il simbolo di notifica sulla card, analogo a quello
 	 * di un nuovo messaggio: compare quando l'annuncio e' stato eliminato
 	 * dall'autore (per l'autore stesso e per il candidato confermato, finche'
-	 * non aprono l'annuncio), quando arriva un messaggio non letto oppure quando
-	 * l'autore cambia data/ora e l'utente deve riconfermare la disponibilita'.
+	 * non aprono l'annuncio), quando la controparte annulla una sessione
+	 * confermata oppure quando arriva un messaggio non letto.
 	 */
 	private static boolean hasNotification(final BoxTutoraggio box, final String me) {
 		if (me == null) {
@@ -642,10 +642,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		if (hasUnreadSessionCancellation(box, me)) {
 			return true;
 		}
-		if (hasUnreadChatMessage(box, me)) {
-			return true;
-		}
-		return box.isInAttesaDiRiconferma(me);
+		return hasUnreadChatMessage(box, me);
 	}
 
 	private static boolean hasUnreadChatMessage(
@@ -712,6 +709,14 @@ public class UniBoTutoringDashboardApp extends Application {
 			box.getAutoreMatricola()).isAnnullata();
 	}
 
+	/** True se data e ora dell'annuncio sono gia' passate (l'annuncio resta visibile, ma segnalato come scaduto). */
+	private static boolean isScaduto(final BoxTutoraggio box) {
+		if (box.getData() == null || box.getOra() == null) {
+			return false;
+		}
+		return java.time.LocalDateTime.of(box.getData(), box.getOra()).isBefore(java.time.LocalDateTime.now());
+	}
+
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
 	private static String statusChipText(
 		final BoxTutoraggio box,
@@ -725,6 +730,9 @@ public class UniBoTutoringDashboardApp extends Application {
 		}
 		if (box.getConfermato() != null) {
 			return "Confermata";
+		}
+		if (isScaduto(box)) {
+			return "Scaduto";
 		}
 		final int n = box.getCandidati().size();
 		if (n > 0) {

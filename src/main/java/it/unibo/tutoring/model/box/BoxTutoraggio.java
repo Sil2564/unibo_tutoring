@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public interface BoxTutoraggio {
@@ -45,29 +44,25 @@ public interface BoxTutoraggio {
 
     /**
      * Indica se data, ora e durata possono ancora essere modificate.
-     * L'autore puo' modificare la programmazione in qualsiasi momento, anche
-     * dopo che sono arrivate candidature o dopo la conferma di un
-     * candidato: l'unico caso in cui non e' piu' possibile e' quando
-     * l'annuncio e' stato eliminato ({@link #isCancellato()}).
+     * La programmazione si blocca appena l'annuncio e' stato eliminato
+     * ({@link #isCancellato()}), esiste almeno un candidato attivo oppure e'
+     * stato confermato un candidato.
      *
      * @return true se l'autore puo' modificare la programmazione
      */
     boolean puoModificareProgrammazione();
 
     /**
-     * Aggiorna data, ora e durata dell'annuncio. Puo' essere invocato anche
-     * quando esistono gia' candidature o un candidato confermato: in tal
-     * caso chi era coinvolto (candidati in attesa e/o candidato confermato)
-     * viene automaticamente marcato come "in attesa di riconferma" tramite
-     * {@link #getInAttesaDiRiconferma()}, cosi' che la UI possa notificarlo e
-     * chiedergli di confermare nuovamente la propria disponibilita' alla
-     * nuova data/ora.
+     * Aggiorna data, ora e durata dell'annuncio. E' consentito solo finche'
+     * {@link #puoModificareProgrammazione()} e' true, cioe' quando l'annuncio
+     * non e' stato eliminato e non ha candidati ne' un candidato confermato.
      *
      * @param richiedenteMatricola matricola dell'utente che richiede la modifica
      * @param data nuova data della sessione
      * @param ora nuovo orario di inizio
      * @param durataOre nuova durata, compresa tra 1 e 8 ore
-     * @throws IllegalStateException se l'annuncio e' stato eliminato
+     * @throws IllegalStateException se la programmazione non e' modificabile
+     *      (annuncio eliminato, con candidature o con un candidato confermato)
      * @throws SecurityException se la modifica non e' richiesta dall'autore
      * @throws IllegalArgumentException se i nuovi valori non sono validi
      */
@@ -76,29 +71,6 @@ public interface BoxTutoraggio {
             LocalDate data,
             LocalTime ora,
             int durataOre);
-
-    /**
-     * Matricole di chi (candidato in attesa e/o candidato confermato) deve
-     * riconfermare la propria disponibilita' a seguito di una modifica di
-     * data/ora effettuata dall'autore dopo che si era gia' candidato o era
-     * gia' stato confermato.
-     */
-    Set<String> getInAttesaDiRiconferma();
-
-    /**
-     * @param matricola matricola da controllare
-     * @return true se {@code matricola} deve riconfermare la propria
-     *      disponibilita' alla programmazione corrente
-     */
-    boolean isInAttesaDiRiconferma(String matricola);
-
-    /**
-     * Riconferma la disponibilita' di {@code matricola} alla programmazione
-     * corrente (data/ora/durata), rimuovendolo dall'elenco di chi e' in
-     * attesa di riconferma. Non ha alcun effetto se la matricola non era in
-     * attesa.
-     */
-    void riconfermaProgrammazione(String matricola);
 
     /**
      * Matricole degli utenti che hanno aperto una conversazione con l'autore.

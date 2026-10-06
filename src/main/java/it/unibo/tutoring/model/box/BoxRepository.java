@@ -127,7 +127,7 @@ public final class BoxRepository {
             sanitize(box.getNote()),
             Boolean.toString(box.isCancellato()),
             box.getCancellatoAt() != null ? box.getCancellatoAt().toString() : "",
-            String.join(LIST_SEP, box.getInAttesaDiRiconferma()),
+            "",
             String.join(LIST_SEP, cancellazioneVistaDaVisibile(box))
         );
     }
@@ -187,7 +187,7 @@ public final class BoxRepository {
                     final LocalDateTime cancellatoAt = parts.length > 15 && !parts[15].isBlank()
                         ? LocalDateTime.parse(parts[15].trim())
                         : null;
-                    final List<String> daRiconfermare = parts.length > 16 ? parseLista(parts[16]) : List.of();
+                    // parts[16] (daRiconfermare) e' una colonna legacy, non piu' usata.
                     final List<String> cancellazioneVistaDa = parts.length > 17 ? parseLista(parts[17]) : List.of();
 
                     // Normalizza automaticamente i titoli che non rispettano lo
@@ -203,7 +203,7 @@ public final class BoxRepository {
                     BOXES.add(new BoxTutoraggioImpl(
                         id, titolo, corso, materia, argomento, data, ora, durataOre,
                         autoreMatricola, tipo, candidati, confermato, contatti, note,
-                        cancellato, cancellatoAt, daRiconfermare, cancellazioneVistaDa
+                        cancellato, cancellatoAt, cancellazioneVistaDa
                     ));
                 } catch (final IllegalArgumentException | java.time.format.DateTimeParseException ex) {
                     // riga corrotta: la saltiamo senza bloccare il caricamento delle altre
