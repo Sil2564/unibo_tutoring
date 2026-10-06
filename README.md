@@ -293,9 +293,10 @@ classDiagram
     %% ============================================================
 
     class UniBoTutoringProfileApp {
-        +createScene(matricola, isOwnProfile)
+        +createScene()
+        +createScene(matricola)
+        +createScene(matricola, annuncioDiProvenienza)
         -createContent(user, controller, isOwnProfile)
-        -handleAvatarUpload()
     }
     <<boundary>> UniBoTutoringProfileApp
 
@@ -334,14 +335,14 @@ classDiagram
 
 Il modulo relativo alla gestione del Profilo Utente è stato ideato con un occhio di riguardo verso la separazione delle responsabilità (Separation of Concerns) e la manutenibilità del codice.
 
-1. **Pattern ECB (Entity-Control-Boundary):**
-   L'architettura del profilo segue fedelmente il pattern ECB. `UniBoTutoringProfileApp` funge da Boundary, occupandosi unicamente del rendering grafico in JavaFX e dell'acquisizione dell'input. Tutta la logica di smistamento dati è delegata al `ProfileController`, il quale funge da tramite esclusivo con i moduli `UserRepository` e `CreditService` (Entity). In questo modo, se un giorno volessimo cambiare la View (ad es. passando a una web app), il Controller e i Repository rimarrebbero intoccati.
+1. **Pattern ECB e Compromessi Pratici:**
+   L'architettura del profilo si ispira al pattern ECB. `UniBoTutoringProfileApp` (Boundary) si occupa del rendering grafico in JavaFX. Tuttavia, per snellire l'interfaccia e limitare i passaggi ridondanti, la Boundary bypassa parzialmente il `ProfileController` invocando direttamente l'istanza singleton di `AuthService` per il salvataggio dei dati anagrafici e della password, lasciando al Controller la sola lettura dello stato corrente e dei crediti.
 
 2. **Reattività dell'Interfaccia (Inline Editing):**
-   Invece di utilizzare finestre modali o pulsanti esterni per il salvataggio dei dati (data di nascita, corso, avatar), l'interfaccia intercetta i cambiamenti tramite `listener` reattivi posti direttamente sui campi JavaFX (come `DatePicker` o `ComboBox`). Il Boundary notifica immediatamente il Controller, che aggiorna il file sottostante in tempo reale.
+   Invece di utilizzare finestre modali per il salvataggio dei dati, l'interfaccia intercetta i cambiamenti tramite `listener` reattivi posti direttamente sui campi (come `DatePicker` o `ComboBox`). La View invoca quindi `AuthService` per aggiornare il file sottostante in tempo reale.
 
-3. **Integrazione fluida dell'Avatar:**
-   La classe boundary `UniBoTutoringProfileApp` gestisce in autonomia l'esplorazione del file system per scegliere l'avatar (`FileChooser`), dopodiché effettua il salvataggio in maniera silente. L'utilizzo di *masks* circolari nativi di JavaFX permette di avere un layout uniforme senza appesantire la CPU.
+3. **Gestione dinamica dell'Avatar:**
+   La classe boundary gestisce in autonomia l'esplorazione del file system per scegliere l'avatar (`FileChooser`), dopodiché effettua il salvataggio in maniera silente (previa eliminazione dei vecchi file orfani, garantendo un reale risparmio di spazio su disco). L'utilizzo di *masks* circolari nativi di JavaFX assicura infine un layout uniforme dell'immagine.
 ## SISTEMA ASSEGNAZIONE CREDITI & BADGE 
 
 Il seguente diagramma modella il sistema di calcolo e assegnazione dei crediti formativi e dei relativi Badge per i tutor. Per garantire la massima flessibilità e un forte disaccoppiamento tra le classi, l'architettura sfrutta il pattern Observer (tramite un Event Bus di dominio) per intercettare in modo asincrono il completamento delle sessioni. Questo è stato poi combinato con il pattern Strategy, il quale delega il calcolo dinamico dei badge a specifiche classi policy intercambiabili.
@@ -354,16 +355,15 @@ classDiagram
     %% ============================================================
 
     class TutoringSessionController {
-        +segnaComeCompletata()
-        -pubblicaEvento()
     }
 
     class SessionCompletedEvent {
-        -String sessionId
         -String tutorMatricola
         -int completedHours
+        -String eventName
         +getTutorMatricola()
         +getCompletedHours()
+        +getEventName()
     }
     <<DomainEvent>> SessionCompletedEvent
 
@@ -390,17 +390,17 @@ classDiagram
         +getNextThreshold(totalHours) int
     }
 
-    class StandardBadgePolicy {
+    class DefaultBadgePolicy {
         +calculateBadge(totalHours) Badge
         +getNextThreshold(totalHours) int
     }
 
     %% RELAZIONI
     TutoringSessionController --> DomainEventBus : pubblica evento >
-    DomainEventBus --> CreditService : notifica asincrona >
+    DomainEventBus --> CreditService : notifica sincrona >
     CreditService --> CreditRepository : persistenza (salvataggio) >
     CreditService --> BadgePolicy : inietta calcolo badge >
-    BadgePolicy <|.. StandardBadgePolicy : implementa
+    BadgePolicy <|.. DefaultBadgePolicy : implementa
 ```
 
 ### Scelte Progettuali: Sistema Crediti e Badge (Niki)
@@ -408,13 +408,13 @@ classDiagram
 L'architettura per l'assegnazione delle ore, la trasformazione in crediti e la conseguente scalata di livello dei Badge è stata pensata come il fulcro della "gamification" dell'applicazione. È stata progettata massimizzando il disaccoppiamento (Loose Coupling) tra le classi.
 
 1. **Pattern Observer (EventBus):**
-   Quando una sessione termina positivamente, `TutoringSessionController` (che si occupa del networking della chat e dello stato della sessione) **non ha alcuna consapevolezza** dell'esistenza dei Crediti. Si limita semplicemente a lanciare un oggetto `SessionCompletedEvent` all'interno del `DomainEventBus`. Il `CreditService` (che è regolarmente iscritto in ascolto sull'EventBus) cattura l'evento in modo asincrono tramite `onEvent()` e aggiorna silenziosamente le statistiche del tutor. Questo approccio previene le dipendenze circolari e mantiene il codice altamente scalabile.
+   Quando una sessione termina positivamente, `TutoringSessionController` delega al modello la finalizzazione dello stato, il quale lancia un oggetto `SessionCompletedEvent` all'interno del `DomainEventBus`. Il `CreditService` (che è regolarmente iscritto in ascolto sull'EventBus) cattura l'evento in modo sincrono tramite `onEvent()` e aggiorna le statistiche del tutor. Questo approccio previene le dipendenze circolari e mantiene il codice scalabile.
 
-2. **Pattern Strategy:**
-   Il calcolo di quando un tutor passa da `BEGINNER` a `INTERMEDIATE` (e via dicendo) o la logica di quanti crediti vale un'ora di lezione, non sono hard-coded direttamente nel Service. La responsabilità è delegata interamente all'interfaccia `BadgePolicy`. Allo stato attuale l'app inietta la `StandardBadgePolicy`, ma se in futuro l'Ateneo dovesse decidere di modificare i requisiti di ore per ottenere i badge, basterà implementare una nuova classe Policy senza intaccare minimamente l'architettura principale.
+2. **Pattern Strategy e Responsabilità:**
+   Il calcolo di quando un tutor passa da `BEGINNER` a `INTERMEDIATE` (e via dicendo) non è hard-coded direttamente nel Service. La responsabilità è delegata interamente all'interfaccia `BadgePolicy`. Allo stato attuale l'app inietta la `DefaultBadgePolicy`. La conversione matematica delle ore in crediti formativi (CFU) è invece centralizzata internamente al `CreditService` (1 CFU = 25 ore), garantendo così una rigorosa Separation of Concerns.
    
 3. **Iniezione delle Dipendenze:**
-   La policy per i badge viene passata al costruttore del `CreditService` dall'alto (durante il bootstrap dell'applicazione), favorendo la Dependency Injection. Questo rende il sistema estremamente semplice da testare tramite mock objects (ad es. per simulare il raggiungimento di badge altissimi senza dover creare centinaia di sessioni fittizie).
+   La policy per i badge viene passata al costruttore del `CreditService` dall'alto (durante il bootstrap dell'applicazione), favorendo la Dependency Injection.
 
 ## Design dettagliato- Gestione Dashboard e Box di Tutoraggio
 

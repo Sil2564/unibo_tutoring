@@ -370,7 +370,7 @@ public class TutoringSessionController {
         final var creditService = it.unibo.tutoring.AppConfig.getInstance().getCreditService();
         final var currentCreditRecord = creditService.getCreditRecord(this.tutorMatricola);
         final int creditsGiven =
-                (currentCreditRecord.getTotalHours() + completedHours) / 2
+                (currentCreditRecord.getTotalHours() + completedHours) / 25
                         - currentCreditRecord.getTotalCredits();
         final String subject = this.model.getMateria();
         final String date = this.model.getDataOra().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));

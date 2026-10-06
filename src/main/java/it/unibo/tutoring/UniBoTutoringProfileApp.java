@@ -439,6 +439,14 @@ switch (creditRecord.getBadge()) {
                         final String ext = selectedFile.getName().substring(selectedFile.getName().lastIndexOf('.'));
                         final File destFile = new File(avatarsDir, user.getMatricola() + ext);
                         
+                        // Elimina eventuali file vecchi con estensione diversa per risparmiare spazio
+                        final File[] existingAvatars = avatarsDir.listFiles((dir, name) -> name.startsWith(user.getMatricola() + "."));
+                        if (existingAvatars != null) {
+                            for (File oldAvatar : existingAvatars) {
+                                oldAvatar.delete();
+                            }
+                        }
+                        
                         // StandardCopyOption.REPLACE_EXISTING assicura che le vecchie foto vengano sovrascritte
                         Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         
