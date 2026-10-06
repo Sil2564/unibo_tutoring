@@ -92,7 +92,7 @@ classDiagram
     %% ============================
     %% RELAZIONI DEL DOMINIO
     %% ============================
-        Utente "1" --> "*" BoxTutoraggio : crea >
+    Utente "1" --> "*" BoxTutoraggio : crea >
     BoxTutoraggio "1" --> "*" Sessione : origina >
     Sessione "1" --> "2" Utente : coinvolge >
     Sessione "1" --> "1" Feedback : genera >
@@ -465,7 +465,7 @@ classDiagram
     }
     <<boundary>> CreateAnnouncementViewApp
 
-        class AnnouncementDetailViewApp {
+    class AnnouncementDetailViewApp {
         +createScene(stage, box)
     }
     <<boundary>> AnnouncementDetailViewApp
@@ -495,10 +495,10 @@ classDiagram
 Il modulo relativo a dashboard e box è stato progettato tenendo conto che lo stato di un annuncio (candidature, conferma, possibilità o meno di modificare la programmazione) è complesso e cambia continuamente in base alle azioni di più utenti diversi.
 
 1. **Entità "ricca" invece di un Controller separato:**
-   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, chi può eliminare l'annuncio) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box e non richiedono di coordinare più entità,quindi per le regole interne al singolo box non serve un controller. Il coordinamento tra box e sessione (per esempio la conferma di un candidato, che verifica prima le sovrapposizioni tramite TutoringSessionController e poi aggiorna il box) avviene invece in AnnouncementDetailViewApp.
+   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, chi può eliminare l'annuncio) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box e riguardano esclusivamente lo stato interno di un singolo box, quindi per queste regole non serve un controller. Il coordinamento tra box e sessione (per esempio la conferma di un candidato, che verifica prima le sovrapposizioni tramite TutoringSessionController e poi aggiorna il box) avviene invece in AnnouncementDetailViewApp.
 
 2. **`BoxRepository` come punto unico di accesso e persistenza:**
-   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view non conoscono il formato CSV: usano l'interfaccia BoxTutoraggio e i metodi statici del repository. Le modifiche allo stato di un box già esistente (candidature, conferma, contatti, riconferma) non passano da un metodo del repository, quindi le view chiamano esplicitamente BoxRepository.saveAll() dopo ogni azione; CreateAnnouncementViewApp istanzia inoltre direttamente BoxTutoraggioImpl.
+   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view non conoscono il formato CSV: usano l'interfaccia BoxTutoraggio e i metodi statici del repository. Le modifiche allo stato di un box già esistente (candidature, conferma, contatti) non passano da un metodo del repository, quindi le view chiamano esplicitamente BoxRepository.saveAll() dopo ogni azione; CreateAnnouncementViewApp istanzia inoltre direttamente BoxTutoraggioImpl.
 
 3. **Filtraggio dichiarativo lato Boundary:**
    La logica di ricerca e filtro (tipo annuncio, corso, testo libero) resta interamente nella dashboard e viene espressa come pipeline di `Stream.filter` sulla lista restituita dal repository, invece di essere spinta dentro `BoxRepository`. Questo evita di trasformare il repository in una classe che conosce troppi criteri di interrogazione diversi, e permette di aggiungere nuovi filtri in futuro modificando solo la view.
@@ -1116,7 +1116,7 @@ final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 ```
 
-La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati con Stream ogni volta che la dashboard viene costruita, sul totale degli annunci ancora aperti (quindi non cambiano con la ricerca o con il filtro per corso) Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni" solo per l'autore, il candidato e il candidato confermato. Una sessione completata da entrambe le parti sparisce da questa vista, e una sessione annullata resta consultabile per 24 ore. La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
+La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati con Stream ogni volta che la dashboard viene costruita, sul totale degli annunci ancora aperti (filtro per corso). Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni" solo per l'autore, il candidato e il candidato confermato. Una sessione completata da entrambe le parti sparisce da questa vista, e una sessione annullata resta consultabile per 24 ore. La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
 
 #### Creazione e gestione dei box di tutoraggio
 
@@ -1170,7 +1170,7 @@ final List<BoxTutoraggio> filtered = base.stream()
     .toList();
 ```
 
-I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa che unisce materia, corso, argomento e titolo, convertita in minuscolo tramite `Locale.ITALIAN`, così da rendere la ricerca indipendente dalle maiuscole usando la locale italiana. La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica, mostrando i risultati aggiornati senza dover premere un pulsante "Cerca".
+I filtri permettono di combinare il tipo di annuncio, il corso selezionato tramite `ComboBox` e una ricerca testuale libera. Quest'ultima viene effettuata costruendo una stringa che unisce materia, corso, argomento e titolo, convertita in minuscolo tramite Locale.ITALIAN, così da rendere la ricerca indipendente dalle maiuscole. La ricerca è inoltre reattiva: i listener associati a `searchField.textProperty()` e `courseCombo.valueProperty()` richiamano `refreshCards` ad ogni modifica, mostrando i risultati aggiornati senza dover premere un pulsante "Cerca".
 Il filtro del corso usa l'elenco condiviso CorsiDiStudio.TUTTI, lo stesso del modulo di creazione, così che le due liste non vadano fuori sincrono. La ricerca testuale non considera il campo note né il nome dell'autore.
 
 
