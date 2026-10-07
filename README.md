@@ -10,7 +10,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 **Requisiti funzionali**
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
-- Gli studenti potranno registrarsi e autenticarsi usando la matricola o l'email universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
+- Gli studenti potranno registrarsi indicando la propria matricola universitaria e autenticarsi usando la matricola oppure l'indirizzo e-mail inserito in fase di registrazione
 - Gli utenti potranno creare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione, e modificarne la programmazione (data, ora e durata) finché non ricevono candidature
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
@@ -105,13 +105,13 @@ L'architettura dell'applicazione unibo_tutoring segue il pattern MVC (Model-View
 In questa architettura, le tre componenti principali (Model, View e Controller) cooperano per gestire le funzionalità di tutoraggio, la persistenza dei dati e l'interazione con l'utente.
 - Model: rappresenta il dominio applicativo: gestisce le entità principali (Utente, boxTutoraggio, Sessione, Chat, Credito) e le relazioni tra loro. Si occupa della logica dei dati, del calcolo dei crediti e dello stato delle sessioni.
 - View: gestisce la parte grafica e interattiva dell'applicazione, mostrando i dati ricevuti dal Controller e aggiornandosi in base alle modifiche del Model.
-- Controller: coordina le azioni dell'utente e media tra Model e View. È responsabile del flusso delle operazioni, come la creazione di un box di tutoraggio, la proposta di una sessione, o l'invio di messaggi in chat.
+- Controller: coordina le azioni dell'utente e media tra Model e View. È responsabile del flusso delle operazioni, come la proposta e la conferma di una sessione o l'invio di messaggi in chat. Per i box di tutoraggio non è previsto un controller dedicato, perché le loro regole sono incapsulate direttamente nel modello (vedi la sezione sulla gestione della dashboard e dei box).
 
 Questa suddivisione consente di mantenere il codice modulare, facilitando la gestione delle diverse sezioni dell'app (Dashboard, Chat, Profilo, ecc...) e rendendo possibile l'estensione futura con nuove funzionalità, come ad esempio l'integrazione con Teams.
 
  
 
-L’applicazione di tutoring segue un’architettura di tipo **MVC**, (Model–View–Controller), ispirata al pattern **ECB** (Entity–Control–Boundary). Il frontend gestisce l’interfaccia e la comunicazione con l’utente, il controller coordina le operazioni principali e interagisce con i gestori di dominio, mentre il database garantisce la persistenza delle informazioni.
+L’applicazione di tutoring segue un’architettura di tipo **MVC**, (Model–View–Controller), ispirata al pattern **ECB** (Entity–Control–Boundary). Il frontend gestisce l’interfaccia e la comunicazione con l’utente, il controller coordina le operazioni principali e interagisce con i gestori di dominio, mentre la persistenza delle informazioni è affidata a file CSV salvati nella cartella `data` (rappresentati nello schema dal componente `DBService`).
 
 ### Architettura – Schema UML
 
@@ -1257,7 +1257,7 @@ Il file generato si trova nella cartella `build/libs`.
 1. Dalla home selezionare **Registrati**.
 2. Inserire nome, cognome, data di nascita, corso di studi, matricola di dieci cifre, e-mail e password.
 3. La password deve contenere almeno sei caratteri, una maiuscola, una minuscola, un numero e un carattere speciale.
-4. Dopo la registrazione selezionare **Accedi** e usare la matricola oppure l'e-mail insieme alla password.
+4. A registrazione completata si entra direttamente nella dashboard. Per gli accessi successivi selezionare **Accedi** e usare la matricola oppure l'e-mail insieme alla password.
 
 ## Consultazione e creazione degli annunci
 
