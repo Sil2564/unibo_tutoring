@@ -11,7 +11,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
 - Gli studenti potranno registrarsi e autenticarsi usando la matricola o l'email universitaria, garantendo così che l'accesso sia riservato agli studenti uniBo
-- Gli utenti potranno creare, modificare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione
+- Gli utenti potranno creare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione, e modificarne la programmazione (data, ora e durata) finché non ricevono candidature
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
 - Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa o cancellata (stato che interrompe il flusso senza generare crediti)
@@ -34,7 +34,7 @@ Gli utenti interagiscono tramite la pubblicazione di box di tutoraggio, la creaz
 
 Gli elementi principali del dominio sono:
 - Utente: rappresenta uno studente iscritto all'Università di Bologna.
-- BoxTutoraggio: rappresenta un'offerta (OFFER) o una richiesta (REQUEST) di tutoraggio pubblicata da un utente. Contiene corso, materia, argomento, data, ora e durata (da 1 a 8 ore), una nota facoltativa, l'elenco dei candidati e l'eventuale candidato confermato. Il titolo viene generato automaticamente dal tipo e dalla materia.
+- BoxTutoraggio: rappresenta un'offerta (OFFER) o una richiesta (REQUEST) di tutoraggio pubblicata da un utente. Contiene corso, materia, argomento, data, ora e durata (da 1 a 8 ore), una nota facoltativa, l'elenco dei candidati e l'eventuale candidato confermato. Il titolo viene generato automaticamente dal tipo e dalla materia. Un box è considerato scaduto quando la data e l'ora di inizio sono già passate.
 - Sessione: indica un incontro di tutoraggio tra due utenti, caratterizzato da data, orario, durata e stato (proposta, confermata, conclusa o cancellata)
 - Chat: rappresenta il canale di comunicazione tra gli utenti che partecipano a una sessione.
 - Credito: rappresenta il numero di ore e CFU accumulati dal tutor per le attività svolte.
@@ -435,6 +435,8 @@ classDiagram
         +confermaCandidato(matricola)
         +puoModificareProgrammazione() Boolean
         +aggiornaProgrammazione(matricola, data, ora, durata)
+        +isScaduto() Boolean
+        +eliminaAnnuncio(matricola) Boolean
     }
     <<interface>> BoxTutoraggio
 
@@ -478,6 +480,12 @@ classDiagram
         +TUTTI List~String~
     }
 
+    class TutoringSessionController {
+        +confermaSessione()
+        +cancellaSessione(motivo)
+    }
+    <<control>> TutoringSessionController
+
     BoxTutoraggioImpl ..|> BoxTutoraggio
     UniBoTutoringDashboardApp --> BoxRepository : legge e filtra >
     CreateAnnouncementViewApp --> BoxRepository : crea >
@@ -488,6 +496,7 @@ classDiagram
     UniBoTutoringDashboardApp --> CorsiDiStudio : filtro corso >
     UniBoTutoringDashboardApp --> AnnouncementDetailViewApp : apre dettaglio >
     AnnouncementDetailViewApp --> BoxTutoraggio : candidature, conferma, modifica, eliminazione >
+    AnnouncementDetailViewApp --> TutoringSessionController : conferma e annulla la sessione >
 ```
 
 ### Scelte Progettuali: Gestione Dashboard e Box di Tutoraggio (Silvia)
@@ -495,13 +504,13 @@ classDiagram
 Il modulo relativo a dashboard e box è stato progettato tenendo conto che lo stato di un annuncio (candidature, conferma, possibilità o meno di modificare la programmazione) è complesso e cambia continuamente in base alle azioni di più utenti diversi.
 
 1. **Entità "ricca" invece di un Controller separato:**
-   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, chi può eliminare l'annuncio) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box, quindi per queste regole non serve un controller. Il coordinamento tra box e sessione (per esempio la conferma di un candidato, che verifica prima le sovrapposizioni tramite TutoringSessionController e poi aggiorna il box) avviene invece in AnnouncementDetailViewApp.
+   A differenza di altri moduli del progetto, qui non esiste un controller dedicato: la logica di transizione (chi può candidarsi, quando la programmazione si blocca, chi può eliminare l'annuncio, quando un annuncio è scaduto) è incapsulata direttamente in `BoxTutoraggioImpl`, dietro l'interfaccia `BoxTutoraggio`. La scelta è stata deliberata: le regole riguardano esclusivamente lo stato interno di un singolo box, quindi per queste regole non serve un controller. Per lo stesso motivo anche la validazione dei dati sta nel modello: il costruttore rifiuta campi obbligatori mancanti e durate fuori dall'intervallo 1-8 ore, con le stesse regole di `aggiornaProgrammazione`, e un annuncio scaduto non accetta più candidature né conferme. Il coordinamento tra box e sessione avviene invece in AnnouncementDetailViewApp: la conferma di un candidato verifica prima le sovrapposizioni tramite TutoringSessionController e poi aggiorna il box, mentre l'eliminazione di un annuncio con una sessione già confermata annulla prima la sessione con `cancellaSessione` (la controparte riceve un messaggio in chat) e viene bloccata se la sessione è già terminata, perché in quel caso va segnalato il completamento.
 
 2. **`BoxRepository` come punto unico di accesso e persistenza:**
-   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view non conoscono il formato CSV: usano l'interfaccia BoxTutoraggio e i metodi statici del repository. Le modifiche allo stato di un box già esistente (candidature, conferma, contatti) non passano da un metodo del repository, quindi le view chiamano esplicitamente BoxRepository.saveAll() dopo ogni azione; CreateAnnouncementViewApp istanzia inoltre direttamente BoxTutoraggioImpl.
+   Tutte le operazioni di lettura e scrittura passano da `BoxRepository`, che mantiene i box in memoria e li sincronizza subito su `data/boxes.csv`. Le view non conoscono il formato CSV: usano l'interfaccia BoxTutoraggio e i metodi statici del repository. Le modifiche allo stato di un box già esistente (candidature, conferma, contatti) non passano da un metodo del repository, quindi le view chiamano esplicitamente BoxRepository.saveAll() dopo ogni azione; CreateAnnouncementViewApp istanzia inoltre direttamente BoxTutoraggioImpl e mostra nel modulo gli eventuali errori di validazione sollevati dal modello.
 
 3. **Filtraggio dichiarativo lato Boundary:**
-   La logica di ricerca e filtro (tipo annuncio, corso, testo libero) resta interamente nella dashboard e viene espressa come pipeline di `Stream.filter` sulla lista restituita dal repository, invece di essere spinta dentro `BoxRepository`. Questo evita di trasformare il repository in una classe che conosce troppi criteri di interrogazione diversi, e permette di aggiungere nuovi filtri in futuro modificando solo la view.
+   La logica di ricerca e filtro (tipo annuncio, corso, testo libero) resta interamente nella dashboard e viene espressa come pipeline di `Stream.filter` sulla lista restituita dal repository, invece di essere spinta dentro `BoxRepository`. Questo evita di trasformare il repository in una classe che conosce troppi criteri di interrogazione diversi, e permette di aggiungere nuovi filtri in futuro modificando solo la view. Anche la selezione degli annunci "aperti" (senza candidato confermato e non scaduti) avviene nella dashboard, ma si appoggia a `isScaduto()` del modello, così la regola di scadenza resta definita in un solo punto.
    
 ## GESTIONE SESSIONI E CHAT
 
@@ -828,7 +837,7 @@ Il progetto usa test automatici JUnit eseguibili con:
 ./gradlew test
 ```
 
-Il progetto contiene 45 metodi annotati con `@Test` distribuiti in undici classi. I test coprono disponibilità del runtime JavaFX, autenticazione, annunci, componenti condivisi dell'interfaccia, navigazione, sessioni, chat e persistenza.
+Il progetto contiene 53 metodi annotati con `@Test` distribuiti in dodici classi. I test coprono disponibilità del runtime JavaFX, autenticazione, annunci, componenti condivisi dell'interfaccia, navigazione, sessioni, chat, crediti e persistenza.
 
 ### Andrea
 
@@ -849,8 +858,8 @@ I seguenti file di test verificano che le funzionalità principali funzionino an
 
 ### Silvia
 
-- `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, ora nulla, durata fuori dal range 1-8 ore) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio.
-- `CreateAnnouncementViewAppTest`: avvia il toolkit JavaFX e verifica che il modulo di creazione annuncio mostri correttamente le due opzioni "Offerta" e "Richiesta", entrambe con etichetta visibile.
+- `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, ora nulla, durata fuori dal range 1-8 ore, data già passata) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio. Verifica inoltre la validazione e il trim dei campi nel costruttore, il confine esatto della scadenza, il rifiuto di candidature e conferme su un annuncio scaduto e l'eliminazione dell'annuncio (immediata senza conferma, "soft" dopo una conferma, vietata a chi non è l'autore). Le date usate sono relative al giorno di esecuzione: con date fisse il test smetterebbe di passare una volta superate, perché la programmazione non accetta date già trascorse.
+- `CreateAnnouncementViewAppTest`: avvia il toolkit JavaFX e verifica che il modulo di creazione annuncio mostri correttamente le due opzioni "Offerta" e "Richiesta", entrambe con etichetta visibile. Se il toolkit è già stato avviato da un'altra classe di test nella stessa JVM il test lo riutilizza, così il risultato non dipende dall'ordine di esecuzione.
 
 ## Note di sviluppo
 
@@ -1100,6 +1109,7 @@ L'integrazione di una foto profilo customizzata mi ha spinto a esplorare l'API N
 ```java
 final List<BoxTutoraggio> openBoxes = allBoxes.stream()
     .filter(b -> b.getConfermato() == null)
+    .filter(b -> !b.isScaduto())
     .toList();
 final List<BoxTutoraggio> mySessionsBoxes = allBoxes.stream()
     .filter(b -> isVisibleInMieSessioni(b, me))
@@ -1116,7 +1126,7 @@ final Button tabRequests = tab("Richieste (" + requestCount + ")", false);
 final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 ```
 
-La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati con Stream ogni volta che la dashboard viene costruita, sul totale degli annunci ancora aperti (quindi non cambiano con la ricerca o con il filtro per corso). Gli annunci per cui è già stato confermato un candidato vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni" solo per l'autore, il candidato e il candidato confermato. Una sessione completata da entrambe le parti sparisce da questa vista, e una sessione annullata resta consultabile per 24 ore. La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
+La dashboard rappresenta il punto di accesso principale all'applicazione dopo il login e organizza gli annunci in quattro viste (**Tutte**, **Offerte**, **Richieste**, **Le mie sessioni**), i cui conteggi vengono calcolati con Stream ogni volta che la dashboard viene costruita, sul totale degli annunci ancora aperti (quindi non cambiano con la ricerca o con il filtro per corso). Gli annunci per cui è già stato confermato un candidato e quelli scaduti vengono esclusi dalle prime tre viste, mentre rimangono visibili nella sezione "Le mie sessioni" solo per l'autore, il candidato e il candidato confermato (gli annunci scaduti sono segnalati dal chip "Scaduto"). Una sessione completata da entrambe le parti sparisce da questa vista, e una sessione annullata resta consultabile per 24 ore. La generazione delle card è inoltre incapsulata nella `Runnable refreshCards`, richiamata ogni volta che cambia la tab selezionata, la ricerca o il filtro per corso, evitando di duplicare la logica di popolamento del `FlowPane`.
 
 #### Creazione e gestione dei box di tutoraggio
 
@@ -1142,7 +1152,7 @@ public static synchronized List<BoxTutoraggio> getAllBoxes() {
 }
 ```
 
-La gestione dei box è affidata al `BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`. Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa, e ogni aggiunta o rimozione viene salvata immediatamente su file, così da mantenere i dati anche dopo il riavvio dell'applicazione. La chiamata a purgaAnnunciScaduti(), eseguita al caricamento del repository e a ogni getAllBoxes(), elimina definitivamente gli annunci cancellati dopo una sessione confermata una volta trascorse 24 ore dalla cancellazione (ORE_GRAZIA_CANCELLAZIONE). Durante queste 24 ore l'autore e il candidato confermato continuano a vedere l'annuncio con una notifica; non esiste un meccanismo di recupero e non serve un processo schedulato separato. L'annuncio cancellato prima di una conferma viene invece rimosso subito (removeBox). La creazione vera e propria avviene invece in `CreateAnnouncementViewApp`, che verifica che corso, materia, argomento, data e ora siano compilati, che l'ora sia in formato HH:mm e che data e ora siano successive a quelle attuali; la durata è vincolata tra 1 e 8 ore dallo Spinner, e il titolo viene generato da TitoloAnnuncioGenerator ("Ripetizioni di ... (Tutor)" per le offerte, "Aiuto con ... (Studente)" per le richieste).
+La gestione dei box è affidata al `BoxRepository`, che mantiene gli annunci in memoria e ne garantisce la persistenza sul file `data/boxes.csv`. Le operazioni principali sono dichiarate `synchronized` per evitare problemi di concorrenza durante l'accesso alla collezione condivisa, e ogni aggiunta o rimozione viene salvata immediatamente su file, così da mantenere i dati anche dopo il riavvio dell'applicazione. La chiamata a purgaAnnunciScaduti(), eseguita al caricamento del repository e a ogni getAllBoxes(), elimina definitivamente gli annunci cancellati dopo una sessione confermata una volta trascorse 24 ore dalla cancellazione (ORE_GRAZIA_CANCELLAZIONE); nonostante il nome, non rimuove gli annunci semplicemente scaduti, che restano visibili all'autore e ai candidati. Durante queste 24 ore l'autore e il candidato confermato continuano a vedere l'annuncio con una notifica; non esiste un meccanismo di recupero e non serve un processo schedulato separato. L'annuncio cancellato prima di una conferma viene invece rimosso subito (removeBox). La creazione vera e propria avviene invece in `CreateAnnouncementViewApp`, che verifica che corso, materia, argomento, data e ora siano compilati, che l'ora sia in formato HH:mm e che data e ora siano successive a quelle attuali; la durata è vincolata tra 1 e 8 ore dallo Spinner e, comunque, dal costruttore di `BoxTutoraggioImpl`, che rifiuta valori non validi, e il titolo viene generato da TitoloAnnuncioGenerator ("Ripetizioni di ... (Tutor)" per le offerte, "Aiuto con ... (Studente)" per le richieste).
 
 #### Implementazione dei filtri di ricerca avanzati
 
@@ -1252,17 +1262,17 @@ Il file generato si trova nella cartella `build/libs`.
 ## Consultazione e creazione degli annunci
 
 1. Dopo l'accesso viene mostrata la dashboard.
-2. Usare la ricerca e i filtri per limitare gli annunci visualizzati.
+2. Usare la ricerca e i filtri per limitare gli annunci visualizzati. Gli annunci scaduti non compaiono nella bacheca pubblica, ma restano nella sezione **Le mie sessioni** di autore e candidati.
 3. Aprire un annuncio per consultarne autore, materia, argomento, programmazione e nota.
 4. Per pubblicare un nuovo annuncio selezionare **+ Crea Annuncio**, scegliere se si tratta di un'offerta o di una richiesta e compilare tutti i dati richiesti.
-5. L'autore può usare **Modifica data e orario** finché l'annuncio non possiede candidature attive o un candidato confermato.
-6. Con **Elimina annuncio** l'autore rimuove l'annuncio. Se esiste già una sessione confermata, la cancellazione rimane temporaneamente visibile alle persone coinvolte.
+5. L'autore può usare **Modifica data e orario** finché l'annuncio non possiede candidature attive o un candidato confermato. In questo modo può anche ripubblicare un annuncio scaduto spostandone la data.
+6. Con **Elimina annuncio** l'autore rimuove l'annuncio, anche se ha già ricevuto candidature (che vengono annullate). Se esiste già una sessione confermata, la sessione viene annullata, la controparte riceve un messaggio in chat e l'annuncio rimane visibile per 24 ore alle persone coinvolte. Se la sessione confermata è già terminata l'eliminazione non è consentita: va invece segnalato il completamento.
 
 ## Contatto, candidatura e conferma
 
 1. Selezionare **Contatta** per aprire una conversazione con l'autore senza candidarsi automaticamente.
-2. Selezionare **Candidati** per proporre la propria partecipazione. Finché la candidatura è pendente è possibile scegliere **Ritira candidatura**.
-3. L'autore vede i candidati nel dettaglio dell'annuncio e può usare **Conferma** o **Rifiuta**.
+2. Selezionare **Candidati** per proporre la propria partecipazione. Finché la candidatura è pendente è possibile scegliere **Ritira candidatura**. Non è possibile candidarsi a un annuncio scaduto.
+3. L'autore vede i candidati nel dettaglio dell'annuncio e può usare **Conferma** o **Rifiuta**. Se l'annuncio scade prima della conferma, **Conferma** viene disabilitato: l'autore può rifiutare i candidati e modificare data e orario, oppure eliminare l'annuncio.
 4. Al momento della conferma il sistema controlla gli impegni di entrambi. Se esiste una sessione confermata sovrapposta, la conferma viene rifiutata e viene mostrato l'intervallo in conflitto.
 
 ## Chat e gestione della sessione
@@ -1283,6 +1293,15 @@ Il file generato si trova nella cartella `build/libs`.
 - La sezione **I Tuoi Prossimi Impegni** mostra soltanto le sessioni future confermate, ordinate cronologicamente, indicando se l'utente partecipa come tutor o come studente.
 - La pagina statistiche riassume progressi, valutazioni ricevute e sessioni recenti.
 - Visitando il profilo di un altro utente si visualizzano le sue informazioni pubbliche senza mostrare il comando di logout del visitatore all'interno di quel profilo.
+
+## Account di prova
+
+I dati inclusi nel repository contengono due account già pronti per provare l'applicazione:
+
+- **Davide Costa**: matricola `0011224400` (oppure `davide.costa@studio.unibo.it`), password `Tutoring1!`. Ha una sessione confermata con chat, una candidatura da confermare sul proprio annuncio "Reti Neurali", ore e CFU accumulati, badge, recensioni e statistiche.
+- **Luca Moretti**: matricola `0011223388` (oppure `luca.moretti@studio.unibo.it`), password `Tutoring1!`. È la controparte di Davide e permette di vedere le stesse sessioni dall'altro lato.
+
+Dopo aver fatto delle prove, lo stato iniziale dei dati si ripristina con `git checkout -- data/`.
 
 ## Persistenza dei dati
 
