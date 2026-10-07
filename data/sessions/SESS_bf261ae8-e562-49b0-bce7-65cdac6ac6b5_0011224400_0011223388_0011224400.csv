@@ -7,7 +7,7 @@ STUDENTE;0011224400
 STATO;Confirmed
 COMPLETO_TUTOR;false
 COMPLETO_STUDENTE;false
-CHAT_VISTA_DA;0011223388
+CHAT_VISTA_DA;0011223388,0011224400
 MSG2;2026-10-06T18:12;0011224400;Ciao Luca! Avrei bisogno di una mano su normalizzazione e query SQL annidate.
 MSG2;2026-10-06T18:40;0011223388;Ciao Davide, certo! Porta gli esercizi che non ti tornano, partiamo da quelli.
 MSG2;2026-10-06T18:47;0011224400;Perfetto, mi candido allora. Grazie!

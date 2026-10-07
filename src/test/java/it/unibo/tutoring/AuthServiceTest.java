@@ -44,6 +44,33 @@ class AuthServiceTest {
         }
 
     @Test
+    void onlyInstitutionalStudentEmailIsAccepted() {
+        assertTrue(AuthService.isEmailValid("mario.rossi@studio.unibo.it"));
+        assertTrue(AuthService.isEmailValid("  Mario.Rossi2@Studio.Unibo.IT "));
+        assertFalse(AuthService.isEmailValid("mario.rossi@gmail.com"));
+        assertFalse(AuthService.isEmailValid("mario.rossi@unibo.it"));
+        assertFalse(AuthService.isEmailValid("mario@studio.unibo.it.fake.com"));
+        assertFalse(AuthService.isEmailValid("@studio.unibo.it"));
+        assertFalse(AuthService.isEmailValid(null));
+    }
+
+    @Test
+    void registrationRejectsNonInstitutionalEmail() {
+        final String suffix = String.valueOf(System.nanoTime()).substring(0, 6);
+        final AuthService.RegistrationResult result = AuthService.getInstance().register(
+            "Mario",
+            "Rossi",
+            "6789" + suffix,
+            "mario" + suffix + "@gmail.com",
+            "Password1!",
+            "01-01-2000",
+            "Informatica"
+        );
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("@studio.unibo.it"));
+    }
+
+    @Test
     void registrationRejectsDuplicateMatricolaAndEmail() throws IOException {
         final String suffix = String.valueOf(System.nanoTime()).substring(0, 6);
         final String matricola = "1234" + suffix;

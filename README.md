@@ -10,7 +10,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 **Requisiti funzionali**
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
-- Gli studenti potranno registrarsi indicando la propria matricola universitaria e autenticarsi usando la matricola oppure l'indirizzo e-mail inserito in fase di registrazione
+- Gli studenti potranno registrarsi con la propria matricola e l'email istituzionale da studente (`@studio.unibo.it`) e autenticarsi usando la matricola o l'email, garantendo così che l'accesso sia riservato agli studenti uniBo
 - Gli utenti potranno creare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione, e modificarne la programmazione (data, ora e durata) finché non ricevono candidature
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
@@ -837,7 +837,7 @@ Il progetto usa test automatici JUnit eseguibili con:
 ./gradlew test
 ```
 
-Il progetto contiene 53 metodi annotati con `@Test` distribuiti in dodici classi. I test coprono disponibilità del runtime JavaFX, autenticazione, annunci, componenti condivisi dell'interfaccia, navigazione, sessioni, chat, crediti e persistenza.
+Il progetto contiene 55 metodi annotati con `@Test` distribuiti in dodici classi. I test coprono disponibilità del runtime JavaFX, autenticazione, annunci, componenti condivisi dell'interfaccia, navigazione, sessioni, chat, crediti e persistenza.
 
 ### Andrea
 
@@ -851,7 +851,7 @@ Le regole che dipendono dal tempo espongono varianti testabili con un `LocalDate
 
 ### Sofia
 
-- `AuthServiceTest`: controlla la registrazione e le credenziali. Verifica che le password rispettino i requisiti e che non si possano creare due account con la stessa matricola o la stessa e-mail. Controlla anche che la registrazione venga effettivamente salvata nel file degli utenti.
+- `AuthServiceTest`: controlla la registrazione e le credenziali. Verifica che le password rispettino i requisiti, che in registrazione sia accettata solo l'email istituzionale da studente (`@studio.unibo.it`) e che non si possano creare due account con la stessa matricola o la stessa e-mail. Controlla anche che la registrazione venga effettivamente salvata nel file degli utenti.
 - `TutoringSessionControllerTest`: controlla il flusso delle recensioni. Verifica che, dopo una sessione completata correttamente, lo studente possa lasciare una recensione e che stelle e commento vengano salvati in 'reviews.csv'. Permette inoltre al tutor di ritrovare la recensione caricandola tramite la propria matricola. Controlla inoltre che il file resti ben formattato anche se non termina con un ritorno a capo.
 
 I seguenti file di test verificano che le funzionalità principali funzionino anche senza aprire l’interfaccia grafica.
@@ -1255,7 +1255,7 @@ Il file generato si trova nella cartella `build/libs`.
 ## Registrazione e accesso
 
 1. Dalla home selezionare **Registrati**.
-2. Inserire nome, cognome, data di nascita, corso di studi, matricola di dieci cifre, e-mail e password.
+2. Inserire nome, cognome, data di nascita, corso di studi, matricola di dieci cifre, e-mail istituzionale da studente (`@studio.unibo.it`) e password.
 3. La password deve contenere almeno sei caratteri, una maiuscola, una minuscola, un numero e un carattere speciale.
 4. A registrazione completata si entra direttamente nella dashboard. Per gli accessi successivi selezionare **Accedi** e usare la matricola oppure l'e-mail insieme alla password.
 

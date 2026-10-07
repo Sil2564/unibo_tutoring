@@ -201,8 +201,8 @@ public final class UniBoTutoringRegistrationApp {
                 feedbackLabel.setVisible(true);
                 return;
             }
-            if (!email.contains("@")) {
-                feedbackLabel.setText("Inserisci una email valida.");
+            if (!AuthService.isEmailValid(email)) {
+                feedbackLabel.setText(AuthService.EMAIL_ERROR_MESSAGE);
                 feedbackLabel.setVisible(true);
                 return;
             }

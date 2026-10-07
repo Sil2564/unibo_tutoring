@@ -8,7 +8,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * pubblic AuthService per renderla visibile anche ad altri package
@@ -37,6 +39,11 @@ public final class AuthService {
     //definisce il percorso del file CSV che memorizza gli utenti registrati e il separatore di campo utilizzato nel file CSV
     private static final Path STORAGE_PATH = Path.of("data", "users.csv");
     private static final String FIELD_SEPARATOR = ";";
+    // L'accesso e' riservato agli studenti UniBo: in registrazione si accetta
+    // solo l'indirizzo istituzionale degli studenti (nome.cognome@studio.unibo.it).
+    private static final String STUDENT_EMAIL_DOMAIN = "@studio.unibo.it";
+    static final String EMAIL_ERROR_MESSAGE =
+        "Usa la tua email istituzionale da studente (es. mario.rossi" + STUDENT_EMAIL_DOMAIN + ").";
     private static final AuthService INSTANCE = new AuthService(); //crea un'istanza singleton di AuthService
 
     //memorizza gli utenti registrati in due mappe: una mappa per matricola e una mappa per email
@@ -78,6 +85,9 @@ public final class AuthService {
 
         if (!cleanMatricola.matches("\\d{10}")) {
             return new RegistrationResult(false, "La matricola deve contenere 10 cifre.");
+        }
+        if (!isEmailValid(cleanEmail)) {
+            return new RegistrationResult(false, EMAIL_ERROR_MESSAGE);
         }
         if (!isPasswordValid(password)) {
             return new RegistrationResult(false, "La password deve avere almeno 6 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale.");
@@ -127,6 +137,22 @@ public final class AuthService {
             return false;
         }//restituisce true se la password fornita corrisponde all'hash della password memorizzata per quell'utente
         return user.getPasswordHash().equals(hashPassword(password));
+    }
+
+    /**
+     * Verifica che l'email sia un indirizzo istituzionale da studente UniBo
+     * (dominio {@code @studio.unibo.it}), senza distinzione tra maiuscole e minuscole.
+     *
+     * @param email l'email da verificare
+     * @return {@code true} se l'email e' valida, {@code false} altrimenti
+     */
+    public static boolean isEmailValid(final String email) {
+        if (email == null) {
+            return false;
+        }
+        final String cleanEmail = email.trim().toLowerCase(Locale.ROOT);
+        return cleanEmail.endsWith(STUDENT_EMAIL_DOMAIN)
+            && cleanEmail.matches("[a-z0-9._%+-]+" + Pattern.quote(STUDENT_EMAIL_DOMAIN));
     }
 
     /**
