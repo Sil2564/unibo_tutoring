@@ -74,28 +74,33 @@ public class BoxTutoraggioImpl
         final BoxType tipo,
         final String note
     ) {
+        // Il modello valida i propri dati: le stesse regole del modulo di
+        // creazione valgono anche per chi istanzia l'annuncio da codice
+        // (es. DataSeeder), e coincidono con quelle di aggiornaProgrammazione.
+        if (tipo == null) {
+            throw new IllegalArgumentException("Il tipo di annuncio e' obbligatorio.");
+        }
+        if (isBlank(autoreMatricola)) {
+            throw new IllegalArgumentException("La matricola dell'autore e' obbligatoria.");
+        }
+        if (isBlank(corso) || isBlank(materia)) {
+            throw new IllegalArgumentException("Corso e materia sono obbligatori.");
+        }
+        validaProgrammazione(data, ora, durataOre);
 
         this.id = UUID.randomUUID();
-
-        this.titolo = titolo;
-
-        this.corso = corso;
-
-        this.materia = materia;
-
-        this.argomento = argomento;
-
+        this.titolo = titolo == null || titolo.isBlank()
+            ? TitoloAnnuncioGenerator.generaTitolo(tipo, materia)
+            : titolo.trim();
+        this.corso = corso.trim();
+        this.materia = materia.trim();
+        this.argomento = argomento == null ? "" : argomento.trim();
         this.data = data;
-
         this.ora = ora;
-
         this.durataOre = durataOre;
-
-        this.autoreMatricola = autoreMatricola;
-
+        this.autoreMatricola = autoreMatricola.trim();
         this.tipo = tipo;
-
-        this.note = note == null ? "" : note;
+        this.note = note == null ? "" : note.trim();
     }
 
     /**
@@ -240,6 +245,17 @@ public class BoxTutoraggioImpl
     }
 
     @Override
+    public boolean isScaduto(final LocalDateTime adesso) {
+        if (adesso == null) {
+            throw new IllegalArgumentException("L'istante di riferimento e' obbligatorio.");
+        }
+        if (this.data == null || this.ora == null) {
+            return false;
+        }
+        return LocalDateTime.of(this.data, this.ora).isBefore(adesso);
+    }
+
+    @Override
     public boolean puoModificareProgrammazione() {
         // La programmazione si blocca non solo se l'annuncio e' stato eliminato,
         // ma anche appena esiste un candidato attivo o una conferma: in questo
@@ -260,12 +276,7 @@ public class BoxTutoraggioImpl
             throw new IllegalStateException(
                     "La programmazione non e' modificabile (annuncio eliminato, con candidature o confermato).");
         }
-        if (nuovaData == null || nuovaOra == null) {
-            throw new IllegalArgumentException("Data e ora sono obbligatorie.");
-        }
-        if (nuovaDurataOre < 1 || nuovaDurataOre > 8) {
-            throw new IllegalArgumentException("La durata deve essere compresa tra 1 e 8 ore.");
-        }
+        validaProgrammazione(nuovaData, nuovaOra, nuovaDurataOre);
         if (LocalDateTime.of(nuovaData, nuovaOra).isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Data e ora devono essere successive a quelle attuali.");
         }
@@ -298,7 +309,7 @@ public class BoxTutoraggioImpl
         if (matricola == null || matricola.isBlank()) {
             return;
         }
-        if (this.confermato != null) {
+        if (this.confermato != null || this.cancellato || isScaduto()) {
             return;
         }
         if (matricola.equals(this.autoreMatricola)) {
@@ -316,7 +327,8 @@ public class BoxTutoraggioImpl
 
     @Override
     public void confermaCandidato(final String matricola) {
-        if (matricola == null || !this.candidati.contains(matricola)) {
+        if (matricola == null || !this.candidati.contains(matricola)
+                || this.cancellato || isScaduto()) {
             return;
         }
         this.confermato = matricola;
@@ -370,5 +382,25 @@ public class BoxTutoraggioImpl
         if (matricola != null) {
             this.cancellazioneVistaDa.add(matricola);
         }
+    }
+
+    /**
+     * Regole comuni a creazione e modifica della programmazione: data e ora
+     * obbligatorie, durata compresa tra 1 e 8 ore.
+     */
+    private static void validaProgrammazione(
+            final LocalDate data,
+            final LocalTime ora,
+            final int durataOre) {
+        if (data == null || ora == null) {
+            throw new IllegalArgumentException("Data e ora sono obbligatorie.");
+        }
+        if (durataOre < 1 || durataOre > 8) {
+            throw new IllegalArgumentException("La durata deve essere compresa tra 1 e 8 ore.");
+        }
+    }
+
+    private static boolean isBlank(final String value) {
+        return value == null || value.isBlank();
     }
 }

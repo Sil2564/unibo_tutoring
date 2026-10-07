@@ -22,8 +22,13 @@ class CreateAnnouncementViewAppTest {
 
     @BeforeAll
     static void initJavaFx() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        Platform.startup(latch::countDown);
+        final CountDownLatch latch = new CountDownLatch(1);
+        try {
+            Platform.startup(latch::countDown);
+        } catch (final IllegalStateException alreadyStarted) {
+            // Un'altra classe di test ha gia' avviato il toolkit nella stessa JVM.
+            latch.countDown();
+        }
         assertTrue(latch.await(10, TimeUnit.SECONDS), "JavaFX toolkit did not start");
     }
 

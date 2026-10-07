@@ -342,10 +342,12 @@ public class UniBoTutoringDashboardApp extends Application {
 		final String me = CurrentSession.getUser() != null ? CurrentSession.getUser().getMatricola() : null;
 
 		// Nelle tab Tutte/Offerte/Richieste compaiono solo gli annunci ancora
-		// "aperti" (nessun candidato confermato): appena l'autore conferma
-		// qualcuno, l'annuncio sparisce da qui e resta solo in "Le mie sessioni".
+		// "aperti": nessun candidato confermato e data/ora non ancora passate.
+		// Appena l'autore conferma qualcuno, o l'annuncio scade, sparisce da qui
+		// e resta solo in "Le mie sessioni" per le persone coinvolte.
 		final List<BoxTutoraggio> openBoxes = allBoxes.stream()
 			.filter(b -> b.getConfermato() == null)
+			.filter(b -> !b.isScaduto())
 			.toList();
 		final List<BoxTutoraggio> mySessionsBoxes = allBoxes.stream()
 			.filter(b -> isVisibleInMieSessioni(b, me))
@@ -360,6 +362,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		final Button tabMySessions = tab("Le mie sessioni (" + mySessionsBoxes.size() + ")", false);
 
 		final List<Button> allTabs = List.of(tabAll, tabOffers, tabRequests, tabMySessions);
+		tabAll.getStyleClass().add("chip-button-active");
 
 		// Modalita' di visualizzazione: ALL/OFFERS/REQUESTS filtrano tra gli
 		// annunci ancora aperti; MY_SESSIONS mostra invece i miei annunci e le
@@ -402,10 +405,10 @@ public class UniBoTutoringDashboardApp extends Application {
 
 			cards.getChildren().clear();
 			if (filtered.isEmpty()) {
-				final Label emptyLabel = new Label(allBoxes.isEmpty()
-					? "Nessun annuncio disponibile. Crea il primo con \"+Crea Annuncio\"."
-					: mySessionsMode[0]
-						? "Non hai ancora nessuna sessione: pubblica un annuncio o candidati a uno esistente."
+				final Label emptyLabel = new Label(mySessionsMode[0] && base.isEmpty()
+					? "Non hai ancora nessuna sessione: pubblica un annuncio o candidati a uno esistente."
+					: base.isEmpty()
+						? "Nessun annuncio aperto al momento. Pubblicane uno con \"+ Crea Annuncio\"."
 						: "Nessun annuncio corrisponde ai filtri selezionati.");
 				emptyLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
 				emptyLabel.setTextFill(TEXT_MEDIUM);
@@ -709,14 +712,6 @@ public class UniBoTutoringDashboardApp extends Application {
 			box.getAutoreMatricola()).isAnnullata();
 	}
 
-	/** True se data e ora dell'annuncio sono gia' passate (l'annuncio resta visibile, ma segnalato come scaduto). */
-	private static boolean isScaduto(final BoxTutoraggio box) {
-		if (box.getData() == null || box.getOra() == null) {
-			return false;
-		}
-		return java.time.LocalDateTime.of(box.getData(), box.getOra()).isBefore(java.time.LocalDateTime.now());
-	}
-
 	/** Testo del chip di stato mostrato accanto al tag Offerta/Richiesta, o null se non applicabile. */
 	private static String statusChipText(
 		final BoxTutoraggio box,
@@ -731,7 +726,7 @@ public class UniBoTutoringDashboardApp extends Application {
 		if (box.getConfermato() != null) {
 			return "Confermata";
 		}
-		if (isScaduto(box)) {
+		if (box.isScaduto()) {
 			return "Scaduto";
 		}
 		final int n = box.getCandidati().size();

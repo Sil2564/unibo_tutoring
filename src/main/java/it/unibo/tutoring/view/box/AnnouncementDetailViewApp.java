@@ -191,6 +191,12 @@ public final class AnnouncementDetailViewApp {
 
         if (isAutore) {
             card.getChildren().add(buildScheduleManagementSection(stage, box, me));
+            // L'eliminazione non dipende dal blocco della programmazione:
+            // l'autore deve poter eliminare l'annuncio anche quando ci sono
+            // candidature o un candidato confermato.
+            if (!box.isCancellato()) {
+                card.getChildren().add(buildDeleteAnnouncementRow(stage, box, me));
+            }
         }
 
         // Pulsante Contatta: sempre disponibile per chi non e' l'autore, apre la
@@ -263,8 +269,10 @@ public final class AnnouncementDetailViewApp {
             return section;
         }
 
-        section.getChildren().add(infoLabel(
-                "Puoi modificare data, ora e durata finche' non arriva una candidatura."));
+        section.getChildren().add(infoLabel(box.isScaduto()
+                ? "L'annuncio e' scaduto e non e' piu' visibile in bacheca: aggiorna data e orario "
+                        + "per pubblicarlo di nuovo."
+                : "Puoi modificare data, ora e durata finche' non arriva una candidatura."));
 
         final AppButton editButton = AppButton.secondary("Modifica data e orario");
 
@@ -355,7 +363,6 @@ public final class AnnouncementDetailViewApp {
         });
 
         section.getChildren().addAll(buttonRow(editButton), editor);
-        section.getChildren().add(buildDeleteAnnouncementRow(stage, box, me));
         return section;
     }
 
@@ -375,9 +382,13 @@ public final class AnnouncementDetailViewApp {
                     javafx.scene.control.Alert.AlertType.CONFIRMATION,
                     hasConfirmed
                             ? "C'e' gia' una sessione confermata su questo annuncio. Eliminandolo, "
-                                    + "restera' visibile per 24 ore a te e alla persona confermata (con una "
-                                    + "notifica), poi sparira' definitivamente. Continuare?"
-                            : "L'annuncio verra' eliminato definitivamente. Continuare?",
+                                    + "la sessione verra' annullata e la persona confermata ricevera' "
+                                    + "un avviso in chat. L'annuncio restera' visibile per 24 ore a te e "
+                                    + "a lei (con una notifica), poi sparira' definitivamente. Continuare?"
+                            : box.getCandidati().isEmpty()
+                                    ? "L'annuncio verra' eliminato definitivamente. Continuare?"
+                                    : "L'annuncio verra' eliminato definitivamente e le candidature "
+                                            + "in attesa verranno annullate. Continuare?",
                     javafx.scene.control.ButtonType.YES, javafx.scene.control.ButtonType.NO);
             confirmAlert.setHeaderText("Eliminare l'annuncio?");
             confirmAlert.showAndWait().ifPresent(response -> {
@@ -385,12 +396,28 @@ public final class AnnouncementDetailViewApp {
                     return;
                 }
                 if (hasConfirmed) {
-                    SessionLinkUtil.buildController(box, box.getConfermato(), box.getAutoreMatricola())
-                            .annullaSessione();
+                    final TutoringSessionController controller = SessionLinkUtil.buildController(
+                            box, box.getConfermato(), box.getAutoreMatricola());
+                    if (controller.isConfermata()) {
+                        if (!controller.puoCancellareSessione()) {
+                            // La sessione si e' gia' svolta: va completata, non
+                            // annullata, altrimenti le ore del tutor andrebbero perse.
+                            mostraErrore(stage, "Impossibile eliminare l'annuncio",
+                                    "La sessione confermata e' gia' terminata: segnala il "
+                                            + "completamento invece di eliminare l'annuncio.");
+                            return;
+                        }
+                        // Stessa cancellazione usata da "Annulla sessione":
+                        // salva autore, motivo e orario e avvisa la controparte in chat.
+                        controller.cancellaSessione("annuncio eliminato dall'autore");
+                    }
                 } else {
                     for (final String candidato : List.copyOf(box.getCandidati())) {
-                        SessionLinkUtil.buildController(box, candidato, box.getAutoreMatricola())
-                                .annullaSessione();
+                        final TutoringSessionController controller = SessionLinkUtil.buildController(
+                                box, candidato, box.getAutoreMatricola());
+                        if (controller.isProposta()) {
+                            controller.annullaSessione();
+                        }
                     }
                 }
                 final boolean rimozioneImmediata = box.eliminaAnnuncio(me);
@@ -403,7 +430,6 @@ public final class AnnouncementDetailViewApp {
                 NavigationHelper.goToDashboard(win);
             });
         });
-
         return buttonRow(deleteButton);
     }
 
@@ -567,7 +593,10 @@ public final class AnnouncementDetailViewApp {
         if (isAutore) {
             section.getChildren().add(buildCandidatiListSection(stage, box));
         } else if (isCandidato) {
-            final Label info = infoLabel("Ti sei candidato per questo annuncio. In attesa che " + autoreNome + " confermi un candidato.");
+            final Label info = infoLabel(box.isScaduto()
+                    ? "Ti eri candidato, ma l'annuncio e' scaduto prima che " + autoreNome
+                            + " confermasse un candidato. Puoi ritirare la candidatura."
+                    : "Ti sei candidato per questo annuncio. In attesa che " + autoreNome + " confermi un candidato.");
 
             final AppButton ritira = AppButton.secondary("Ritira candidatura");
             ritira.setOnAction(event -> {
@@ -577,13 +606,22 @@ public final class AnnouncementDetailViewApp {
             });
 
             section.getChildren().addAll(info, buttonRow(ritira));
+        } else if (box.isScaduto()) {
+            // Data e ora di inizio sono gia' passate: non ha senso candidarsi
+            // (e confermare) una sessione che non puo' piu' svolgersi.
+            section.getChildren().add(infoLabel(
+                    "Questo annuncio e' scaduto: non e' piu' possibile candidarsi."));
         } else {
             final Label info = infoLabel("Vuoi candidarti per questa sessione di tutoraggio?");
 
             final AppButton candidati = AppButton.primary("Candidati", GREEN);
             candidati.setOnAction(event -> {
                 box.aggiungiCandidato(me);
-                SessionLinkUtil.buildController(box, box.getAutoreMatricola(), me).proponi();
+                // Il modello puo' rifiutare la candidatura (es. annuncio scaduto
+                // nel frattempo): la sessione viene proposta solo se accettata.
+                if (box.isCandidato(me)) {
+                    SessionLinkUtil.buildController(box, box.getAutoreMatricola(), me).proponi();
+                }
                 refresh(stage, box);
             });
 
@@ -604,6 +642,12 @@ public final class AnnouncementDetailViewApp {
         }
 
         list.getChildren().add(infoLabel(candidati.size() + " candidat" + (candidati.size() == 1 ? "o" : "i") + " in attesa di conferma:"));
+
+        if (box.isScaduto()) {
+            list.getChildren().add(infoLabel(
+                    "L'annuncio e' scaduto: non puoi piu' confermare un candidato. Rifiuta le candidature "
+                            + "per poter modificare data e orario, oppure elimina l'annuncio."));
+        }
 
         for (final String candidatoMatricola : candidati) {
             list.getChildren().add(buildCandidatoRow(stage, box, candidatoMatricola));
@@ -639,7 +683,15 @@ public final class AnnouncementDetailViewApp {
 
         final AppButton conferma = AppButton.primary("Conferma", GREEN);
         conferma.setPadding(new Insets(6, 14, 6, 14));
+        conferma.setDisable(box.isScaduto());
         conferma.setOnAction(event -> {
+            if (box.isScaduto()) {
+                // Il pulsante e' gia' disabilitato, ma l'annuncio potrebbe essere
+                // scaduto mentre la pagina era aperta.
+                mostraErroreConferma(stage, "L'annuncio e' scaduto: non e' piu' possibile confermare un candidato.");
+                refresh(stage, box);
+                return;
+            }
             final TutoringSessionController controller = SessionLinkUtil.buildController(
                     box,
                     candidatoMatricola,
@@ -683,10 +735,14 @@ public final class AnnouncementDetailViewApp {
     }
 
     private static void mostraErroreConferma(final Stage stage, final String message) {
+        mostraErrore(stage, "Impossibile confermare la sessione", message);
+    }
+
+    private static void mostraErrore(final Stage stage, final String header, final String message) {
         final javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
                 javafx.scene.control.Alert.AlertType.ERROR);
-        alert.setTitle("Sessione non disponibile");
-        alert.setHeaderText("Impossibile confermare la sessione");
+        alert.setTitle("Operazione non disponibile");
+        alert.setHeaderText(header);
         alert.setContentText(message);
         if (stage != null) {
             alert.initOwner(stage);

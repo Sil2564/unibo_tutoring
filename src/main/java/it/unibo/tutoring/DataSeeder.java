@@ -44,22 +44,22 @@ public class DataSeeder {
         registerUser("Beatrice", "Marchetti", "0011224499", "Work, Organizational and Personnel Psychology");
 
         // Aggiunto da Niki: Carichiamo finalmente i 16 annunci richiesti nella dashboard
-        addBox(BoxType.OFFER, "Architettura", "Progettazione Architettonica", "Offro supporto sui progetti di laboratorio, dal concept alle tavole finali. Ho già sostenuto Progettazione 2 con lode.", "2026-07-03", "0011223344");
-        addBox(BoxType.REQUEST, "Biomedical Engineering", "Biomeccanica", "Cerco aiuto per capire i modelli di analisi del movimento e le equazioni della dinamica applicate al corpo umano.", "2026-07-08", "0011223355");
-        addBox(BoxType.OFFER, "Digital Transformation Management", "Data Analytics", "Spiego analisi dei dati con Excel e Python base, utile per i case study del corso. Disponibile su prenotazione.", "2026-07-11", "0011223366");
-        addBox(BoxType.REQUEST, "Ingegneria biomedica", "Strumentazione Biomedica", "Ho bisogno di un ripasso su sensori e trasduttori per sistemi biomedicali prima dell'orale.", "2026-06-25", "0011223377");
-        addBox(BoxType.OFFER, "Ingegneria e scienze informatiche", "Algoritmi e Strutture Dati", "Ripetizioni su alberi, grafi e complessità computazionale, con esercizi pratici in Java.", "2026-07-14", "0011223388");
-        addBox(BoxType.REQUEST, "Ingegneria elettronica", "Campi Elettromagnetici", "Cerco supporto sulle equazioni di Maxwell e la propagazione delle onde, argomento ostico dell'esame.", "2026-07-01", "0011223399");
-        addBox(BoxType.OFFER, "Ingegneria elettronica per l'intelligenza artificiale", "Reti Neurali", "Offro aiuto su reti neurali, backpropagation e progetti in Python/PyTorch. Ho seguito il corso l'anno scorso con 29.", "2026-07-19", "0011224400");
-        addBox(BoxType.REQUEST, "Neuroscienze e riabilitazione neuropsicologica", "Neuropsicologia", "Vorrei ripassare le sindromi neuropsicologiche e i test diagnostici principali per l'esame di gennaio.", "2026-06-29", "0011224411");
-        addBox(BoxType.OFFER, "Psicologia clinica", "Psicopatologia", "Aiuto nello studio del DSM-5 e dei principali quadri psicopatologici, con schemi riassuntivi.", "2026-07-06", "0011224422");
-        addBox(BoxType.REQUEST, "Psicologia scolastica e di comunità", "Psicologia dell'Educazione", "Cerco un ripasso sui modelli di apprendimento e le teorie dello sviluppo cognitivo a scuola.", "2026-07-16", "0011224433");
-        addBox(BoxType.OFFER, "Scienze e cultura della gastronomia", "Chimica degli Alimenti", "Spiego le basi di chimica applicata agli alimenti, utile per l'esame del primo anno.", "2026-06-22", "0011224444");
-        addBox(BoxType.REQUEST, "Scienze e tecnologie alimentari", "Microbiologia degli Alimenti", "Ho bisogno di supporto sui processi di fermentazione e i patogeni alimentari prima dell'appello.", "2026-07-09", "0011224455");
-        addBox(BoxType.OFFER, "Tecnologie alimentari", "Tecnologie di Conservazione degli Alimenti", "Offro ripetizioni sui metodi di conservazione (termici, chimici, fisici) con esempi industriali.", "2026-07-21", "0011224466");
-        addBox(BoxType.REQUEST, "Tecnologie dei sistemi informatici", "Sicurezza Informatica", "Cerco aiuto sui concetti base di crittografia e sicurezza delle reti per l'esame di fine corso.", "2026-07-24", "0011224477");
-        addBox(BoxType.OFFER, "Viticoltura ed enologia", "Chimica Enologica", "Aiuto su fermentazione alcolica e analisi chimiche del vino, ho già superato l'esame con 28.", "2026-07-04", "0011224488");
-        addBox(BoxType.REQUEST, "Work, Organizational and Personnel Psychology", "Organizational Behavior", "Vorrei ripassare i modelli di comportamento organizzativo e le dinamiche di gruppo in azienda.", "2026-07-27", "0011224499");
+        addBox(BoxType.OFFER, "Architettura", "Progettazione Architettonica", "Offro supporto sui progetti di laboratorio, dal concept alle tavole finali. Ho già sostenuto Progettazione 2 con lode.", 18, "0011223344");
+        addBox(BoxType.REQUEST, "Biomedical Engineering", "Biomeccanica", "Cerco aiuto per capire i modelli di analisi del movimento e le equazioni della dinamica applicate al corpo umano.", 23, "0011223355");
+        addBox(BoxType.OFFER, "Digital Transformation Management", "Data Analytics", "Spiego analisi dei dati con Excel e Python base, utile per i case study del corso. Disponibile su prenotazione.", 26, "0011223366");
+        addBox(BoxType.REQUEST, "Ingegneria biomedica", "Strumentazione Biomedica", "Ho bisogno di un ripasso su sensori e trasduttori per sistemi biomedicali prima dell'orale.", 10, "0011223377");
+        addBox(BoxType.OFFER, "Ingegneria e scienze informatiche", "Algoritmi e Strutture Dati", "Ripetizioni su alberi, grafi e complessità computazionale, con esercizi pratici in Java.", 29, "0011223388");
+        addBox(BoxType.REQUEST, "Ingegneria elettronica", "Campi Elettromagnetici", "Cerco supporto sulle equazioni di Maxwell e la propagazione delle onde, argomento ostico dell'esame.", 16, "0011223399");
+        addBox(BoxType.OFFER, "Ingegneria elettronica per l'intelligenza artificiale", "Reti Neurali", "Offro aiuto su reti neurali, backpropagation e progetti in Python/PyTorch. Ho seguito il corso l'anno scorso con 29.", 34, "0011224400");
+        addBox(BoxType.REQUEST, "Neuroscienze e riabilitazione neuropsicologica", "Neuropsicologia", "Vorrei ripassare le sindromi neuropsicologiche e i test diagnostici principali per l'esame di gennaio.", 14, "0011224411");
+        addBox(BoxType.OFFER, "Psicologia clinica", "Psicopatologia", "Aiuto nello studio del DSM-5 e dei principali quadri psicopatologici, con schemi riassuntivi.", 21, "0011224422");
+        addBox(BoxType.REQUEST, "Psicologia scolastica e di comunità", "Psicologia dell'Educazione", "Cerco un ripasso sui modelli di apprendimento e le teorie dello sviluppo cognitivo a scuola.", 31, "0011224433");
+        addBox(BoxType.OFFER, "Scienze e cultura della gastronomia", "Chimica degli Alimenti", "Spiego le basi di chimica applicata agli alimenti, utile per l'esame del primo anno.", 7, "0011224444");
+        addBox(BoxType.REQUEST, "Scienze e tecnologie alimentari", "Microbiologia degli Alimenti", "Ho bisogno di supporto sui processi di fermentazione e i patogeni alimentari prima dell'appello.", 24, "0011224455");
+        addBox(BoxType.OFFER, "Tecnologie alimentari", "Tecnologie di Conservazione degli Alimenti", "Offro ripetizioni sui metodi di conservazione (termici, chimici, fisici) con esempi industriali.", 36, "0011224466");
+        addBox(BoxType.REQUEST, "Tecnologie dei sistemi informatici", "Sicurezza Informatica", "Cerco aiuto sui concetti base di crittografia e sicurezza delle reti per l'esame di fine corso.", 39, "0011224477");
+        addBox(BoxType.OFFER, "Viticoltura ed enologia", "Chimica Enologica", "Aiuto su fermentazione alcolica e analisi chimiche del vino, ho già superato l'esame con 28.", 19, "0011224488");
+        addBox(BoxType.REQUEST, "Work, Organizational and Personnel Psychology", "Organizational Behavior", "Vorrei ripassare i modelli di comportamento organizzativo e le dinamiche di gruppo in azienda.", 42, "0011224499");
 
         System.out.println("Seeding completato!");
     }
@@ -71,11 +71,13 @@ public class DataSeeder {
         AuthService.getInstance().register(name, surname, matricola, email, "Password123", "01/01/2000", corso);
     }
 
-    private static void addBox(BoxType tipo, String corso, String materia, String note, String dataStr, String matricola) {
+    private static void addBox(BoxType tipo, String corso, String materia, String note, int giorniDaOggi, String matricola) {
         String titolo = TitoloAnnuncioGenerator.generaTitolo(tipo, materia);
-        // Costruiamo l'annuncio con i dati passati, durata fissa di 2 ore e data dinamica
+        // Durata fissa di 2 ore e data relativa al giorno del seeding: con date
+        // fisse gli annunci risulterebbero gia' scaduti (e quindi nascosti
+        // dalla bacheca) poco dopo la consegna del progetto.
         BoxTutoraggioImpl box = new BoxTutoraggioImpl(
-            titolo, corso, materia, "", LocalDate.parse(dataStr), LocalTime.of(10, 0), 2, matricola, tipo, note
+            titolo, corso, materia, "", LocalDate.now().plusDays(giorniDaOggi), LocalTime.of(10, 0), 2, matricola, tipo, note
         );
         BoxRepository.addBox(box);
     }

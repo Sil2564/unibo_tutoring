@@ -43,6 +43,23 @@ public interface BoxTutoraggio {
     boolean isCandidato(String matricola);
 
     /**
+     * Indica se l'inizio programmato dell'annuncio e' gia' passato rispetto
+     * all'istante indicato. Un annuncio senza data o ora non scade mai.
+     *
+     * @param adesso istante di riferimento
+     * @return true se data e ora di inizio sono precedenti a {@code adesso}
+     */
+    boolean isScaduto(LocalDateTime adesso);
+
+    /**
+     * @return true se l'annuncio e' scaduto rispetto all'istante corrente
+     * @see #isScaduto(LocalDateTime)
+     */
+    default boolean isScaduto() {
+        return isScaduto(LocalDateTime.now());
+    }
+
+    /**
      * Indica se data, ora e durata possono ancora essere modificate.
      * La programmazione si blocca appena l'annuncio e' stato eliminato
      * ({@link #isCancellato()}), esiste almeno un candidato attivo oppure e'
@@ -86,8 +103,8 @@ public interface BoxTutoraggio {
 
     /**
      * Aggiunge una candidatura. Non ha effetto se l'annuncio e' gia' stato
-     * assegnato, se la matricola coincide con l'autore, o se la matricola e'
-     * gia' candidata.
+     * assegnato, eliminato o e' scaduto, se la matricola coincide con
+     * l'autore, o se la matricola e' gia' candidata.
      */
     void aggiungiCandidato(String matricola);
 
@@ -100,6 +117,8 @@ public interface BoxTutoraggio {
     /**
      * Conferma definitivamente un candidato tra quelli in attesa: le altre
      * candidature pendenti restano a carico del chiamante da annullare.
+     * Non ha effetto se la matricola non e' tra i candidati, oppure se
+     * l'annuncio e' eliminato o scaduto.
      */
     void confermaCandidato(String matricola);
 

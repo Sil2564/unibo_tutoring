@@ -241,76 +241,57 @@ public final class CreateAnnouncementViewApp {
         final AppButton publishButton = AppButton.primary("Pubblica Annuncio");
 
         publishButton.setOnAction(event -> {
+            final String materia = materiaField.getText() == null ? "" : materiaField.getText().trim();
+            final String argomento = argomentoField.getText() == null ? "" : argomentoField.getText().trim();
+            final String oraTesto = oraField.getText() == null ? "" : oraField.getText().trim();
 
             if (corsoBox.getValue() == null
-                || materiaField.getText().isBlank()
-                || argomentoField.getText().isBlank()
+                || materia.isEmpty()
+                || argomento.isEmpty()
                 || dataPicker.getValue() == null
-                || oraField.getText().isBlank()) {
-
-                feedbackLabel.setText("Compila tutti i campi prima di pubblicare.");
-                feedbackLabel.setVisible(true);
-                feedbackLabel.setManaged(true);
+                || oraTesto.isEmpty()) {
+                mostraFeedback(feedbackLabel, "Compila tutti i campi prima di pubblicare.");
                 return;
             }
 
-            final LocalTime oraValidazione;
+            final LocalTime ora;
             try {
-                oraValidazione = LocalTime.parse(oraField.getText().trim());
+                ora = LocalTime.parse(oraTesto);
             } catch (final java.time.format.DateTimeParseException exception) {
-                feedbackLabel.setText("Formato orario non valido. Usa HH:mm (es. 15:00).");
-                feedbackLabel.setVisible(true);
-                feedbackLabel.setManaged(true);
-                return;
-            }
-            if (LocalDateTime.of(dataPicker.getValue(), oraValidazione).isBefore(LocalDateTime.now())) {
-                feedbackLabel.setText("Non puoi pubblicare un annuncio per una data e ora gia' passate: scegli un momento da adesso in poi.");
-                feedbackLabel.setVisible(true);
-                feedbackLabel.setManaged(true);
+                mostraFeedback(feedbackLabel, "Formato orario non valido. Usa HH:mm (es. 15:00).");
                 return;
             }
 
+            if (LocalDateTime.of(dataPicker.getValue(), ora).isBefore(LocalDateTime.now())) {
+                mostraFeedback(feedbackLabel,
+                    "Non puoi pubblicare un annuncio per una data e ora gia' passate: scegli un momento da adesso in poi.");
+                return;
+            }
+
+            final BoxType tipo = offertaRadio.isSelected() ? BoxType.OFFER : BoxType.REQUEST;
+            final BoxTutoraggioImpl box;
             try {
-
-                final LocalTime ora = LocalTime.parse(oraField.getText());
-
-                final BoxType tipo =
-                    offertaRadio.isSelected()
-                        ? BoxType.OFFER
-                        : BoxType.REQUEST;
-
-                final String titolo =
-                    it.unibo.tutoring.model.box.TitoloAnnuncioGenerator.generaTitolo(tipo, materiaField.getText());
-
-                final BoxTutoraggioImpl box =
-                    new BoxTutoraggioImpl(
-                        titolo,
-                        corsoBox.getValue(),
-                        materiaField.getText(),
-                        argomentoField.getText(),
-                        dataPicker.getValue(),
-                        ora,
-                        durataSpinner.getValue(),
-                        userMatricola,
-                        tipo,
-                        noteField.getText() == null ? "" : noteField.getText().trim()
-                    );
-
-                BoxRepository.addBox(box);
-
-                final Stage stage =
-                    (Stage) publishButton
-                        .getScene()
-                        .getWindow();
-
-                NavigationHelper.goToDashboard(stage);
-
-            } catch (final Exception exception) {
-
-                feedbackLabel.setText("Formato orario non valido. Usa HH:mm (es. 15:00).");
-                feedbackLabel.setVisible(true);
-                feedbackLabel.setManaged(true);
+                // Le regole sui dati (durata 1-8 ore, campi obbligatori) sono
+                // verificate dal modello: qui ci limitiamo a mostrarne l'esito.
+                box = new BoxTutoraggioImpl(
+                    it.unibo.tutoring.model.box.TitoloAnnuncioGenerator.generaTitolo(tipo, materia),
+                    corsoBox.getValue(),
+                    materia,
+                    argomento,
+                    dataPicker.getValue(),
+                    ora,
+                    durataSpinner.getValue(),
+                    userMatricola,
+                    tipo,
+                    noteField.getText()
+                );
+            } catch (final IllegalArgumentException exception) {
+                mostraFeedback(feedbackLabel, exception.getMessage());
+                return;
             }
+
+            BoxRepository.addBox(box);
+            NavigationHelper.goToDashboard((Stage) publishButton.getScene().getWindow());
         });
 
         final HBox publishRow = new HBox(publishButton);
@@ -366,6 +347,12 @@ public final class CreateAnnouncementViewApp {
         final Scene scene = new Scene(root, 1200, 900);
         scene.getStylesheets().add(CreateAnnouncementViewApp.class.getResource("/styles.css").toExternalForm());
         return scene;
+    }
+
+    private static void mostraFeedback(final Label feedbackLabel, final String message) {
+        feedbackLabel.setText(message);
+        feedbackLabel.setVisible(true);
+        feedbackLabel.setManaged(true);
     }
 
     private static Label fieldLabel(final String text) {
