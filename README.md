@@ -169,11 +169,6 @@ Il diagramma delle classi UML rappresenta la struttura del sistema di autenticaz
 Il sistema è organizzato secondo una separazione tra interfaccia utente, logica applicativa e gestione dei dati.
 
 ```mermaid
-## Design dettagliato- Gestione fasi Login e Registrazione
-Il diagramma delle classi UML rappresenta la struttura del sistema di autenticazione del sito di tutoring, mostrando le principali classi coinvolte nel processo di registrazione e login degli utenti tramite numero di matricola oppure l'indirizzo email universitario e la password.
-Il sistema è organizzato secondo una separazione tra interfaccia utente, logica applicativa e gestione dei dati.
-
-```mermaid
 classDiagram
     class UserAccount {
         ~name: String
