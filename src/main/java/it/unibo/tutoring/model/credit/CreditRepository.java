@@ -48,7 +48,10 @@ public final class CreditRepository {
                 if (parts[0].equals(matricola)) {
                     final int totalHours = Integer.parseInt(parts[3]);
                     final int totalCredits = Integer.parseInt(parts[4]);
-                    final Badge badge = Badge.valueOf(parts[5]);    //converte i valori in enum
+                    // Il badge salvato e' solo indicativo: CreditService lo ricalcola
+                    // sempre dalle ore. Un valore non riconosciuto non deve quindi far
+                    // scartare il record, altrimenti le ore verrebbero azzerate.
+                    final Badge badge = parseBadge(parts[5]);
                     final double rating = Double.parseDouble(parts[6]); //converte la stringa della valutazioni in valore decimale
                     //crea un nuovo CreditRecord con i valori letti dal file e lo restituisce
                     return Optional.of(new CreditRecord(
@@ -75,6 +78,14 @@ public final class CreditRepository {
      * @param record dati da salvare
      * 
      */
+    private static Badge parseBadge(final String value) {
+        try {
+            return Badge.valueOf(value.trim());
+        } catch (final IllegalArgumentException e) {
+            return Badge.BEGINNER;
+        }
+    }
+
     public static synchronized void saveRecord(
         final String matricola,
         final CreditRecord record   //parametro in lettura, rappresenta il record di credito da salvare o aggiornare per la matricola specificata

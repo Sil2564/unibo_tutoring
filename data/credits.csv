@@ -5,7 +5,7 @@ matricola;firstName;lastName;totalHours;totalCredits;badge;rating
 0011223377;Elena;Santini;0;0;BEGINNER;0.0
 0011223388;Luca;Moretti;25;11;INTERMEDIATE;4.8
 0011223399;Sara;Bellini;0;0;BEGINNER;0.0
-0011224400;Davide;Costa;30;13;ADVANCED;4.9
+0011224400;Davide;Costa;30;13;INTERMEDIATE;4.9
 0011224411;Chiara;Villani;0;0;BEGINNER;0.0
 0011224422;Francesca;Serra;15;6;INTERMEDIATE;4.5
 0011224433;Martina;Rinaldi;0;0;BEGINNER;0.0

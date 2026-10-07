@@ -1,0 +1,14 @@
+CONVERSATION_ID;bf261ae8-e562-49b0-bce7-65cdac6ac6b5_0011224400
+MATERIA;Basi di Dati
+DATA_ORA;2027-03-12T16:00
+DURATA;PT1H
+TUTOR;0011223388
+STUDENTE;0011224400
+STATO;Confirmed
+COMPLETO_TUTOR;false
+COMPLETO_STUDENTE;false
+CHAT_VISTA_DA;0011223388
+MSG2;2026-10-06T18:12;0011224400;Ciao Luca! Avrei bisogno di una mano su normalizzazione e query SQL annidate.
+MSG2;2026-10-06T18:40;0011223388;Ciao Davide, certo! Porta gli esercizi che non ti tornano, partiamo da quelli.
+MSG2;2026-10-06T18:47;0011224400;Perfetto, mi candido allora. Grazie!
+MSG2;2026-10-07T09:05;0011223388;Confermato! Ci vediamo in biblioteca al campus.

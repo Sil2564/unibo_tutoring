@@ -25,7 +25,8 @@ public class DataSeeder {
         System.out.println("Nessun annuncio presente: avvio seeding automatico della dashboard...");
 
         // Aggiunto da Niki: Registriamo tutti gli utenti necessari per farli combaciare con gli annunci.
-        // La password per tutti sarà 'Password123' di default.
+        // La password per tutti sarà 'Password123!' di default (deve rispettare
+        // le regole di AuthService: maiuscola, minuscola, numero e carattere speciale).
         registerUser("Marco", "Fabbri", "0011223344", "Architettura");
         registerUser("Giulia", "Neri", "0011223355", "Biomedical Engineering");
         registerUser("Alessandro", "Ferretti", "0011223366", "Digital Transformation Management");
@@ -68,7 +69,7 @@ public class DataSeeder {
         String email = name.toLowerCase() + "." + surname.toLowerCase() + "@studio.unibo.it";
         // Registrazione vera e propria usando l'infrastruttura dell'app! 
         // Data nascita fittizia per questi utenti generati
-        AuthService.getInstance().register(name, surname, matricola, email, "Password123", "01/01/2000", corso);
+        AuthService.getInstance().register(name, surname, matricola, email, "Password123!", "01/01/2000", corso);
     }
 
     private static void addBox(BoxType tipo, String corso, String materia, String note, int giorniDaOggi, String matricola) {
