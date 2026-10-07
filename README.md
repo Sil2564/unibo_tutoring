@@ -708,10 +708,6 @@ Il modulo di feedback e recensioni consente agli utenti di valutare le sessioni 
 
 ```mermaid
 classDiagram
-    %% ============================================================
-    %% DESIGN DETTAGLIATO - FEEDBACK & REVIEWS
-    %% Pattern: Repository + ECB (Entity-Control-Boundary)
-    %% ============================================================
 
     class TutoringSessionController {
         +registraRecensione(stelle, commento)
@@ -720,9 +716,13 @@ classDiagram
     <<control>> TutoringSessionController
 
     class UniBoTutoringStatisticApp {
-        +createReviewsSection()
-        +createKpiCards()
-    }
+    +createScene() Scene
+    -createKpiCards(matricola) HBox
+    -createReviewsSection(matricola) VBox
+    -createSessionsSection(matricola) VBox
+    -createMonthlySessionsChart(matricola) VBox
+    -parseDateSafe(data) LocalDate
+}
     <<boundary>> UniBoTutoringStatisticApp
 
     class Review {
@@ -735,6 +735,7 @@ classDiagram
     <<entity>> Review
 
     class ReviewRepository {
+        +saveReview(reviewerName, subject, date, stars, comment, recipientMatricola) void
         +loadReviewsForRecipient(matricola): List~Review~
     }
     <<entity>> ReviewRepository
@@ -754,10 +755,10 @@ classDiagram
     <<entity>> CreditRecord
 
     %% RELAZIONI
-    TutoringSessionController --> Review : acquisisce dati >
-    UniBoTutoringStatisticApp --> ReviewRepository : legge storico >
-    UniBoTutoringStatisticApp --> CreditService : legge rating globale >
-    ReviewRepository --> Review : gestisce >
+    TutoringSessionController --> ReviewRepository : salva recensione >
+    ReviewRepository --> Review : crea / restituisce >
+    UniBoTutoringStatisticApp --> ReviewRepository : carica recensioni e calcola media >
+    UniBoTutoringStatisticApp --> CreditService : legge ore e crediti >
     CreditService --> CreditRecord : gestisce >
 ```
 
@@ -769,48 +770,52 @@ La classe `Review` rappresenta una valutazione di una sessione di tutoraggio com
 - `reviewerName`: nome dello studente che lascia la recensione
 - `subject`: materia della sessione di tutoraggio
 - `date`: data della sessione
-- `stars`: voto numerico (scala 1-5)
+- `stars`: voto numerico (scala 0-5)
 - `comment`: testo libero con osservazioni specifiche
 
 **Gestione:**
-- Le recensioni sono memorizzate nel file CSV `data/reviews.csv`
-- Ogni recensione contiene anche la matricola del tutor che le riceve (memorizzata come ultimo campo)
-- Il record è immutabile (Java record), garantendo thread-safety
+- Le recensioni sono memorizzate nel file CSV `data/reviews.csv`;
+- ogni recensione contiene anche la matricola del tutor che le riceve (memorizzata come ultimo campo);
+- il record è immutabile (Java record), quindi i dati delle recensioni, una volta inseriti, non sono modificabili.
 
 **Struttura del CSV:**
 ```
 reviewerName;subject;date;stars;comment;tutorMatricola
-Mario Rossi;Calcolo;2024-06-15;5;Ottima spiegazione;12345678
-Laura Bianchi;Algebra;2024-06-14;4;Molto brava;87654321
+Mario Rossi;Calcolo;15-06-2026;5;Ottima spiegazione;0011223344
+Laura Bianchi;Algebra;14-06-2026;4;Molto brava;0011223366
 ```
 
 ### Classe ReviewRepository
 
-La classe ReviewRepository gestisce il caricamento delle recensioni da file CSV per la consultazione dello storico.
+La classe ReviewRepository gestisce la persistenza delle recensioni nel file `data/reviews.csv`.
 
-Metodo principale:
+Responsabilità principali:
+- `saveReview(...)`: aggiunge una recensione al file CSV;
 - loadReviewsForRecipient(matricola): carica tutte le recensioni ricevute da un tutor specifico.
-- Legge il file data/reviews.csv
-- Filtra per matricola tutor (ultimo campo del CSV)
-- Restituisce una List<Review>
+- Filtra per matricola tutor (ultimo campo del CSV);
+- converte le righe del file in record immutabili `Review`.
 
 **Esempio di utilizzo:**
 ```java
-List<Review> reviews = ReviewRepository.loadReviewsForRecipient("12345678");
+List<Review> reviews = ReviewRepository.loadReviewsForRecipient("0012345678");
 for (Review r : reviews) {
     System.out.println(r.reviewerName() + ": " + r.stars() + " stelle");
 }
 ```
 
 ### Calcolo della media delle valutazioni 
-La gestione delle valutazioni (rating) e delle recensioni è strutturata in questo modo e suddivisa tra diverse classi:
-- UniBoTutoringStatisticApp: il rating medio viene letto direttamente tramite il record dei crediti;
-- TutoringSessionController: salva e gestisce il valore delle singole recensioni a fine sessione tramite la variabile reviewStars;
-- CreditRecord: è il modello di dati che memorizza il rating globale come semplice campo double rating;
-- ReviewRepository: si occupa di recuperare dal database CSV (reviews.csv) lo storico delle recensioni ricevute da un tutor.
+Quando la pagina Statistiche, il Profilo o il dettaglio di un annuncio devono mostrare il rating di un tutor, caricano le recensioni tramite `ReviewRepository.loadReviewsForRecipient(matricola)` e calcolano in tempo reale la media delle stelle con le Stream API.
+
+- `UniBoTutoringStatisticApp`: calcola la media per la card KPI “Valutazioni”;
+- `UniBoTutoringProfileApp`: calcola la media per il riepilogo del profilo;
+- `AnnouncementDetailViewApp`: calcola la media per visualizzare il rating del tutor nel dettaglio dell’annuncio;
+- `TutoringSessionController`: acquisisce la recensione al termine della sessione e la salva tramite `ReviewRepository.saveReview(...)`;
+- `ReviewRepository`: salva e carica lo storico delle recensioni dal file `data/reviews.csv`.
 
 **Integrazione con CreditRecord:**
-Il campo rating fa parte del profilo reputazionale dell'utente, modellato in CreditRecord. Al momento, la logica di calcolo non itera in tempo reale sulle recensioni, ma si appoggia al CreditService e al CreditRepository che provvedono a leggere il valore globale già pre-calcolato dal database o assegnando un valore di default qualora l'utente sia nuovo.
+Il campo `rating` è presente in `CreditRecord` e viene salvato nel file dei crediti, ma non viene aggiornato quando viene aggiunta una nuova recensione.
+Inoltre, non viene utilizzato dalle schermate per mostrare il rating del tutor.
+Il rating mostrato nell'interfaccia viene invece calcolato in tempo reale sulla base delle recensioni presenti in `data/reviews.csv`, caricate tramite `ReviewRepository.loadReviewsForRecipient(matricola)`.
 
 ### Diagramma di Relazione tra Entità
 
