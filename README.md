@@ -806,7 +806,7 @@ for (Review r : reviews) {
 ```
 
 ### Calcolo della media delle valutazioni 
-Quando la pagina Statistiche, il Profilo o il dettaglio di un annuncio devono mostrare il rating di un tutor, caricano le recensioni tramite `ReviewRepository.loadReviewsForRecipient(matricola)` e calcolano in tempo reale la media delle stelle con le Stream API.
+Quando la pagina statistiche deve mostrare il rating di un tutor, caricano le recensioni tramite `ReviewRepository.loadReviewsForRecipient(matricola)` e calcolano in tempo reale la media delle stelle con le Stream API.
 
 - `UniBoTutoringStatisticApp`: calcola la media per la card KPI “Valutazioni”;
 - `UniBoTutoringProfileApp`: calcola la media per il riepilogo del profilo;
