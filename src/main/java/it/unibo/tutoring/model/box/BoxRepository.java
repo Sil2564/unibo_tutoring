@@ -27,7 +27,7 @@ public final class BoxRepository {
     private static final String LIST_SEP = ",";
     private static final String HEADER =
         "id;titolo;corso;materia;argomento;data;ora;durataOre;autoreMatricola;tipo;candidati;confermato;contatti;note"
-        + ";cancellato;cancellatoAt;daRiconfermare;cancellazioneVistaDa";
+        + ";cancellato;cancellatoAt;cancellazioneVistaDa";
 
     /** Ore dopo le quali un annuncio "cancellato" (soft-delete) sparisce definitivamente. */
     private static final long ORE_GRAZIA_CANCELLAZIONE = 24;
@@ -127,7 +127,6 @@ public final class BoxRepository {
             sanitize(box.getNote()),
             Boolean.toString(box.isCancellato()),
             box.getCancellatoAt() != null ? box.getCancellatoAt().toString() : "",
-            "",
             String.join(LIST_SEP, cancellazioneVistaDaVisibile(box))
         );
     }
@@ -187,8 +186,12 @@ public final class BoxRepository {
                     final LocalDateTime cancellatoAt = parts.length > 15 && !parts[15].isBlank()
                         ? LocalDateTime.parse(parts[15].trim())
                         : null;
-                    // parts[16] (daRiconfermare) e' una colonna legacy, non piu' usata.
-                    final List<String> cancellazioneVistaDa = parts.length > 17 ? parseLista(parts[17]) : List.of();
+                    // I file salvati dalle versioni precedenti hanno una colonna in piu'
+                    // (daRiconfermare, mai usata) prima di cancellazioneVistaDa: la si salta.
+                    final int indiceVistaDa = parts.length > 17 ? 17 : 16;
+                    final List<String> cancellazioneVistaDa = parts.length > indiceVistaDa
+                        ? parseLista(parts[indiceVistaDa])
+                        : List.of();
 
                     // Normalizza automaticamente i titoli che non rispettano lo
                     // schema standard "Aiuto con .../Ripetizioni di ..." (es.

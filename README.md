@@ -11,7 +11,7 @@ L'applicazione unibo_tutoring nasce con lo scopo di creare una piattaforma digit
 
 L'applicazione dovrà permettere le seguenti funzionalità principali:
 - Gli studenti potranno registrarsi con la propria matricola e l'email istituzionale da studente (`@studio.unibo.it`) e autenticarsi usando la matricola o l'email, garantendo così che l'accesso sia riservato agli studenti uniBo
-- Gli utenti potranno creare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e una breve descrizione, e modificarne la programmazione (data, ora e durata) finché non ricevono candidature
+- Gli utenti potranno creare ed eliminare box di offerta/richiesta di tutoraggio, in cui specificano il corso, la materia e l'argomento (più una nota facoltativa), e modificarne la programmazione (data, ora e durata) finché non ricevono candidature
 - Potranno consultare le offerte e le richieste pubblicate da altri utenti, anche filtrandole per materia o corso
 - Gli utenti potranno quindi proporre e accettare sessioni di tutoraggio, stabilendo data, orario e durata
 - Ogni sessione dovrà passare attraverso diversi stati: proposta, confermata, conclusa o cancellata (stato che interrompe il flusso senza generare crediti)
@@ -170,115 +170,174 @@ Il sistema è organizzato secondo una separazione tra interfaccia utente, logica
 
 ```mermaid
 classDiagram
-    class User {
-        -matricola: String
-        -nome: String
-        -cognome: String
-        -email: String
-        -dataNascita: LocalDate
-        -corsoDiStudi: String
-        -password: String
-        +login(identifier, password): Boolean
-        +register(nome, cognome, email, matricola, dataNascita, corsoDiStudi, password): Boolean
-        +validateMatricola(): Boolean
-        +validateEmail(): Boolean
+    class UserAccount {
+        ~name: String
+        ~surname: String
+        ~matricola: String
+        ~email: String
+        ~passwordHash: String
+        ~birthDate: String
+        ~corso: String
+        ~presentazione: String
+        ~avatarPath: String
+        +getName() String
+        +getSurname() String
+        +getMatricola() String
+        +getEmail() String
+        +getPasswordHash() String
+        +getBirthDate() String
+        +getCorso() String
+        +setBirthDate(birthDate) void
+        +setCorso(corso) void
     }
-    class AuthenticationService {
-        -users: List~User~
-        +authenticateUser(identifier, password): User
-        +registerNewUser(userData): User
-        +checkMatricolaExists(matricola): Boolean
-        +hashPassword(password): String
+
+    class AuthService {
+        -STORAGE_PATH: Path
+        -INSTANCE: AuthService
+        -usersByMatricola: Map~String, UserAccount~
+        -usersByEmail: Map~String, UserAccount~
+        +getInstance() AuthService
+        ~register(name, surname, matricola, email, password, birthDate, corso) RegistrationResult
+        +login(identifier, password) UserAccount
+        +getUser(matricola) UserAccount
+        +isPasswordValid(password) boolean
+        -hashPassword(password) String
+        -loadUsers() void
+        -persistUsers() void
     }
-    class LoginView {
-        -identifierInput: String
-        -passwordInput: String
-        +displayLoginForm(): void
-        +onLoginClick(): void
-        +redirectToRegistration(): void
+
+    class RegistrationResult {
+        -success: boolean
+        -message: String
+        +isSuccess() boolean
+        +getMessage() String
     }
-    class RegistrationView {
-        -nomeInput: String
-        -cognomeInput: String
-        -emailInput: String
-        -matricolaInput: String
-        -dataNascitaInput: LocalDate
-        -corsoDiStudiInput: String
-        -passwordInput: String
-        +displayRegistrationForm(): void
-        +onRegisterClick(): void
-        +validateFormData(): Boolean
-}
-    class Database {
-        -users: List~User~
-        +saveUser(user): Boolean
-        +findUserByIdentifier(identifier): User
-        +getUserByCredentials(identifier, password): User
+
+    class CurrentSession {
+        -currentUser: UserAccount
+        +setUser(user) void
+        +getUser() UserAccount
+        +clear() void
+        +isLoggedIn() boolean
     }
-    LoginView --> AuthenticationService: usa
-    RegistrationView --> AuthenticationService: usa
-    AuthenticationService --> Database: accede a
-    AuthenticationService --> User: gestisce
-    Database --> User: memorizza
+
+    class UniBoTutoringLoginApp {
+        +createScene(stage) Scene
+    }
+
+    class UniBoTutoringRegistrationApp {
+        +createScene(stage) Scene
+    }
+
+    class NavigationHelper {
+        +goToLogin(stage) void
+        +goToRegistration(stage) void
+        +goToDashboard(stage) void
+    }
+
+    class UsersCsv {
+        <<artifact>>
+        data/users.csv
+    }
+
+    UniBoTutoringLoginApp --> AuthService : login
+    UniBoTutoringLoginApp --> CurrentSession : setUser
+    UniBoTutoringLoginApp --> NavigationHelper : naviga
+
+    UniBoTutoringRegistrationApp --> AuthService : register / getUser
+    UniBoTutoringRegistrationApp --> CurrentSession : setUser
+    UniBoTutoringRegistrationApp --> NavigationHelper : naviga
+
+    AuthService --> UserAccount : gestisce
+    AuthService --> RegistrationResult : restituisce
+    AuthService --> UsersCsv : legge / scrive
+
+    CurrentSession --> UserAccount : utente autenticato
 ```
 
-## Classe User
-La classe User rappresenta l'entità principale del sistema, ovvero l'utente registrato alla piattaforma.
+## UserAccount
+La classe UserAccount rappresenta l'utente registrato alla piattaforma.
 Gli attributi della classe contengono le informazioni personali necessarie per l'identificazione dell'utente:
 - matricola: identificativo univoco dello studente
-- nome: nome dell'utente
-- cognome: cognome dell'utente
-- email: indirizzo email dell'utente
-- dataNascita: data di nascita dell’utente, richiesta in fase di registrazione;
-- corsoDiStudi: corso di studi selezionato dall’utente in fase di registrazione.
-- password: password associata all'account
+- nome e cognome;
+- matricola;
+- e-mail;
+- hash della password;
+- data di nascita;
+- corso di studi;
+- presentazione personale;
+- immagine profilo.
 
-La classe include inoltre diversi metodi che permettono la gestione delle operazioni di autenticazione:
-- login(): verifica le credenziali inserite dall'utente per accedere al sistema
-- register(): permette la creazione di un nuovo account utente
-- validateMatricola(): controlla la validità del formato della matricola
-- validateEmail(): verifica la correttezza dell'indirizzo email
+La classe espone metodi getter per leggere le informazioni dell’account e alcuni setter per modificare dati del profilo, come data di nascita, corso di studi, presentazione e avatar.
+UserAccount non esegue direttamente login, registrazione o controlli sulle credenziali: tali responsabilità appartengono ad AuthService.
 
-## Classe AuthenticationService
-La classe AuthenticationService gestisce la logica principale del sistema di autenticazione.
-Essa funge da livello intermedio tra l'interfaccia utente e il database.
-
+## AuthService
+AuthService è il servizio principale del modulo di autenticazione. È implementato come Singleton, quindi esiste una sola istanza condivisa nell’applicazione, ottenuta con getInstance().
 Gli attributi includono una lista di utenti registrati: users: List<User>
+Le sue responsabilità sono:
+- caricare gli utenti registrati da data/users.csv;
+- mantenere gli utenti in memoria in due mappe: una indicizzata per matricola e l'altra per e-mail;
+- registrare nuovi utenti;
+- controllare che matricola ed e-mail non siano già presenti;
+- validare i requisiti della password;
+- calcolare l’hash SHA-256 della password;
+- autenticare l’utente tramite matricola o e-mail;
+- salvare o aggiornare gli utenti nel file CSV;
 
-I metodi principali sono:
-- authenticateUser(): verifica che l’identificativo inserito (matricola o e-mail) e la password inserite corrispondono a un utente registrato
-- registerNewUser(): gestisce il processo di registrazione di un nuovo utente
-- checkMatricolaExists(): controlla se una matricola è già presente nel sistema
-- hashPassword(): converte la password in formato cifrato per garantire maggiore sicurezza
+## RegistrationResult
 
-## Classe LoginView
-La classe LoginView rappresenta l'interfaccia grafica utilizzata dall'utente per effettuare l'accesso al sistema.
-Gli attributi rappresentano i campi inseriti dall'utente ovvero `identifierInput` (matricola o e-mail) e `passwordInput`.
+Rappresenta il risultato della registrazione e contiene:
+- success: indica se l’account è stato creato correttamente;
+- message: contiene un messaggio di successo o di errore.
+Viene usata dalla schermata di registrazione per mostrare all’utente messaggi di errore come “La matricola è già registrata” oppure “La password non rispetta i requisiti”.
 
-I metodi gestiscono l'interazione con l'interfaccia:
-- displayLoginForm(): mostra il modulo di login
-- onLoginClick(): gestisce il tentativo di accesso dell'utente
-- redirectToRegistration(): reindirizza l'utente alla pagina di registrazione nel caso non sia ancora registrato
+## CurrentSession
 
-## Classe RegistrationView
+Gestisce e memorizza l’utente autenticato durante l’esecuzione dell’applicazione e fornisce metodi per:
+- impostare l’utente autenticato con setUser(...);
+- ottenere l’utente corrente con getUser();
+- verificare se esiste una sessione attiva con isLoggedIn();
 
-La classe RegistrationView invece, rappresenta l'interfaccia grafica per la registrazione di nuovi utenti.
-Gli attributi corrispondono ai campi del modulo di registrazione: nome, cognome, e-mail, matricola, data di nascita, corso di studi e password.
+Dopo login o registrazione riusciti, il sistema inserisce l’account in CurrentSession. Le altre pagine, come Dashboard, Profilo e Statistiche, usano questa classe per sapere quale utente sta utilizzando l’applicazione.
 
-I metodi principali sono:
-- displayRegistrationForm(): visualizza il modulo di registrazione
-- onRegisterClick(): gestisce la richiesta di registrazione
-- validateFormData(): verifica che tutti i dati inseriti siano corretti prima dell'invio
+## UniBoTutoringLoginApp
 
-## Classe Database
-La classe Database rappresenta il sistema di persistenza dei dati e contiene le informazioni sugli utenti registrati.
-Essa include users: List<User>, che rappresenta l'insieme degli utenti memorizzati.
+La classe rappresenta la schermata JavaFX di login.
+Quando l'utente schiaccio sul pulsante 'Accedi', la classe:
+- controlla che i campi non siano vuoti;
+- invoca AuthService.login(identifier, password);
+- se il login ha successo, salva l’account in CurrentSession;
+- reindirizza l’utente alla Dashboard altrimenti mostra un messaggio di errore.
 
-I metodi principali sono:
-- saveUser(): salva un nuovo utente nel database
-- findUserByMatricola(): ricerca un utente tramite matricola
-- getUserByCredentials(): restituisce l'utente corrispondente alle credenziali inserite
+Dalla seguente schermata ci si può tornare alla home page oppure collegarsi alla pagina di registrazione utente.
 
+## UniBoTutoringRegistrationApp
+
+La classe rappresenta la schermata JavaFX di registrazione utente. Questa comprende:
+- nome;
+- cognome;
+- data di nascita;
+- matricola;
+- e-mail;
+- corso di studi;
+- password;
+- conferma della password.
+
+Se AuthService.register(...) restituisce un risultato positivo, il nuovo utente viene inserito in CurrentSession e reindirizzato direttamente alla Dashboard.
+
+## NavigationHelper
+
+Serve per effettuare la navigazione tra pagine. Nel modulo di autenticazione viene usato per:
+- tornare alla Home;
+- aprire la schermata di Login;
+- aprire la schermata di Registrazione;
+- aprire la Dashboard dopo un accesso riuscito.
+
+## data/user.csv
+
+data/users.csv è il file in cui l’app salva gli account degli utenti.
+Contiene tutte le informazioni che si inseriscono in fase di registrazione.
+Quando l’app si avvia, AuthService legge data/users.csv e carica gli utenti in memoria. Quando qualcuno si registra, modifica il profilo o cambia password, AuthService aggiorna lo stesso file.
 
 
 ## Design dettagliato- Gestione Profilo Utente
@@ -649,10 +708,6 @@ Il modulo di feedback e recensioni consente agli utenti di valutare le sessioni 
 
 ```mermaid
 classDiagram
-    %% ============================================================
-    %% DESIGN DETTAGLIATO - FEEDBACK & REVIEWS
-    %% Pattern: Repository + ECB (Entity-Control-Boundary)
-    %% ============================================================
 
     class TutoringSessionController {
         +registraRecensione(stelle, commento)
@@ -661,9 +716,13 @@ classDiagram
     <<control>> TutoringSessionController
 
     class UniBoTutoringStatisticApp {
-        +createReviewsSection()
-        +createKpiCards()
-    }
+    +createScene() Scene
+    -createKpiCards(matricola) HBox
+    -createReviewsSection(matricola) VBox
+    -createSessionsSection(matricola) VBox
+    -createMonthlySessionsChart(matricola) VBox
+    -parseDateSafe(data) LocalDate
+}
     <<boundary>> UniBoTutoringStatisticApp
 
     class Review {
@@ -676,6 +735,7 @@ classDiagram
     <<entity>> Review
 
     class ReviewRepository {
+        +saveReview(reviewerName, subject, date, stars, comment, recipientMatricola) void
         +loadReviewsForRecipient(matricola): List~Review~
     }
     <<entity>> ReviewRepository
@@ -695,10 +755,10 @@ classDiagram
     <<entity>> CreditRecord
 
     %% RELAZIONI
-    TutoringSessionController --> Review : acquisisce dati >
-    UniBoTutoringStatisticApp --> ReviewRepository : legge storico >
-    UniBoTutoringStatisticApp --> CreditService : legge rating globale >
-    ReviewRepository --> Review : gestisce >
+    TutoringSessionController --> ReviewRepository : salva recensione >
+    ReviewRepository --> Review : crea / restituisce >
+    UniBoTutoringStatisticApp --> ReviewRepository : carica recensioni e calcola media >
+    UniBoTutoringStatisticApp --> CreditService : legge ore e crediti >
     CreditService --> CreditRecord : gestisce >
 ```
 
@@ -710,48 +770,52 @@ La classe `Review` rappresenta una valutazione di una sessione di tutoraggio com
 - `reviewerName`: nome dello studente che lascia la recensione
 - `subject`: materia della sessione di tutoraggio
 - `date`: data della sessione
-- `stars`: voto numerico (scala 1-5)
+- `stars`: voto numerico (scala 0-5)
 - `comment`: testo libero con osservazioni specifiche
 
 **Gestione:**
-- Le recensioni sono memorizzate nel file CSV `data/reviews.csv`
-- Ogni recensione contiene anche la matricola del tutor che le riceve (memorizzata come ultimo campo)
-- Il record è immutabile (Java record), garantendo thread-safety
+- Le recensioni sono memorizzate nel file CSV `data/reviews.csv`;
+- ogni recensione contiene anche la matricola del tutor che le riceve (memorizzata come ultimo campo);
+- il record è immutabile (Java record), quindi i dati delle recensioni, una volta inseriti, non sono modificabili.
 
 **Struttura del CSV:**
 ```
 reviewerName;subject;date;stars;comment;tutorMatricola
-Mario Rossi;Calcolo;2024-06-15;5;Ottima spiegazione;12345678
-Laura Bianchi;Algebra;2024-06-14;4;Molto brava;87654321
+Mario Rossi;Calcolo;15-06-2026;5;Ottima spiegazione;0011223344
+Laura Bianchi;Algebra;14-06-2026;4;Molto brava;0011223366
 ```
 
 ### Classe ReviewRepository
 
-La classe ReviewRepository gestisce il caricamento delle recensioni da file CSV per la consultazione dello storico.
+La classe ReviewRepository gestisce la persistenza delle recensioni nel file `data/reviews.csv`.
 
-Metodo principale:
+Responsabilità principali:
+- `saveReview(...)`: aggiunge una recensione al file CSV;
 - loadReviewsForRecipient(matricola): carica tutte le recensioni ricevute da un tutor specifico.
-- Legge il file data/reviews.csv
-- Filtra per matricola tutor (ultimo campo del CSV)
-- Restituisce una List<Review>
+- Filtra per matricola tutor (ultimo campo del CSV);
+- converte le righe del file in record immutabili `Review`.
 
 **Esempio di utilizzo:**
 ```java
-List<Review> reviews = ReviewRepository.loadReviewsForRecipient("12345678");
+List<Review> reviews = ReviewRepository.loadReviewsForRecipient("0012345678");
 for (Review r : reviews) {
     System.out.println(r.reviewerName() + ": " + r.stars() + " stelle");
 }
 ```
 
 ### Calcolo della media delle valutazioni 
-La gestione delle valutazioni (rating) e delle recensioni è strutturata in questo modo e suddivisa tra diverse classi:
-- UniBoTutoringStatisticApp: il rating medio viene letto direttamente tramite il record dei crediti;
-- TutoringSessionController: salva e gestisce il valore delle singole recensioni a fine sessione tramite la variabile reviewStars;
-- CreditRecord: è il modello di dati che memorizza il rating globale come semplice campo double rating;
-- ReviewRepository: si occupa di recuperare dal database CSV (reviews.csv) lo storico delle recensioni ricevute da un tutor.
+Quando la pagina Statistiche, il Profilo o il dettaglio di un annuncio devono mostrare il rating di un tutor, caricano le recensioni tramite `ReviewRepository.loadReviewsForRecipient(matricola)` e calcolano in tempo reale la media delle stelle con le Stream API.
+
+- `UniBoTutoringStatisticApp`: calcola la media per la card KPI “Valutazioni”;
+- `UniBoTutoringProfileApp`: calcola la media per il riepilogo del profilo;
+- `AnnouncementDetailViewApp`: calcola la media per visualizzare il rating del tutor nel dettaglio dell’annuncio;
+- `TutoringSessionController`: acquisisce la recensione al termine della sessione e la salva tramite `ReviewRepository.saveReview(...)`;
+- `ReviewRepository`: salva e carica lo storico delle recensioni dal file `data/reviews.csv`.
 
 **Integrazione con CreditRecord:**
-Il campo rating fa parte del profilo reputazionale dell'utente, modellato in CreditRecord. Al momento, la logica di calcolo non itera in tempo reale sulle recensioni, ma si appoggia al CreditService e al CreditRepository che provvedono a leggere il valore globale già pre-calcolato dal database o assegnando un valore di default qualora l'utente sia nuovo.
+Il campo `rating` è presente in `CreditRecord` e viene salvato nel file dei crediti, ma non viene aggiornato quando viene aggiunta una nuova recensione.
+Inoltre, non viene utilizzato dalle schermate per mostrare il rating del tutor.
+Il rating mostrato nell'interfaccia viene invece calcolato in tempo reale sulla base delle recensioni presenti in `data/reviews.csv`, caricate tramite `ReviewRepository.loadReviewsForRecipient(matricola)`.
 
 ### Diagramma di Relazione tra Entità
 
