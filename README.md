@@ -596,6 +596,7 @@ Gli utenti di unibo_tutoring possono candidarsi a un annuncio di offerta o richi
         +annulla()
         +completa()
         +inviaMessaggio(testo, mittente)
+        +inviaMessaggio(testo, mittente, timestamp)
         +addChatObserver(observer)
         +getStoricoChat() : List~Message~
     }
@@ -688,6 +689,7 @@ Una `TutoringSession` attraversa le fasi Proposta, Confermata, Completata e Canc
 * **Modifica della programmazione:** l'autore può modificare data, ora e durata finché non è presente una candidatura attiva o un candidato confermato. Modello e View applicano lo stesso controllo.
 * **Cancellazione e persistenza:** una sessione confermata può essere cancellata prima della fine prevista. Autore, data, motivo e lettura della notifica vengono salvati; la sessione cancellata rimane consultabile per 24 ore e lo stato `Cancelled` viene ripristinato dal file. `SessionLinkUtil` genera inoltre un identificativo di conversazione a partire dall'annuncio e dalla controparte, evitando collisioni fra sessioni diverse.
 * **Vantaggi:** ogni stato mantiene isolate le proprie regole e l'aggiunta di un nuovo stato richiede una nuova implementazione di `SessionState` e l'aggiornamento delle sole transizioni che devono raggiungerlo.
+* **Eccezioni:** Per migliorare la comprensione nel diagramma uml è stato evitato di riscrivere i metodi `completa(session)` `conferma(session)` `annulla(session)` nelle classi che ereditano da  `SessionState` quando come unico compito lanciano delle eccezioni.
 
 #### 2. Architettura della Chat Privata (Composizione e Observer)
 La `Chat` è modellata come un'entità separata, ma legata alla `TutoringSession` tramite una relazione di **Composizione**.
