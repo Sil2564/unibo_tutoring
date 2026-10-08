@@ -926,6 +926,9 @@ I seguenti file di test verificano che le funzionalità principali funzionino an
 
 - `BoxTutoraggioScheduleTest`: verifica che la programmazione di un annuncio sia modificabile finché non arriva una candidatura attiva, che un semplice contatto in chat non blocchi la modifica, che il blocco resti valido anche dopo la conferma di un candidato, il rifiuto di valori non validi (data nulla, ora nulla, durata fuori dal range 1-8 ore, data già passata) e il rifiuto della modifica da parte di chi non è l'autore dell'annuncio. Verifica inoltre la validazione e il trim dei campi nel costruttore, il confine esatto della scadenza, il rifiuto di candidature e conferme su un annuncio scaduto e l'eliminazione dell'annuncio (immediata senza conferma, "soft" dopo una conferma, vietata a chi non è l'autore). Le date usate sono relative al giorno di esecuzione: con date fisse il test smetterebbe di passare una volta superate, perché la programmazione non accetta date già trascorse.
 - `CreateAnnouncementViewAppTest`: avvia il toolkit JavaFX e verifica che il modulo di creazione annuncio mostri correttamente le due opzioni "Offerta" e "Richiesta", entrambe con etichetta visibile. Se il toolkit è già stato avviato da un'altra classe di test nella stessa JVM il test lo riutilizza, così il risultato non dipende dall'ordine di esecuzione.
+### Niki
+
+- `CreditRepositoryTest`: verifica la resilienza in fase di parsing del database dei crediti (`credits.csv`). Assicura che la presenza di stringhe non riconosciute o livelli di Badge deprecati/legacy (es. `ADVANCED`) all'interno del database non provochi crash e non azzeri le ore lavorate dal tutor, demandando invece il ricalcolo sicuro del Badge al `CreditService`.
 
 ## Note di sviluppo
 
