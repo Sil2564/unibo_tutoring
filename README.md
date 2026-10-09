@@ -757,11 +757,11 @@ classDiagram
     <<entity>> CreditRecord
 
     %% RELAZIONI
-    TutoringSessionController --> ReviewRepository : salva recensione >
-    ReviewRepository --> Review : crea / restituisce >
-    UniBoTutoringStatisticApp --> ReviewRepository : carica recensioni e calcola media >
-    UniBoTutoringStatisticApp --> CreditService : legge ore e crediti >
-    CreditService --> CreditRecord : gestisce >
+    TutoringSessionController --> ReviewRepository : salva recensione 
+    ReviewRepository --> Review : crea / restituisce 
+    UniBoTutoringStatisticApp --> ReviewRepository : carica recensioni e calcola media 
+    UniBoTutoringStatisticApp --> CreditService : legge ore e crediti 
+    CreditService --> CreditRecord : gestisce 
 ```
 
 ### Classe Review
